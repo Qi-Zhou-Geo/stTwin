@@ -1,0 +1,6 @@
+name: stTwins
+channels:
+  - anaconda
+  - conda-forge
+  - defaults
+dependencies:
