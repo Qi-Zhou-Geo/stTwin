@@ -15,13 +15,5 @@ run_temp_test.sh
 .vscode
 
 # ingore the folder and all files
-functions
-functions/PPSD
 
-# catchment code and event list
-config/catchment_code.yaml
-
-data/event_catalog/Flow_Bench_Catalog.xlsx
-data/seismic
-
-plotting/diagram/*.png
+task.md
