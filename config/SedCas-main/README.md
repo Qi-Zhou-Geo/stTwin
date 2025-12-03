@@ -1,3 +1,10 @@
+# Note from Qi Zhou: 2025-09-24
+## The **SedCas** model integrated into stTwin originates from  <br>
+[https://github.com/jacobhirschberg/SedCas](https://github.com/jacobhirschberg/SedCas) <br>
+and is distributed under the [GPL-3.0 License](https://www.gnu.org/licenses/gpl-3.0.html).
+
+***
+
 # SedCas: Sediment Cascade Model
 
 Source code for SedCas. For a detailed model description, please see Hirschberg et al. (2021)
