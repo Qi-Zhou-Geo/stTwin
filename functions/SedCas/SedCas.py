@@ -365,6 +365,9 @@ class SedCas():
             pass
         else:
             file_name = f"{self.model_output_dir}/{h_name}"
+            # arr = self.hydro.iloc[:, 0] # conver to ISO format
+            # arr = pd.to_datetime(arr).dt.strftime('%Y-%m-%dT%H:%M:%S')
+            # self.hydro.iloc[:, 0] = arr
             self.hydro.to_csv(file_name, header=True)
             log_print(f"Save file: {file_name} \n \n")
 
@@ -381,6 +384,9 @@ class SedCas():
             sedout['Qstl'] = self.sed.sopot[:, 0] # debris flows potential
 
             file_name = f"{self.model_output_dir}/{s_name}"
+            # arr = sedout.iloc[:, 0] # conver to ISO format
+            # arr = pd.to_datetime(arr).dt.strftime('%Y-%m-%dT%H:%M:%S')
+            # sedout.iloc[:, 0] = arr
             sedout.to_csv(file_name, header=True)
             log_print(f"Save file: {file_name} \n \n")
 
