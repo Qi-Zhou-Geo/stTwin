@@ -45,7 +45,8 @@ hyd = model.run_hydro()
 sed = model.run_sediment()
 
 sedout, sed, sed.sopot = model.save_output(h_name=f"Hydro_{data_type}.txt",
-                           s_name=f"Sediment_{data_type}.txt")
+                                           s_name=f"Sediment_{data_type}.txt")
+
 # model.plot_sedyield_monthly()
 
 # t = np.array(model.sed.index)
