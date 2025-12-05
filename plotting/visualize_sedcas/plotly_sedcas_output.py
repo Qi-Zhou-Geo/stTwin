@@ -17,6 +17,8 @@ import matplotlib.ticker as ticker
 import matplotlib.gridspec as gridspec
 
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import plotly.io as pio
 
 # <editor-fold desc="add the sys.path to search for custom modules">
@@ -36,10 +38,10 @@ plt.rcParams.update({'font.size': 7,
                      'axes.formatter.use_mathtext': True})
 
 pio.templates.default = "plotly_white"
-pio.templates["plotly_white"].layout.font.size = 7
-fig.update_yaxes(exponentformat="power")  # show scientific notation
-fig.update_xaxes(exponentformat="power")
+# pio.templates["plotly_white"].layout.font.size = 7
+pio.renderers.default = "chrome"
 
+# <editor-fold desc="load the dataset">
 # selected_period = ["2017-05-01 00:00:00", "2017-07-01 00:00:00"]
 selected_period = ["2018-06-01 00:00:00", "2018-08-15 00:00:00"]
 
@@ -70,13 +72,36 @@ date = df3_arr[:, 1]
 id1 = np.where(date == selected_period[0].replace(" ", "T"))[0][0]
 id2 = np.where(date == selected_period[1].replace(" ", "T"))[0][0]
 df3_arr = df3_arr[id1:id2, :]
+# </editor-fold>
 
 
+fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1)
 
-fig = px.line(df3, x='timestamp [UTC+0]', y='precipitation [mm per Hourly]')
+# Panel 1: df3 (precipitation)
+fig.add_trace(
+    go.Scatter(
+        x=df3['timestamp [UTC+0]'],
+        y=df3['precipitation [mm per Hourly]'],
+        mode='lines',
+        line=dict(color='black', width=2),
+        name='Precipitation'
+    ),
+    row=1, col=1
+)
 
-fig.update_traces(line_color='black', line_width=2)
+# Panel 2: df1 (for example hydro)
+fig.add_trace(
+    go.Scatter(
+        x=df2['timestamp [UTC+0]'],  # make sure column names match
+        y=df2['Qstl'],
+        mode='lines',
+        line=dict(color='blue', width=2),
+        name='Qstl'
+    ),
+    row=2, col=1
+)
 
+# update layout
 fig.update_layout(
     title="Precipitation [mm/hr]",
     xaxis=dict(tickformat="%Y-%m-%dT%H:%M:%S"),
@@ -84,13 +109,18 @@ fig.update_layout(
     paper_bgcolor="white",
 )
 
+# update axes if needed
 fig.update_xaxes(
     title_text="Time [UTC+0]",
+    tickformat="%Y-%m-%dT%H:%M:%S",
+    hoverformat="%Y-%m-%dT%H:%M:%S",
     showgrid=True,
     gridwidth=1,
     gridcolor="rgba(128,128,128,0.5)",  # grey with 50% alpha
     griddash="dash",
     layer="below traces",
+    row=1,
+    col=1
 )
 
 fig.update_yaxes(
@@ -100,7 +130,35 @@ fig.update_yaxes(
     gridcolor="rgba(128,128,128,0.5)",  # grey with 50% alpha
     griddash="dash",
     layer="below traces",
+    row=1,
+    col=1
 )
 
-fig.write_image(f"./precipitation.png", width=550, height=300)
-fig.show()
+
+fig.update_xaxes(
+    title_text="Time [UTC+0]",
+    tickformat="%Y-%m-%dT%H:%M:%S",
+    hoverformat="%Y-%m-%dT%H:%M:%S",
+    showgrid=True,
+    gridwidth=1,
+    gridcolor="rgba(128,128,128,0.5)",  # grey with 50% alpha
+    griddash="dash",
+    layer="below traces",
+    row=2,
+    col=1
+)
+
+fig.update_yaxes(
+    title_text="Sediemnt [mm/hr]",
+    showgrid=True,
+    gridwidth=1,
+    gridcolor="rgba(128,128,128,0.5)",  # grey with 50% alpha
+    griddash="dash",
+    layer="below traces",
+    row=2,
+    col=1
+)
+
+
+# show in browser
+fig.show(renderer="browser")
