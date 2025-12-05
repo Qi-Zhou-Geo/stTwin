@@ -64,7 +64,7 @@ def remove_LD_STA01_response(trace, paz, pre_filt=(0.5, 1.0, 45.0, 50.0)):
 
 def config_snesor_parameter(catchment_name, seismic_network):
 
-    default_data_path = f"{project_root}/config/catchment_code.yaml"
+    default_data_path = f"{project_root}/config/data_path.yaml"
     with open(default_data_path, "r") as f:
         config = yaml.safe_load(f)
         sac_path = config[f"glic_sac_dir"]

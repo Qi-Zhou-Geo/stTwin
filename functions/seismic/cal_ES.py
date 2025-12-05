@@ -1,47 +1,115 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-#__modification time__ = 2025-06-19
-#__author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
-#__find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
-# Please do not distribute this code without the author's permission
+# __modification time__ = 2024-02-23
+# __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
+# __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
+# Please do not distribute this functions without the author's permission
 
-import pytz
-from datetime import datetime, timedelta
+import os
+import argparse
 
+import pandas as pd
 import numpy as np
 
+from scipy.signal import hilbert, lfilter, butter, spectrogram
+from scipy.stats import kurtosis, skew, iqr
 
-def chunk_data(data, data_start_time, data_sps, window_size, window_overlap):
+from tqdm import tqdm
 
-    x_seq_length = int(data_sps * window_size)  # x_seq_length unit by data point
-    overlap_length = int(x_seq_length * (1 - window_overlap))  # unit by data point
+from datetime import datetime, timezone, timedelta
+from obspy import Stream
 
-    # prepare the float time stamps
-    date_start_time = datetime.strptime(data_start_time, "%Y-%m-%dT%H:%M:%S")
-    timestamps = np.array([date_start_time + timedelta(seconds= i / data_sps) for i in range(len(data))])
-    timestamps = np.array([(ts - datetime(1970, 1, 1)).total_seconds() for ts in timestamps])
-    
-    # prepare a 2D data numpy array
-    if window_overlap != 0:  # for overlap window
-        chunk_t = np.lib.stride_tricks.sliding_window_view(timestamps, x_seq_length)[::overlap_length]
-        chunk_x = np.lib.stride_tricks.sliding_window_view(data, x_seq_length)[::overlap_length]
-    else: # for none overlap window
-        num_windows = len(data) // x_seq_length
-        chunk_t = timestamps[:num_windows * x_seq_length].reshape(-1, x_seq_length)
-        chunk_x = data[:num_windows * x_seq_length].reshape(-1, x_seq_length)
+# <editor-fold desc="add the sys.path to search for custom modules">
+from pathlib import Path
+current_dir = Path(__file__).resolve().parent
+# using ".parent" on a "pathlib.Path" object_typeect moves one level up the directory hierarchy
+project_root = current_dir.parent.parent
+import sys
+sys.path.append(str(project_root))
+# </editor-fold>
 
-    t_value = chunk_t[:, 0]
-    t_str = [datetime.utcfromtimestamp(ts).strftime('%Y-%m-%dT%H:%M:%S.%f') for ts in t_value]
-    chunk_x = chunk_x
-
-    return t_value, t_str, chunk_x
+# import the custom functions
+from functions.seismic.st2tr import stream_to_trace
+from functions.seismic.chunk_st2seq import chunk_data
 
 
-data = np.arange(1, 1440*60)
-data_start_time = "2020-10-01T00:00:00"
-data_sps = 1
-window_size = 60
-window_overlap = 0
+def get_freq_band_energy(data,
+                         sps,
+                         freq_lower=(1, 5, 15, 25, 35),
+                         freq_upper=(5, 15, 25, 35, 45)):
 
-t_value, t_str, chunk_x = chunk_data(data, data_start_time, data_sps, window_size, window_overlap)
+    '''
+    Calculate log10 energy in multiple frequency bands using bandpass filtering + Hilbert transform.
+
+    Args:
+        data: array-like, 1D seismic waveform.
+        sps: float, data sampling rate (samples per second).
+        freq_lower: tuple, frequency band edges
+        freq_upper: tuple, frequency band edges
+
+    Returns:
+
+    '''
+
+    # convert to array
+    data = np.asarray(data, dtype=float)
+
+    if len(freq_lower) != len(freq_upper):
+        raise ValueError(f"freq_lower = {freq_lower} and "
+                         f"freq_upper = {freq_upper} must have same length.")
+
+    nf = len(freq_lower)
+    seismic_energy = np.empty(nf, dtype=float)
+
+    Nyquist = sps / 2
+
+    for i, (f_low, f_high) in enumerate(zip(freq_lower, freq_upper)):
+
+        # Normalize to Nyquist
+        wn = [f_low / Nyquist, f_high / Nyquist]
+        # Butterworth bandpass filter
+        b, a = butter(N=2, Wn=wn, btype='band')
+        # Filter data
+        data_filt = lfilter(b, a, data)
+
+        # Hilbert envelope energy (trapz integral)
+        analytic_signal = hilbert(data_filt)
+        envelope = np.abs(analytic_signal)
+
+        seismic_energy[i] = np.log10(np.trapz(envelope))
+
+    return seismic_energy
+
+
+def single_day_ES(st, window_size, window_overlap,
+                  freq_lower=(1, 5, 15, 25, 35),
+                  freq_upper=(5, 15, 25, 35, 45)):
+
+    tr = stream_to_trace(st=st)
+    data = tr.data
+    data_start_time = tr.stats.starttime.strftime("%Y-%m-%dT%H:%M:%S")
+    data_sps = tr.stats.sampling_rate
+
+    # chunk the data to avoid the loop-st.trim
+    t_value, t_str, chunk_x = chunk_data(data, data_start_time, data_sps, window_size, window_overlap)
+    print(len(t_str), len(data))
+    # prepare the empty temp_ES to store the results
+    temp_ES = np.empty((len(t_str), len(freq_lower)), dtype=float)
+    for i in tqdm(range(len(t_str)), file=sys.stdout):
+        data_temp = chunk_x[i]
+
+        es_arr = get_freq_band_energy(data_temp, data_sps,
+                                      freq_lower=freq_lower,
+                                      freq_upper=freq_upper)
+        temp_ES[i] = es_arr
+
+    # save the npy file
+    output_path = f"{project_root}/data/seismic_temp/seis_energy"
+    os.makedirs(output_path, exist_ok=True)
+    output_name = f"{tr.stats.network}.{tr.stats.station}.{tr.stats.channel}.{tr.stats.starttime.year}.{tr.stats.starttime.julday:03d}"
+    np.savez(f"{output_path}/{output_name}.npz",
+             allow_pickle=True,
+             t_str=t_str,
+             t_float=t_value,
+             seismic_energy=temp_ES)
