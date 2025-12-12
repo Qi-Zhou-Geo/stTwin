@@ -8,11 +8,23 @@
 
 import logging
 
+# <editor-fold desc="add the sys.path to search for custom modules">
+from pathlib import Path
+
+current_dir = Path(__file__).resolve().parent
+# using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
+project_root = current_dir.parent.parent
+
+import sys
+sys.path.append(str(project_root))
+# </editor-fold>
+
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     datefmt="%Y-%m-%dT%H:%M:%S",
-    filename="log_print.txt",
+    filename=f"{project_root}/log_print.txt",
     filemode="a"
 )
 

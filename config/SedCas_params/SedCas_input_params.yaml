@@ -1,13 +1,13 @@
 # This is the SedCas model input parameters
 
-# Note: the parameters are stored as list and signle variable
+# Note: the parameters are stored as a Python List or signle variable
 # e.g.,
 #  params1: 0.1 # this is a signle variable
 #  params2:  # this is a list
 #    - abc
 #    - 0.2
 
-SedCas:
+input_params:
   n_HRU: 2  # Number of hydrological response units (HRU) [-]
 
   HRUs:  # Description of hydrological response units
@@ -83,4 +83,4 @@ SedCas:
 
   ls_cutoff: 3000000  # Max potential landslide volume [m3]
 
-  M: 100  # Number of stochastic simulations
+  num_iteration: 100  # Number of stochastic simulations
