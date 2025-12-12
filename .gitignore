@@ -16,4 +16,7 @@ run_temp_test.sh
 
 # ingore the folder and all files
 
-task.md
+# catchment code and event list
+config/data_path.yaml
+
+plotting/diagram/*.png

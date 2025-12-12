@@ -113,3 +113,34 @@ def single_day_ES(st, window_size, window_overlap,
              t_str=t_str,
              t_float=t_value,
              seismic_energy=temp_ES)
+
+def load_ES_energy(network, station, channel, year, julday,
+                   print_output=False,
+                   freq_lower=(1, 5, 15, 25, 35),
+                   freq_upper=(5, 15, 25, 35, 45)):
+
+    # save the npy file
+    output_path = f"{project_root}/data/seismic_temp/seis_energy"
+    os.makedirs(output_path, exist_ok=True)
+    output_name = f"{network}.{station}.{channel}.{year}.{julday:03d}"
+
+    with np.load(f"{output_path}/{output_name}.npz", "r", allow_pickle=True) as f:
+        t_str = f["t_str"]
+        t_float = f["t_float"]
+        seismic_energy = f["seismic_energy"]
+
+
+    delta = t_float[1] - t_float[0]
+    sps = 1 / delta
+
+    output_temp = np.hstack((t_str.reshape(-1, 1), t_float.reshape(-1, 1), seismic_energy))
+
+    output_header = ["t_str", "t_float"]
+    for i, j in zip(freq_lower, freq_upper):
+        h = f"seismic_energy{i}-{j}Hz"
+        output_header.append(h)
+
+    if print_output is True:
+        print(f"{output_name}, delta: {delta}, SPS: {sps}, output_temp.shape: {output_temp.shape}")
+
+    return output_temp, output_header

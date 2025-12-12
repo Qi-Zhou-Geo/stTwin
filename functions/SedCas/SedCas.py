@@ -10,7 +10,7 @@
 import ast
 
 import os
-# import yaml
+import yaml
 
 import pandas as pd
 import numpy as np
@@ -32,7 +32,6 @@ sys.path.append(str(project_root))
 
 
 # import the custom functions
-import modules as mod
 from functions.toolkit.log_infor import log_print
 
 from functions.SedCas import hydro_model as SedCas_h_model
@@ -41,19 +40,6 @@ from functions.SedCas import transport_model as SedCas_t_model
 
 from functions.download_MeteoSwiss.fetch_data import fetch_data4SedCas
 
-
-# from dataclasses import dataclass
-#
-# @dataclass
-# class IOConfig:
-#     input_dir: str
-#     output_dir: str
-#
-# class SedCas:
-#     def __init__(self, io: IOConfig, params: ModelParams):
-#         self.io = io
-#         self.params = params
-#         self.state = ModelState()
 
 class SedCas():
     
@@ -76,7 +62,8 @@ class SedCas():
         self.sun_radiation = None # Sun radiation [W/m^2]
 
     def log_config_params(self):
-        # you can run this function when you want to check the model attributy
+        # you can run this function whenever you want to check the model attributy by:
+        # model.log_config_params()
 
         # logout the instance attributes (attributes of the SedCas model instance)
         for k, v in vars(self).items():
@@ -128,34 +115,31 @@ class SedCas():
 
         return df
 
-    def load_params(self):
+    def load_params(self, log_params=True):
 
         # 1) load the pre-defined model params
-        with open(f"{self.model_params_dir}/parameters.par", 'r') as file:
-            f = file.readlines()
+        yaml_path = f"{self.model_params_dir}/SedCas_input_params.yaml"
+        with open(yaml_path, "r") as f:
+            data = yaml.safe_load(f)
+        params = data["input_params"]
 
-            for l in range(2, 35):
-                linestr = f[l].strip()
-
-                if ":" in linestr:
-                    key, val = linestr.split(":", 1)
-                    key, val = key.strip(), val.strip()
-
-                    try:
-                        # convert numbers safely
-                        val = ast.literal_eval(val)
-                    except Exception as e:
-                        log_print(f"Error! key={key}, val={val}\n"
-                                  f"{e}\n \n")
-                    setattr(self, key, val)
+        # assign each parameter as class attribute
+        for key, val in params.items():
+            # equal to -> self.key_name = val,
+            # but the "key_name" is automaticly set as defiend "key_name" in params
+            setattr(self, key, val)
 
         # 2) post-processing to get another two more model params
         # normalizing hillslope sediment storage by catchment area considering packing density
         self.shcap = self.shcap * (self.rho_dry / self.rho_b) / self.area * 10 ** -3
 
         # smallest possible sediment amount in debirs flow
-        # NOTE: this is only a constrain for the model, the smallest modelled debris flow volume is given by qdf and smax_nodf
+        # NOTE: this is only a constraint for the model, the smallest modelled debris flow volume is given by qdf and smax_nodf
         self.mindf = self.minDF * self.smax_nodf / self.area * 10 ** -3
+
+        # 3) print out the loaded model params
+        if log_params is True:
+            self.log_config_params()
 
         return self.mindf
 
