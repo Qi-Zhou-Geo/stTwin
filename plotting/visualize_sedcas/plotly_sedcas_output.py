@@ -46,8 +46,8 @@ pio.renderers.default = "chrome"
 # <editor-fold desc="load the dataset">
 # selected_period = ["2017-05-18T00:00:00", "2017-07-01T00:00:00"]
 # selected_period = ["2018-06-01T00:00:00", "2018-08-15T00:00:00"]
-selected_period = ["2019-05-25T00:00:00", "2019-08-25T00:00:00"]
-# selected_period = ["2020-05-29T00:00:00", "2020-09-25T00:00:00"]
+# selected_period = ["2019-05-25T00:00:00", "2019-08-25T00:00:00"]
+selected_period = ["2020-05-29T00:00:00", "2020-09-25T00:00:00"]
 # selected_period = ["2022-06-01T00:00:00", "2022-09-15T00:00:00"]
 
 # <editor-fold desc="load CasSed in-out">
@@ -101,7 +101,13 @@ df2 = df2.iloc[id1:id2]
 
 # </editor-fold>
 
-feature_name = 'ES_1' # df3.columns
+
+# - 36  # MeanFFT
+# - 37  # MaxFFT
+# - 38  # FmaxFFT
+# - 39  # FCentroid
+
+feature_name = "MaxFFT" #"env_max_to_duration"#'ES_1' # df3.columns
 df3 = pd.read_csv(f"{project_root}/data/seismic_temp/seis_energy/{selected_period[0][:4]}_ILL12_EHZ_all_B.txt", header=0)
 df3 = df3.rename(columns={"time_window_start": "timestamp [UTC+0]"})
 df3 = df3.rename(columns={feature_name: feature_name})
@@ -274,7 +280,7 @@ fig.update_xaxes(
 
 # Panel 4 Y-axis
 fig.update_yaxes(
-    title_text="Seismic Energy [5–15 Hz]",
+    title_text=feature_name,
     showgrid=True,
     gridwidth=1,
     gridcolor="rgba(128,128,128,0.5)",

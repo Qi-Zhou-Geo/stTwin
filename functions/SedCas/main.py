@@ -6,6 +6,7 @@
 #__find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
 import numpy as np
+import pandas as pd
 
 # <editor-fold desc="add the sys.path to search for custom modules">
 from pathlib import Path
@@ -26,16 +27,19 @@ from functions.toolkit.confidence_level_test import statistical_testing
 # initial the SedCas model
 model = SedCas(project_root=project_root)
 
-data_type = "2017-2025"
-# load the climate forcing data
-model.load_climate(data_type=data_type)
 
 # load the pre-calibrated parameters
 model.load_params(log_params=True)
 
 
+data_type = "2017-2025"
+# load the climate forcing data
+model.load_climate(data_type=data_type)
+
+
 # run the hydro model
-hyd = model.run_hydro()
+hydro, SWE, PET, HYM = model.run_hydro()
+
 
 # run the sediment model
 sed = model.run_sediment()
