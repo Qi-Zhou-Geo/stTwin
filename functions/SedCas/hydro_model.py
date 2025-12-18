@@ -1,33 +1,31 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-#__modification time__ = 2025-09-24
-#__author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
-#__find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
-#__note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
+# __modification time__ = 2025-09-24
+# __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
+# __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
+# __note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
 #           and is distributed under the terms of the GNU General Public License v3.0 (GPL-3.0).
 
 import math
 import random
+from itertools import dropwhile
 
 import pandas as pd
 import numpy as np
 
 
-
 # Snow Degree-Day-Module
-def snow_water_equivalent(temperature, prec, melt_rate_f, T_theta_a, T_theta_m, snow_albedo=0.8, soil_albedo=0.3):
-
+def snow_water_equivalent(temperature, precipitation, melt_rate_f, T_theta_a, T_theta_m, snow_albedo, soil_albedo):
     '''
     Computing snow depth in snow-water-equivalent (SWE) based on a degree-day-snow-melt-model
 
     Args:
         temperature : Temperature time series [degree C]
-        P : Precipitation time series [mm]
+        precipitation : Precipitation time series [mm]
         melt_rate_f : melt rate factor [mm/degreeC/t]
         T_theta_a : temperature threshold for snow accumulation [degree C]
         T_theta_m : temperature threshold for snow melt [degree C]
-        s0 : initial snow depth [mm]
         snow_albedo : snow albedo [-]
         soil_albedo : soil albedo [-]
 
@@ -42,54 +40,61 @@ def snow_water_equivalent(temperature, prec, melt_rate_f, T_theta_a, T_theta_m, 
     at the same time step (if accumulation and melt temperature threshold are not equal)
     '''
 
-    index = prec.index
-    temperature = temperature.values
-    prec = prec.values
+    index = temperature.index
+    temperature = np.array(temperature, dtype=float) # unit by degree
+    precipitation = np.array(precipitation, dtype=float) # unit by mm per hour, Note this may change to mm per minutes
 
     # snow accumulation
-    cond = temperature <= T_theta_a
-    acc = prec
-    acc[~cond] = 0.0  # no snow pack accumulation where temperature is above
+    cold_cond = temperature <= T_theta_a # cold condition
+    warm_cond = temperature > T_theta_a
+    snow_acc = precipitation.copy()
+    snow_acc[warm_cond] = 0.0  # no snow pack accumulation where temperature is above
 
     # snow melt
+    # melt_cond = temperature > T_theta_m
+    non_melt_cond = temperature <= T_theta_m
+
     T_grad = temperature - T_theta_m  # melting gradient
-    cond = temperature > T_theta_m
-    T_grad[~cond] = 0.0  # no snowmelt where temperature is below
-    melt = melt_rate_f * T_grad  # potential snowmelt based on temperature
+    T_grad[non_melt_cond] = 0.0  # no snowmelt where temperature is below
+    snow_melt = melt_rate_f * T_grad  # potential snowmelt based on temperature
 
     # compute actual snow depth
-    depth = np.zeros(len(prec))
-    ddepth = np.zeros(len(prec))
+    modelled_s_depth = np.zeros(len(precipitation)) # modelled snow depth SWE [mm]
+    delta_depth = np.zeros(len(precipitation)) # daily (?? really ?? QZ) snow pack change SWE
 
-    for i in range(1, len(prec)):
-        depth[i] = depth[i - 1] + acc[i] - melt[i]
+    for i in range(1, len(precipitation)):
+        modelled_s_depth[i] = modelled_s_depth[i - 1] + snow_acc[i] - snow_melt[i]
 
-        if depth[i] < 0:
-            melt[i] = melt[i] - abs(depth[i])
-            depth[i] = 0
-        ddepth[i] = depth[i] - depth[i - 1]
+        if modelled_s_depth[i] < 0:
+            snow_melt[i] = snow_melt[i] - abs(modelled_s_depth[i])
+            modelled_s_depth[i] = 0
+
+        delta_depth[i] = modelled_s_depth[i] - modelled_s_depth[i - 1]
 
     # Albedo
-    albedo = np.zeros(len(depth))
-    cond = depth > 0
-    albedo[cond] = snow_albedo
-    albedo[~cond] = soil_albedo
+    albedo = np.zeros(len(modelled_s_depth))
 
-    data = {'depth': depth,
-            'ddepth': ddepth,
-            'sacc': acc,
-            'smelt': melt,
+    with_snow_cond = modelled_s_depth > 0
+    albedo[with_snow_cond] = snow_albedo
+
+    without_snow_cond = modelled_s_depth <= 0
+    albedo[without_snow_cond] = soil_albedo
+
+    # prepare the output
+    data = {'modelled_s_depth': modelled_s_depth,
+            'delta_depth': delta_depth,
+            'snow_acc': snow_acc,
+            'snow_melt': snow_melt,
             'albedo': albedo
             }
 
-    df = pd.DataFrame(data=data, index = index)
+    df = pd.DataFrame(data=data, index=index)
 
     return df
 
 
 # Potential Evapotranspiration Module
-def cal_actual_evap(temperature, sps_temperature, radiation, cloud_cover_r, albedo_t, elev, U):
-
+def cal_actual_evap(temperature, sps_temperature, radiation, cloud_cover_r, albedo, elevation, U):
     '''
     Calculate the daily potential evapotranspiration (PET) by Priestly Taylor method.
     E(t) = \gammar \cdot PET(t)
@@ -100,11 +105,12 @@ def cal_actual_evap(temperature, sps_temperature, radiation, cloud_cover_r, albe
     Args:
         temperature: data array, time series temperature, physical unit: degree C
         sps_temperature: int or float, temporal resolution of the temperature data, physical unit: None
-                         e.g., sps_temperature=24 for dayily data; sps_temperature=1 for hourly data,
+                         e.g., sps_temperature=24 for dayily data;
+                               sps_temperature=1 for hourly data,
         radiation: radiation, physical unit: W/m^2 (watt per squared meter)
         cloud_cover_r: cloud cover fraction (ratio), physical unit: None
-        albedo_t: data array, time series albedo, physical unit: None
-        elev: data array, meters above sea level (elevation), physical unit: m
+        albedo: data array, time series albedo, physical unit: None
+        elevation: data array, meters above sea level (elevation), physical unit: m
         U: ??, what's this?
 
     Returns:
@@ -113,69 +119,67 @@ def cal_actual_evap(temperature, sps_temperature, radiation, cloud_cover_r, albe
     '''
 
     # convert to numpy array
-    temperature = np.array(temperature)
-    radiation = np.array(radiation)
-    albedo_t = np.array(albedo_t)
+    temperature = np.array(temperature, dtype=float)
+    radiation = np.array(radiation, dtype=float)
+    albedo = np.array(albedo, dtype=float)
 
-
-    esat = 611*np.exp(17.27*temperature/(237.3+temperature))  ## Vapor Pressure Saturation
-    ea = U*esat
+    esat = 611 * np.exp(17.27 * temperature / (237.3 + temperature))  ## Vapor Pressure Saturation
+    ea = U * esat
 
     #### Net Radiation
-    si = 5.6704*(10**-8)  # Stefan-Boltzman Constant [W/m**2.K**4]
+    si = 5.6704 * (10 ** -8)  # Stefan-Boltzman Constant [W/m**2.K**4]
     ######
-    K = 0.1 +0.9*(1-0.6*(cloud_cover_r**2.5))  #### Emissiivty coefficient cloud
-    ei= 0.34 -0.14*np.sqrt(ea/1000)  ## Net emissivity humidity
+    K = 0.1 + 0.9 * (1 - 0.6 * (cloud_cover_r ** 2.5))  #### Emissiivty coefficient cloud
+    ei = 0.34 - 0.14 * np.sqrt(ea / 1000)  ## Net emissivity humidity
     ######
-    D_Rlw=ei*K*si*((temperature-273.15)**4)  ## Net Longwave Radiatio W/m^2
-    Rn = radiation * (1-albedo_t) - D_Rlw  ## Net Radiation  W/m^2
+    D_Rlw = ei * K * si * ((temperature - 273.15) ** 4)  ## Net Longwave Radiatio W/m^2
+    Rn = radiation * (1 - albedo) - D_Rlw  ## Net Radiation  W/m^2
 
     #################################################
     ##### COMBINED ENERGETIC AND AERODYNAMIC METHOD
     ### PARAMETERS
-    #p_p0   = exp(-elev/8434.5)  ### correction for differences in pressure between basin and seal level
-    #Pre = P0*p_p0
-    Pre0=101325  ##[Pa]
-    Pre = Pre0*np.exp((-9.81/287)*(elev-0)/(temperature+273.15)) #[Pa]
+    # p_p0   = exp(-elev/8434.5)  ### correction for differences in pressure between basin and seal level
+    # Pre = P0*p_p0
+    Pre0 = 101325  ##[Pa]
+    Pre = Pre0 * np.exp((-9.81 / 287) * (elevation- 0) / (temperature + 273.15))  # [Pa]
     #############################5
     row = 1000  # water density [kg/m^3]
-    cp=1005 + ((temperature +23.15)**2)/3364  ## specific heat air  [J/kg K]
-    L= 1000*(2501.3 - 2.361*(temperature))  ### Latent heat vaporization/condensaition [J/kg]
+    cp = 1005 + ((temperature + 23.15) ** 2) / 3364  ## specific heat air  [J/kg K]
+    L = 1000 * (2501.3 - 2.361 * (temperature))  ### Latent heat vaporization/condensaition [J/kg]
     ##############
     ######################################
 
-    EP_en=1000*3600*Rn/(L*row)  ## [mm/h] evaporation
-    G=cp*Pre/(0.622*L)  ## Pa/c  psicrometric costant
-    D=(4098*esat)/((237.3+temperature)**2)  ## Pa/C
-    PET= 1.26*(D/(D+G))*EP_en  ## [mm/h] Priestly-Taylor
+    EP_en = 1000 * 3600 * Rn / (L * row)  ## [mm/h] evaporation
+    G = cp * Pre / (0.622 * L)  ## Pa/c  psicrometric costant
+    D = (4098 * esat) / ((237.3 + temperature) ** 2)  ## Pa/C
+    PET = 1.26 * (D / (D + G)) * EP_en  ## [mm/h] Priestly-Taylor
     EP_aer = np.nan
-    Epot=np.nan
-    Tpot=np.nan
+    Epot = np.nan
+    Tpot = np.nan
 
-    if not np.isclose(sps_temperature, 1.):
-        PET = PET*sps_temperature  ##[mm/sps_temperature]
-        EP_aer = EP_aer*sps_temperature
-        EP_en = EP_en*sps_temperature
-        Tpot=Tpot*sps_temperature
-        Epot=Epot*sps_temperature
+    if not np.isclose(a = sps_temperature, b = 1.0):
+        PET = PET * sps_temperature  ##[mm/sps_temperature]
+        EP_aer = EP_aer * sps_temperature
+        EP_en = EP_en * sps_temperature
+        Tpot = Tpot * sps_temperature
+        Epot = Epot * sps_temperature
 
     # PET may be negative due to dew in the winter.
     # However, we do not consider dew and are just interested in positive values.
-
-    PET[PET<0] = 0
+    PET[PET < 0] = 0
 
     return PET
 
 
-# hydrological model
-def h_model(snow, PET, prec, temperature, alpha, num_reservoir, params):
+# Hydrological Model
+def h_model(snow, PET, precipitation, temperature, alpha, num_reservoir, params):
     '''
     SedCas hydrological model
 
     Args:
         snow: data frame from degree-day-model
         PET: potential ET from cal_actual_evap model
-        prec: data frame, precipitation, physical unit: mm/h
+        precipitation: data frame, precipitation, physical unit: mm/h
         temperature: data frame, temperature, physical unit: degree C
         alpha: parameter for efficiency of ET dependent on saturation of upper storage,
         num_reservoir: int or float, number of reservoirs, physical unit: none
@@ -198,15 +202,20 @@ def h_model(snow, PET, prec, temperature, alpha, num_reservoir, params):
     #  initialization
     index = snow.index
     num_data = len(snow)
-    sdepth = snow.depth.values
-    dsdepth = snow.ddepth.values
-    sacc = snow.sacc.values
-    smelt = snow.smelt.values
-    PET = PET#PET.values
-    prec = prec.values
-    temperature = temperature.values
 
-    Q, Qss, Qs = np.zeros(num_data), np.zeros(num_data), np.zeros(num_data)  # dischage
+    # convert to numpy array
+    snow_depth = np.array(snow.modelled_s_depth, dtype=float)
+    dsdepth =  np.array(snow.delta_depth, dtype=float)
+    snow_acc = np.array(snow.snow_acc, dtype=float)
+    snow_melt = np.array(snow.snow_melt, dtype=float)
+
+    PET = np.array(PET, dtype=float)
+    precipitation = np.array(precipitation, dtype=float)
+    temperature = np.array(temperature, dtype=float)
+
+    Q = np.zeros(num_data)  # dischagre
+    Qss = np.zeros(num_data) # discharge from overland (surface) flow
+    Qs = np.zeros(num_data)  # discharge from subsurface flow
 
     # percolation between storages the first column is for the flow between the most upper and the second...
     Qper = np.zeros(shape=(num_data, num_reservoir - 1))
@@ -223,7 +232,8 @@ def h_model(snow, PET, prec, temperature, alpha, num_reservoir, params):
 
     s = storage(params)
 
-    Vw = np.zeros((num_data, num_reservoir))  # array for storage time series, each column represents one reservoir (from bottom to top)
+    # array for storage time series, each column represents one reservoir (from bottom to top)
+    Vw = np.zeros((num_data, num_reservoir))
     AET = np.zeros(num_data)
     for i in range(num_reservoir):
         Vw[0, i] = s.S0[i]  # initial condition
@@ -231,9 +241,9 @@ def h_model(snow, PET, prec, temperature, alpha, num_reservoir, params):
     # transient storage, discharge computation
     # changes from precipitation and snowmelt (both positive, because they are inputs to the storage)
     # to keep this order is important because there can be snow accumulation and melt on the same day
-    dVw = prec.copy()  # add precipitation
-    dVw = dVw - sacc  # when snow accumulation, precipitation is not added to the storage
-    dVw = dVw + smelt  # where snow melt, add it
+    dVw = precipitation.copy()  # add precipitation
+    dVw = dVw - snow_acc  # when snow accumulation, precipitation is not added to the storage
+    dVw = dVw + snow_melt  # where snow melt, add it
 
     # loop through each time step
     ## scheme:
@@ -244,7 +254,6 @@ def h_model(snow, PET, prec, temperature, alpha, num_reservoir, params):
     # 5) check that capacity of upper is not exceeded, else more surface runoff
 
     # loop through time steps
-    # i --> time index
     for i in range(1, num_data):
         # 1)
         Vw[i, 0] = Vw[i - 1, 0] + dVw[i]
@@ -367,11 +376,6 @@ def h_model(snow, PET, prec, temperature, alpha, num_reservoir, params):
 
         Q[i] = Qs[i] + Qss[i]
 
-    #    if any(Vw<0):
-    #        Warning('Negative Soil Water Storage')
-
-    # output
-
     # total system storage
     Vw_tot = np.sum(Vw, axis=1)
 
@@ -379,11 +383,11 @@ def h_model(snow, PET, prec, temperature, alpha, num_reservoir, params):
             'Qs': Qs,
             'Qss': Qss,
             'Vw': Vw_tot,
-            'snow': sdepth,
+            'snow_depth': snow_depth,
             'snowacc': dsdepth,
             'PET': PET,
             'AET': AET,
-            'Pr': prec,
+            'Pr': precipitation,
             'temperature': temperature
             }
 
@@ -397,3 +401,44 @@ def h_model(snow, PET, prec, temperature, alpha, num_reservoir, params):
     hyd = pd.DataFrame(data=data, index=index)
 
     return hyd
+
+
+# Lumped Hydrological Model Results
+def lump_h_model(HYM, num_HRU, shares, log_print):
+
+    # create an empty df with the same column and index name as hydro
+    hydro = pd.DataFrame(columns=HYM[0].columns, index=HYM[0].index)
+
+    for column in hydro.columns:
+
+        try:
+            lumped = []
+            for HRU_id in range(num_HRU):
+                # sum the different HRU part based on the shares values
+                temp = np.array(HYM[HRU_id][column], dtype=float) * shares[HRU_id] # return as
+                lumped.append(temp)
+
+            lumped = np.array(lumped)
+            hydro[column] = np.sum(lumped, axis=0)
+
+        except KeyError as e:
+            log_print(f"KeyError in < class SedCas() -> run_hydro -> for c in hyd: >:\n"
+                      f"i={column}, HRU_id={HRU_id}\n"
+                      f"Error={e} \n \n")
+
+
+        # check the column contains string "Vw" or not
+        if "Vw" in column:
+            # contain something like, "Vw", 'Vw0', 'Vw1'
+            if column == "Vw":
+                # only keep the column 'Vw'
+                pass
+            else:
+                print(column)
+                # drop the column like 'Vw0', 'Vw1'
+                hydro.drop(columns=[column], inplace=True)  # drop
+        else:
+            # Do not contain
+            pass  # keep
+
+    return hydro

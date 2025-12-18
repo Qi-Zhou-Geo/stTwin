@@ -143,81 +143,49 @@ class SedCas():
 
         return self.mindf
 
-    def run_hydro(self):
+    def run_hydro(self, sps_temperature=1, cloud_cover_r=1, U=0.8):
         
         # running the individual HRUs
-        snow = [] # list()
-        PET = [] # list()
-        hydro = [] # list()
-
+        SWE = [] # snow water equivalent
+        PET = [] # potential evapotranspiration
+        HYM = [] # hydrological model output
         for HRU_id in range(self.num_HRU):
-            # s = mod.degree_day_model(self.temperature.copy(), self.prec.copy(), self.mrate, self.Tsa, self.Tsm, s0=0, Asnow = self.Asnow[i], Asoil = self.Anosnow[i])
-            # snow.append(s)
-            #
-            # pet = mod.ET_PT(1, self.sun_radiation, self.temperature, 1, s.albedo, self.Ele, 0.8, 1, 1, 1, 0, 0)
-            # PET.append(pet)
-            #
-            # h = mod.hydmod(s, pet, self.prec, self.temperature, self.alphaET, len(self.Vwcaps[i]), {'k':self.ks[i], 'Scap':self.Vwcaps[i], 'S0':[0,0]})
-            # hydro.append(h)
 
-            swe = SedCas_h_model.snow_water_equivalent(temperature=self.temperature.copy(),
-                                                       prec=self.prec.copy(),
-                                                       melt_rate_f=self.mrate,
-                                                       T_theta_a=self.Tsa,
-                                                       T_theta_m=self.Tsm,
-                                                       snow_albedo=self.Asnow[HRU_id],
-                                                       soil_albedo=self.Anosnow[HRU_id])
-            snow.append(swe)
-            # print("swe", swe.columns, swe.shape)
+            s_w_e = SedCas_h_model.snow_water_equivalent(temperature=self.temperature.copy(),
+                                                         precipitation=self.prec.copy(),
+                                                         melt_rate_f=self.mrate,
+                                                         T_theta_a=self.Tsa,
+                                                         T_theta_m=self.Tsm,
+                                                         snow_albedo=self.Asnow[HRU_id],
+                                                         soil_albedo=self.Anosnow[HRU_id])
+            SWE.append(s_w_e)
+            # print("s_w_e", s_w_e.columns, s_w_e.shape)
 
-            p = SedCas_h_model.cal_actual_evap(temperature=self.temperature,
-                                               sps_temperature=1,
-                                               radiation=self.sun_radiation,
-                                               cloud_cover_r=1,
-                                               albedo_t=swe.albedo,
-                                               elev=self.Ele,
-                                               U=0.8)
-            PET.append(p)
-            # print("p", p.shape)
+            p_e_t = SedCas_h_model.cal_actual_evap(temperature=self.temperature,
+                                                   sps_temperature=sps_temperature,
+                                                   radiation=self.sun_radiation,
+                                                   cloud_cover_r=cloud_cover_r,
+                                                   albedo=s_w_e.albedo,
+                                                   elevation=self.Ele,
+                                                   U=U)
+            PET.append(p_e_t)
+            # print("p_e_t", p_e_t.shape)
 
-            h = SedCas_h_model.h_model(snow=swe,
-                                       PET=p,
-                                       prec=self.prec,
+            h = SedCas_h_model.h_model(snow=s_w_e,
+                                       PET=p_e_t,
+                                       precipitation=self.prec,
                                        temperature=self.temperature,
                                        alpha=self.alphaET,
                                        num_reservoir=len(self.Vwcaps[HRU_id]),
                                        params={'k': self.ks[HRU_id], 'Scap': self.Vwcaps[HRU_id], 'S0': [0, 0]})
-            hydro.append(h)
+            HYM.append(h)
             # print("h", h.columns, h.shape)
 
-        # lumped hydrology: adding individual HRUs
-        # create an empty df with the same column and index name as hydro
-        hyd = pd.DataFrame(columns = hydro[0].columns, index =  hydro[0].index)
+        # lumped hydrology: area-weighted aggregation
+        hydro = SedCas_h_model.lump_h_model(HYM, num_HRU=self.num_HRU, shares=self.shares, log_print=log_print)
+        self.hydro = hydro
 
-        for column in hyd:
-            try:
-                lumped = []
-                for HRU_id in range(self.num_HRU):
-                    l = hydro[HRU_id][column].values * self.shares[HRU_id]
-                    lumped.append(l)
-
-                lumped = np.array(lumped)
-                hyd[column] = np.sum(lumped, axis=0)
-
-            except KeyError as e:
-                log_print(f"KeyError in < class SedCas() -> run_hydro -> for c in hyd: >:\n"
-                          f"i={column}, HRU_id={HRU_id}\n"
-                          f"Error={e} \n \n")
-                pass
-
-            if 'Vw' in column:
-                if not column == 'Vw':
-                    hyd.drop(columns=[column], inplace=True)
-        self.hydro = hyd
-
-        #self.hydro.to_csv(f"{self.model_output_dir}/Hydro_new.txt", header=True)
-
-        return hyd
+        return hydro, SWE, PET, HYM
         
     def run_sediment(self, seed=0):
         

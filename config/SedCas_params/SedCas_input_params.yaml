@@ -6,9 +6,10 @@
 #  params2:  # this is a list
 #    - abc
 #    - 0.2
+#    - [abc, 0.2]
 
 input_params:
-  n_HRU: 2  # Number of hydrological response units (HRU) [-]
+  num_HRU: 2  # Number of hydrological response units (HRU) [-]
 
   HRUs:  # Description of hydrological response units
     - forest
