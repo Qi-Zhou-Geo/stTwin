@@ -60,7 +60,7 @@ def trans_model(large_ls_t, small_ls_t, hyd, Q_theta, s_max, d_h, hs_theta, area
     '''
 
     q = hyd.Qs.copy()
-    snow = hyd.snow.copy()
+    snow = hyd.snow_depth.copy()
 
     # check if given kwargs are valid
     valid_kwargs = ['b', 'mindf', 'smax_nodf']

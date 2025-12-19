@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-#__modification time__ = 2025-09-24
-#__author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
-#__find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
-#__note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
+# __modification time__ = 2025-09-24
+# __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
+# __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
+# __note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
 #           and is distributed under the terms of the GNU General Public License v3.0 (GPL-3.0).
 
 
@@ -13,7 +13,6 @@ import random
 
 import pandas as pd
 import numpy as np
-
 
 
 # random landslides from heavy-tailed distribution
@@ -49,78 +48,76 @@ def randht(n, *varargin, seed='none'):
     '''
 
     # update variables
-#    v = {'Type': '',
-#         'xmin': 1,
-#         'alpha': 2.5,
-#         'beta': 1,
-#         'Lambda': 1,
-#         'mu': 1,
-#         'sigma': 1}
-#    
-#    for key, value in kwargs.items():
-#        if key not in v.keys():
-#            raise NameError('Invalid keyword argument input.')
-#            
-#    v.update(kwargs)
-#    globals().update(v)
-#
-#
-#    if n<1:
-#        raise AttributeError('(RANDHT) Error: invalid ''n'' argument.')
-#
-#    if xmin < 1:
-#        raise AttributeError('(RANDHT) Error: invalid ''xmin'' argument.')
+    #    v = {'Type': '',
+    #         'xmin': 1,
+    #         'alpha': 2.5,
+    #         'beta': 1,
+    #         'Lambda': 1,
+    #         'mu': 1,
+    #         'sigma': 1}
+    #
+    #    for key, value in kwargs.items():
+    #        if key not in v.keys():
+    #            raise NameError('Invalid keyword argument input.')
+    #
+    #    v.update(kwargs)
+    #    globals().update(v)
+    #
+    #
+    #    if n<1:
+    #        raise AttributeError('(RANDHT) Error: invalid ''n'' argument.')
+    #
+    #    if xmin < 1:
+    #        raise AttributeError('(RANDHT) Error: invalid ''xmin'' argument.')
 
-    Type   = ''
-    xmin   = 1
-    alpha  = 2.5
-    beta   = 1
+    Type = ''
+    xmin = 1
+    alpha = 2.5
+    beta = 1
     Lambda = 1
-    mu     = 1
-    sigma  = 1
-
+    mu = 1
+    sigma = 1
 
     # parse command-line parameters; trap for bad input
-    i=0
-    while i<len(varargin): 
+    i = 0
+    while i < len(varargin):
         argok = 1
-        if type(varargin[i])==str: 
+        if type(varargin[i]) == str:
             if varargin[i] == 'xmin':
-                xmin = varargin[i+1]
+                xmin = varargin[i + 1]
                 i = i + 1
             elif varargin[i] == 'powerlaw':
                 Type = 'PL'
-                alpha  = varargin[i+1]
+                alpha = varargin[i + 1]
                 i = i + 1
             elif varargin[i] == 'cutoff':
                 Type = 'PC'
-                alpha  = varargin[i+1]
-                Lambda = varargin[i+2]
+                alpha = varargin[i + 1]
+                Lambda = varargin[i + 2]
                 i = i + 2
             elif varargin[i] == 'exponential':
                 Type = 'EX'
-                Lambda = varargin[i+1]
+                Lambda = varargin[i + 1]
                 i = i + 1
             elif varargin[i] == 'lognormal':
                 Type = 'LN'
-                mu = varargin[i+1]
-                sigma = varargin[i+2]
+                mu = varargin[i + 1]
+                sigma = varargin[i + 2]
                 i = i + 2
             elif varargin[i] == 'stretched':
                 Type = 'ST'
-                Lambda = varargin[i+1]
-                beta = varargin[i+2]
+                Lambda = varargin[i + 1]
+                beta = varargin[i + 2]
                 i = i + 2
             else:
-                argok=0
-        
-      
-        if not argok: 
-            print('(RANDHT) Ignoring invalid argument') #' ,i+1 
-      
-        i = i+1 
+                argok = 0
 
-    if n<1:
+        if not argok:
+            print('(RANDHT) Ignoring invalid argument')  # ' ,i+1
+
+        i = i + 1
+
+    if n < 1:
         print('(RANDHT) Error: invalid ''n'' argument; using default.\n')
         n = 10000
 
@@ -128,63 +125,65 @@ def randht(n, *varargin, seed='none'):
         print('(RANDHT) Error: invalid ''xmin'' argument; using default.\n')
         xmin = 1
 
-
     # methods
-    
-    random.seed(seed)   #### SET THE SEED
-    
-    x=[]
+
+    random.seed(seed)  #### SET THE SEED
+
+    x = []
     if Type == 'EX':
-        x=[]
+        x = []
         for i in range(n):
-            x.append(xmin - (1./Lambda)*math.log(1-random.random()))
+            x.append(xmin - (1. / Lambda) * math.log(1 - random.random()))
     elif Type == 'LN':
-        y=[]
-        for i in range(10*n):
-            y.append(math.exp(mu+sigma*random.normalvariate(0,1)))
+        y = []
+        for i in range(10 * n):
+            y.append(math.exp(mu + sigma * random.normalvariate(0, 1)))
 
         while True:
-            y= filter(lambda X:X>=xmin,y)
-            q = len(y)-n
+            y = filter(lambda X: X >= xmin, y)
+            q = len(y) - n
             if np.isclose(q, 0.):
                 break
 
-            if q>0.:
+            if q > 0.:
                 r = range(len(y))
                 random.shuffle(r)
                 ytemp = []
                 for j in range(len(y)):
                     if j not in r[0:q]:
                         ytemp.append(y[j])
-                y=ytemp
+                y = ytemp
                 break
-            if (q<0.):
-                for j in range(10*n):
-                    y.append(math.exp(mu+sigma*random.normalvariate(0,1)))
-            
+            if (q < 0.):
+                for j in range(10 * n):
+                    y.append(math.exp(mu + sigma * random.normalvariate(0, 1)))
+
         x = y
-        
-    elif Type =='ST':
-        x=[]
-        for i in range(n):
-            x.append(pow(pow(xmin,beta) - (1./Lambda)*math.log(1.-random.random()),(1./beta)))
-    elif Type == 'PC':
-        
+
+    elif Type == 'ST':
         x = []
-        y=[]
-        for i in range(10*n):
-            y.append(xmin - (1./Lambda)*math.log(1.-random.random()))
+        for i in range(n):
+            x.append(pow(pow(xmin, beta) - (1. / Lambda) * math.log(1. - random.random()), (1. / beta)))
+    elif Type == 'PC':
+
+        x = []
+        y = []
+        for i in range(10 * n):
+            y.append(xmin - (1. / Lambda) * math.log(1. - random.random()))
         while True:
-            ytemp=[]
-            for i in range(10*n):
-                if random()<pow(y[i]/float(xmin),-alpha):ytemp.append(y[i])
+            ytemp = []
+
+            for i in range(10 * n):
+                if random() < pow(y[i] / float(xmin), -alpha):
+                    ytemp.append(y[i])
+
             y = ytemp
-            x = x+y
-            q = len(x)-n
+            x = x + y
+            q = len(x) - n
             if np.isclose(q, 0.):
                 break
 
-            if (q>0):
+            if (q > 0):
                 r = range(len(x))
                 random.shuffle(r)
 
@@ -192,19 +191,20 @@ def randht(n, *varargin, seed='none'):
                 for j in range(len(x)):
                     if j not in r[0:q]:
                         xtemp.append(x[j])
-                x=xtemp
+                x = xtemp
                 break
-            
-            if (q<0.):
-                y=[]
-                for j in range(10*n):
-                    y.append(xmin - (1./Lambda)*math.log(1.-random.random()))
+
+            if (q < 0.):
+                y = []
+                for j in range(10 * n):
+                    y.append(xmin - (1. / Lambda) * math.log(1. - random.random()))
 
 
     else:
-        x=[]
+        x = []
         for i in range(n):
-            x.append(xmin*pow(1.-random.random(),-1./(alpha-1.))) # random.random() is uniform distribution [0,1]
+            x.append(
+                xmin * pow(1. - random.random(), -1. / (alpha - 1.)))  # random.random() is uniform distribution [0,1]
 
     return x
 
@@ -216,7 +216,9 @@ def generate_large_ls(ls_trigger,
                       theta_sd, theta_prec, theta_sa,
                       theta_ls_freeze,
                       min_ls_volume, alpha, cutoff,
-                      area=1e6, seed=None):
+                      area=1e6,
+                      seed=0,
+                      max_attempts=1000):
     '''
     Generation of large landslides by thermal trigger (procedure 1 in Bennett et al., 2014).
     Parameters taken from Bennett et al. (2012/13) are not altered.
@@ -237,10 +239,11 @@ def generate_large_ls(ls_trigger,
         seed : initialize random number generator
 
     Returns:
-        large_ls : time series of large land slides, [m3] if area not provided, else [mm]
+        large_ls : time series of large landslides, [m3] if area not provided, else [mm]
     '''
 
-    if (ls_trigger == 'thermal') or (ls_trigger == 'random'):
+    # 'rainfall' have not been used, if you need it, please add it from: https://github.com/jacobhirschberg/SedCas/blob/main/modules.py
+    if ls_trigger == 'thermal':
         # temperature and snow have to be resampled to daily mean
         temperature_daily = temperature.resample('24h').mean()
 
@@ -254,16 +257,15 @@ def generate_large_ls(ls_trigger,
 
         # a large landslide is triggered when
         # (1) temperature is subfreezing, T < 0 $^\circ$C
-        # (2) the day before was not freezing
+        # (2) the day before was not freezing # (?? really ?? QZ) this seems not include
         # (3) and the snow depth is below threshold
         cond1 = temperature_daily < theta_ls_freeze  # freezing days
         # cond2 = temperature_daily_1 > 0            # positive T days
-        cond3 = snow_day < theta_sd                  # days of only little snow
+        cond3 = snow_day < theta_sd  # days of only little snow
         # lsdays = cond1 & cond2 & cond3             # boolean array with days of possible landslides
         ls_days = cond1 & cond3
 
-        N = len(ls_days[ls_days == True])  # number of big lansdslides
-
+        num_ls = np.sum(ls_days)  # number of big lansdslides, False -> 0, Ture -> 1
         large_ls = np.zeros(len(temperature_daily))
 
     elif ls_trigger == 'rainfall':
@@ -273,10 +275,12 @@ def generate_large_ls(ls_trigger,
         Prl_day = Prl.resample('24h').sum()  # daily sums
         idx = Prl_day.index
         ls_days = Prl_day > theta_prec
-        N = len(ls_days[ls_days == True])
+
+        num_ls = len(ls_days[ls_days == True])
 
         large_ls = np.zeros(len(Prl_day))
 
+    # this elif will introduce bugs
     elif ls_trigger == 'random':
         # N from thermal triggering
         nt = len(temperature_daily)
@@ -295,46 +299,38 @@ def generate_large_ls(ls_trigger,
     else:
         print(f"Error! please check the ls_trigger={ls_trigger}")
 
-    # generate N large landslide magnitudes (volume, m3).
-    # iteration is needed in order to avoid unreasonable large volumes, greater than cutoff
-    # this is not effective computation...condition should be in randth
-    cond = False
-    while not cond:
-        mags = randht(N, 'xmin', min_ls_volume, 'powerlaw', alpha, seed=seed)
-
-        cond = max(mags) < float(eval(cutoff))  # cutoff # convert string '3*10**6' to float: 3000000
-        if not cond:
-            seed = seed + 10000
-
-    # max_attempts = 1000
-    # attempt = 0
-    # while attempt < max_attempts:
-    #     mags = randht(N, 'xmin', min_ls_volume, 'powerlaw', alpha, seed=seed)
-    #
-    #     if max(mags) < cutoff: # make sure all elements smaller than cutoff
-    #         break
-    #     seed += 10000
-    #     attempt += 1
-    # else:
-    #     raise ValueError("Could not generate mags below cutoff after 1000 attempts")
-    #
+    # generate "num_ls" large landslide magnitudes (volume, m3).
+    # iteration is needed in order to avoid unreasonable large volumes, greater than "cutoff"
+    for attempt in range(max_attempts):
+        # mags is a list
+        mags = randht(num_ls, 'xmin', min_ls_volume, 'powerlaw', alpha, seed=seed)
+        if max(mags) < cutoff:
+            break
+        seed = seed + 1e4
+    else:
+        raise RuntimeError("Failed to sample landslide magnitudes below cutoff")
 
     # output
-    large_ls[ls_days] = mags
-    large_ls = large_ls / area * 10. ** -3  # convert m3 to mm
-    data = {'mag': large_ls}
+    large_ls[ls_days] = mags # assign the sampled large landsides to the time domain
+    large_ls = large_ls / area * 1e-3  # convert m3 to mm # (?? really ?? QZ) this seems a bug
 
+
+    data = {'mag': large_ls}
     large_ls = pd.DataFrame(data, index=idx)
 
     return large_ls
 
-def generate_small_ls(num_t, num_large_ls, min_ls_volume, area=1e6, seed=None, mu=3.36, sigma=1.18, ratio=3.36):
+
+def generate_small_ls(num_days, num_large_ls, min_ls_volume,
+                      area=1e6,
+                      seed=0,
+                      mu=3.36, sigma=1.18, ratio=3.36):
     '''
     Generation of small landslides (procedure 1 in Bennett et al., 2014).
     Parameters taken from Bennett et al. (2012/13) are not altered.
 
     Args:
-        num_t: length of time series, number of days as integer
+        num_days: length of time series, number of days as integer
         num_large_ls: number of large landslides, because the number of small landslides comes from a ratio
         min_ls_volume: Minimum landslide volume from the power-law tail
         area: catchment area, unit by m^2
@@ -350,33 +346,90 @@ def generate_small_ls(num_t, num_large_ls, min_ls_volume, area=1e6, seed=None, m
     np.random.seed(seed)
 
     # generate spacing of small LS
-    s_ls = np.zeros(num_t)  # initialize days
     num_small_ls = int(ratio * num_large_ls)  # number of small LS according to ratio of small/large LS
-    dt = int(num_t / num_small_ls)  # mean (?) spacing between small landslides
-    dtexp = np.random.exponential(dt, num_small_ls)
-    dtexp = np.ceil(dtexp)  # get full days, in this case max one per day
-    ids = np.cumsum(dtexp)
 
-    if max(ids) >= num_t:
+    dt = int(num_days / num_small_ls)  # mean tempormal spacing between small landslides, like delta in st[0].stats.delta
+    dt_exp = np.random.exponential(dt, num_small_ls)
+    dt_exp = np.ceil(dt_exp)  # get full days, in this case max one per day
+    ids = np.cumsum(dt_exp)
+
+    if max(ids) >= num_days:
         # if the days go beyond the time series length,
         # rescale to length of time series // (t-2) to ensure max value after ceiling in next line as well
-        nids = ids / max(ids) * (num_t - 2)
+        nids = ids / max(ids) * (num_days - 2)
         nids = np.ceil(nids)
         ids = nids
 
     # generate small landslides
     # draw many from random distribution, should represent the theoretical distribution
-    mags_teo = np.random.lognormal(mu, sigma, size=int(1e6))
-    mags_con = mags_teo[mags_teo <= min_ls_volume]  # represents theoretical distribution but constrained by xmin
-    mags = np.random.choice(mags_con, num_small_ls)  # n samples from constrained distribution
+    mags_theo = np.random.lognormal(mu, sigma, size=int(1e6))
+    mags_cond = mags_teo[mags_theo <= min_ls_volume]  # represents theoretical distribution but constrained by "min_ls_volume"
+    mags = np.random.choice(mags_cond, num_small_ls)  # n samples from constrained distribution
 
     # output
     ids = [int(i) for i in ids]
-    s_ls[ids] = mags
-    s_ls = s_ls / area * 10. ** -3  # convert m3 to mm
+    small_ls = np.zeros(num_days)  # initialize days
+    small_ls[ids] = mags
+    small_ls = small_ls / area * 10. ** -3  # convert m3 to mm
 
-    data = {'mag': s_ls}
+    data = {'mag': small_ls}
     small_ls = pd.DataFrame(data=data)
 
     return small_ls
 
+
+import pandas as pd
+
+climate = pd.read_csv("/Users/qizhou/#python/stTwin/data/SedCas_input/climate_2017_2025.txt", header=0)
+climate["timestamp [UTC+0]"] = pd.to_datetime(climate["timestamp [UTC+0]"])
+climate.index = climate["timestamp [UTC+0]"]
+temperature = climate['temperature [degree]']
+prec = climate['precipitation [mm per Hourly]']
+
+hydro = pd.read_csv("/Users/qizhou/#python/stTwin/data/SedCas_output/Hydro_2017-2025_test.txt", header=0)
+hydro.index = pd.to_datetime(climate["timestamp [UTC+0]"])
+snow = hydro['snow_depth']
+
+ls_trigger = "thermal"
+
+Tsd, Tpr, Tsa = 20.0, 7.9, 0.6
+Tfreeze = 0
+ls_xmin, ls_alpha = 233, 1.69
+ls_cutoff = 3000000
+area = 4.83
+
+large_ls = generate_large_ls(ls_trigger=ls_trigger,
+                             temperature=temperature,
+                             prec=prec,
+                             snow=snow,
+                             theta_sd=Tsd, theta_prec=Tpr, theta_sa=Tsa,
+                             theta_ls_freeze=Tfreeze,
+                             min_ls_volume=ls_xmin, alpha=ls_alpha,
+                             cutoff=ls_cutoff,
+                             area=area,
+                             seed=1)
+num_large_ls = len(large_ls[large_ls.mag > 0])
+
+from functions.toolkit.plotly_visualize import plot_time_series
+
+x = large_ls.index.astype(str).to_numpy().reshape(-1, 1)
+y = large_ls.values.reshape(-1, 1)
+arr = np.hstack((x, y))
+df = pd.DataFrame(arr, columns=["date", "ls"])
+plot_time_series(df, column_x="date", column_y="ls")
+
+
+num_days = len(large_ls)
+ls_xmin = 233
+small_ls = generate_small_ls(num_days=num_days,
+                             num_large_ls=num_large_ls,
+                             min_ls_volume=ls_xmin,
+                             area=area,
+                             seed=seed,
+                             mu=3.36, sigma=1.18, ratio=3.36)
+
+x = large_ls.index.astype(str).to_numpy().reshape(-1, 1)
+y = small_ls.values.reshape(-1, 1)
+arr = np.hstack((x, y))
+df = pd.DataFrame(arr, columns=["date", "ls2"])
+plot_time_series(df, column_x="date", column_y="ls2")

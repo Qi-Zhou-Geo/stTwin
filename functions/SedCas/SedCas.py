@@ -14,6 +14,7 @@ import yaml
 
 import pandas as pd
 import numpy as np
+import xarray as xr
 
 from tqdm import tqdm
 
@@ -25,6 +26,7 @@ import matplotlib.gridspec as gridspec
 from pathlib import Path
 current_dir = Path(__file__).resolve().parent
 # using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
+
 project_root = current_dir.parent.parent
 import sys
 sys.path.append(str(project_root))
@@ -78,6 +80,34 @@ class SedCas():
                 print(f"SedCas model params \n"
                       f"<{k}>: {v} \n")
 
+    def load_default_params(self, log_params=True):
+
+        # 1) load the pre-defined model params
+        yaml_path = f"{self.model_params_dir}/SedCas_input_params.yaml"
+        with open(yaml_path, "r") as f:
+            data = yaml.safe_load(f)
+        params = data["input_params"]
+
+        # assign each parameter as class attribute
+        for key, val in params.items():
+            # equal to -> self.key_name = val,
+            # but the "key_name" is automaticly set as defiend "key_name" in params
+            setattr(self, key, val)
+
+        # 2) post-processing to get another two more model params
+        # normalizing hillslope sediment storage by catchment area considering packing density
+        self.shcap = self.shcap * (self.rho_dry / self.rho_b) / self.area * 10 ** -3
+
+        # smallest possible sediment amount in debirs flow
+        # NOTE: this is only a constraint for the model, the smallest modelled debris flow volume is given by qdf and smax_nodf
+        self.mindf = self.minDF * self.smax_nodf / self.area * 10 ** -3
+
+        # 3) print out the loaded model params
+        if log_params is True:
+            self.log_config_params()
+
+        return self.mindf
+
     def load_climate(self, data_type="default"):
 
         if data_type == "default":
@@ -114,34 +144,6 @@ class SedCas():
         print(f"input data (climate.met) shape: {df.shape}")
 
         return df
-
-    def load_params(self, log_params=True):
-
-        # 1) load the pre-defined model params
-        yaml_path = f"{self.model_params_dir}/SedCas_input_params.yaml"
-        with open(yaml_path, "r") as f:
-            data = yaml.safe_load(f)
-        params = data["input_params"]
-
-        # assign each parameter as class attribute
-        for key, val in params.items():
-            # equal to -> self.key_name = val,
-            # but the "key_name" is automaticly set as defiend "key_name" in params
-            setattr(self, key, val)
-
-        # 2) post-processing to get another two more model params
-        # normalizing hillslope sediment storage by catchment area considering packing density
-        self.shcap = self.shcap * (self.rho_dry / self.rho_b) / self.area * 10 ** -3
-
-        # smallest possible sediment amount in debirs flow
-        # NOTE: this is only a constraint for the model, the smallest modelled debris flow volume is given by qdf and smax_nodf
-        self.mindf = self.minDF * self.smax_nodf / self.area * 10 ** -3
-
-        # 3) print out the loaded model params
-        if log_params is True:
-            self.log_config_params()
-
-        return self.mindf
 
     def run_hydro(self, sps_temperature=1, cloud_cover_r=1, U=0.8):
         
@@ -201,14 +203,7 @@ class SedCas():
         class sed:
             pass
 
-        # from types import SimpleNamespace
-        #
-        # sed = SimpleNamespace()
-        # sed.index = self.prec.index
-        # sed.ls = np.zeros([num_data, self.num_iteration])
-
-
-        # index for date
+        # index for date-time
         sed.index = self.prec.index
 
         # sediment input from landslides
@@ -235,36 +230,26 @@ class SedCas():
 
 
         # sediment module with stochastic landslide magnitudes
-        for iteration in tqdm(range(self.num_iteration), desc="running sediment model by stochastic simulations"):
+        for iteration in tqdm(range(self.num_iteration),
+                              desc="running sediment model by stochastic simulations",
+                              file=sys.stdout):
 
-            # # large landslides
-            # large_ls = mod.large_ls(self.temperature, self.prec, self.hydro.snow, self.Tsd, self.Tpr, self.Tsa, self.ls_xmin,
-            #                      self.ls_alpha, self.ls_cutoff, self.Tfreeze, self.LStrig, self.area, seed=seed)
-            # N = len(large_ls[large_ls.mag > 0])
-            #
-            # # small landslides
-            # small_ls = mod.small_ls(num_days, N, self.ls_xmin, self.area, seed=seed)
-            #
-            # # date index for small landslides
-            # small_ls.index = large_ls.index
-            # sed_run = mod.sedcas(large_ls, small_ls, self.hydro, self.qdf, self.smax, self.rhc, self.shcap, self.area, 'exp',
-            #                      self.LStrig, self.Tpr, shinit=self.shcap, mindf=self.mindf, smax_nodf=self.smax_nodf, b=self.b)
-
-            # large landslides
+            # large landslides, return daily
             large_ls = SedCas_s_model.generate_large_ls(ls_trigger=self.LStrig,
                                                         temperature=self.temperature,
                                                         prec=self.prec,
-                                                        snow=self.hydro.snow,
+                                                        snow=self.hydro.snow_depth,
                                                         theta_sd=self.Tsd, theta_prec=self.Tpr, theta_sa=self.Tsa,
                                                         theta_ls_freeze=self.Tfreeze,
                                                         min_ls_volume=self.ls_xmin, alpha=self.ls_alpha,
                                                         cutoff=self.ls_cutoff,
-                                                        area=self.area, seed=seed)
+                                                        area=self.area,
+                                                        seed=seed)
 
             num_large_ls = len(large_ls[large_ls.mag > 0])
 
             # small landslides
-            small_ls = SedCas_s_model.generate_small_ls(num_t=num_days,
+            small_ls = SedCas_s_model.generate_small_ls(num_days=num_days,
                                                         num_large_ls=num_large_ls,
                                                         min_ls_volume=self.ls_xmin,
                                                         area=self.area,
@@ -273,6 +258,8 @@ class SedCas():
 
             # date index for small landslides
             small_ls.index = large_ls.index
+
+
             sed_run = SedCas_t_model.trans_model(large_ls_t=large_ls,
                                                  small_ls_t=small_ls,
                                                  hyd=self.hydro,
@@ -299,6 +286,7 @@ class SedCas():
             sed.catchment_output[:, iteration] = sed_run.so # catchment sediment output time series [mm]
             sed.sopot[:, iteration] = sed_run.sopot # potential sediment output based on discharge [mm]
             sed.dfs[:, iteration] = sed_run.dfs # debris flows, sediment output above minimum threshold and concentration of debris flows[mm]
+
             seed += 1
 
         sed.dfspot[:] = sed_run.dfspot

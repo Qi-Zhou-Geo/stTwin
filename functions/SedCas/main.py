@@ -6,6 +6,7 @@
 #__find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
 import numpy as np
+import pandas as pd
 
 # <editor-fold desc="add the sys.path to search for custom modules">
 from pathlib import Path
@@ -28,7 +29,7 @@ model = SedCas(project_root=project_root)
 
 
 # load the pre-calibrated parameters
-model.load_params(log_params=True)
+model.load_default_params(log_params=False)
 
 
 data_type = "2017-2025"
@@ -42,6 +43,7 @@ hydro, SWE, PET, HYM = model.run_hydro()
 
 # run the sediment model
 sed = model.run_sediment()
+sdf
 
 sedout, sed, sed.sopot = model.save_output(h_name=f"Hydro_{data_type}.txt",
                                            s_name=f"Sediment_{data_type}.txt")

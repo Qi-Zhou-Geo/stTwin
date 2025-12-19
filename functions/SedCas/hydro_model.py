@@ -434,7 +434,6 @@ def lump_h_model(HYM, num_HRU, shares, log_print):
                 # only keep the column 'Vw'
                 pass
             else:
-                print(column)
                 # drop the column like 'Vw0', 'Vw1'
                 hydro.drop(columns=[column], inplace=True)  # drop
         else:
