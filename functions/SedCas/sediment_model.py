@@ -312,10 +312,25 @@ def generate_large_ls(ls_trigger,
 
     # output
     large_ls[ls_days] = mags # assign the sampled large landsides to the time domain
-    large_ls = large_ls / area * 1e-3  # convert m3 to mm # (?? really ?? QZ) this seems a bug
 
+    # Note: This step converts landslide volume [m^3] to an equivalent mean thickness (or depth) [mm] over the given area.
+    #
+    # Physical meaning:
+    # Dividing landslide volume (large_ls, m^3) by area (area, km^2) gives the area-normalized landslide thickness.
+    #
+    # Unit conversion:
+    #   area [km^2] = 1e6 m^2
+    #   m^3 / m^2 = m
+    #   m -> mm = 1e3
+    # Therefore:
+    #   m^3 / (km^2) * 1e-3 = mm
+    #
+    # The factor 1e-3 combines both conversions: (1 / 1e6) * 1e3 = 1e-3
 
-    data = {'mag': large_ls}
+    large_ls = large_ls / (area * 1e6)  # return area-normalized landslide thickness, unit: m
+    large_ls = large_ls * 1e3  # convert m to mm
+
+    data = {'mag': large_ls} # magnitude[mm]
     large_ls = pd.DataFrame(data, index=idx)
 
     return large_ls
@@ -370,66 +385,11 @@ def generate_small_ls(num_days, num_large_ls, min_ls_volume,
     ids = [int(i) for i in ids]
     small_ls = np.zeros(num_days)  # initialize days
     small_ls[ids] = mags
-    small_ls = small_ls / area * 10. ** -3  # convert m3 to mm
 
-    data = {'mag': small_ls}
+    small_ls = small_ls / (area * 1e6)  # return area-normalized landslide thickness, unit: m
+    small_ls = small_ls * 1e3  # convert m to mm
+
+    data = {'mag': small_ls} # magnitude[mm]
     small_ls = pd.DataFrame(data=data)
 
     return small_ls
-
-
-import pandas as pd
-
-climate = pd.read_csv("/Users/qizhou/#python/stTwin/data/SedCas_input/climate_2017_2025.txt", header=0)
-climate["timestamp [UTC+0]"] = pd.to_datetime(climate["timestamp [UTC+0]"])
-climate.index = climate["timestamp [UTC+0]"]
-temperature = climate['temperature [degree]']
-prec = climate['precipitation [mm per Hourly]']
-
-hydro = pd.read_csv("/Users/qizhou/#python/stTwin/data/SedCas_output/Hydro_2017-2025_test.txt", header=0)
-hydro.index = pd.to_datetime(climate["timestamp [UTC+0]"])
-snow = hydro['snow_depth']
-
-ls_trigger = "thermal"
-
-Tsd, Tpr, Tsa = 20.0, 7.9, 0.6
-Tfreeze = 0
-ls_xmin, ls_alpha = 233, 1.69
-ls_cutoff = 3000000
-area = 4.83
-
-large_ls = generate_large_ls(ls_trigger=ls_trigger,
-                             temperature=temperature,
-                             prec=prec,
-                             snow=snow,
-                             theta_sd=Tsd, theta_prec=Tpr, theta_sa=Tsa,
-                             theta_ls_freeze=Tfreeze,
-                             min_ls_volume=ls_xmin, alpha=ls_alpha,
-                             cutoff=ls_cutoff,
-                             area=area,
-                             seed=1)
-num_large_ls = len(large_ls[large_ls.mag > 0])
-
-from functions.toolkit.plotly_visualize import plot_time_series
-
-x = large_ls.index.astype(str).to_numpy().reshape(-1, 1)
-y = large_ls.values.reshape(-1, 1)
-arr = np.hstack((x, y))
-df = pd.DataFrame(arr, columns=["date", "ls"])
-plot_time_series(df, column_x="date", column_y="ls")
-
-
-num_days = len(large_ls)
-ls_xmin = 233
-small_ls = generate_small_ls(num_days=num_days,
-                             num_large_ls=num_large_ls,
-                             min_ls_volume=ls_xmin,
-                             area=area,
-                             seed=seed,
-                             mu=3.36, sigma=1.18, ratio=3.36)
-
-x = large_ls.index.astype(str).to_numpy().reshape(-1, 1)
-y = small_ls.values.reshape(-1, 1)
-arr = np.hstack((x, y))
-df = pd.DataFrame(arr, columns=["date", "ls2"])
-plot_time_series(df, column_x="date", column_y="ls2")
