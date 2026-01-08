@@ -32,9 +32,9 @@ model = SedCas(project_root=project_root)
 model.load_default_params(log_params=False)
 
 
-data_type = "2017-2025"
+data_type = "default" #"2017-2025"
 # load the climate forcing data
-model.load_climate(data_type=data_type)
+model.load_climate_input(data_type=data_type)
 
 
 # run the hydro model
@@ -42,8 +42,10 @@ hydro, SWE, PET, HYM = model.run_hydro()
 
 
 # run the sediment model
-sed = model.run_sediment()
-sdf
+sed = model.run_sediment(total_iteration=10)
 
-sedout, sed, sed.sopot = model.save_output(h_name=f"Hydro_{data_type}.txt",
+sedout = model.save_output(h_name=f"Hydro_{data_type}.txt",
                                            s_name=f"Sediment_{data_type}.txt")
+
+# list_of_tuples =
+model.results_visualize(list_of_tuples=None)

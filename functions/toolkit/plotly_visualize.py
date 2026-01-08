@@ -171,3 +171,74 @@ def plotly_2time_series(df1, column_x1, column_y1,
     )
 
     fig.show()
+
+
+def plotly_multi_time_series(list_of_tuples,
+                             width=2000,
+                             height_per_panel=300,
+                             shared_title=None):
+
+    """
+    list_of_tuples: list of tuples
+        [(df, x_col, y_col), ...]
+    """
+
+    pio.templates.default = "plotly_white"
+    pio.renderers.default = "browser"
+
+    n = len(list_of_tuples)
+    if n == 0:
+        raise ValueError("No series provided")
+
+    fig = make_subplots(
+        rows=n,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.03
+    )
+
+    for i, (df, x_col, y_col) in enumerate(list_of_tuples, start=1):
+        fig.add_trace(
+            go.Scatter(
+                x=df[x_col],
+                y=df[y_col],
+                mode="lines",
+                name=y_col
+            ),
+            row=i,
+            col=1
+        )
+
+        fig.update_yaxes(
+            title_text=y_col,
+            row=i,
+            col=1,
+            showgrid=True,
+            gridcolor="rgba(128,128,128,0.5)",
+            griddash="dash"
+        )
+
+
+    fig.update_xaxes(
+        tickformat="%Y-%m-%dT%H:%M:%S",
+        hoverformat="%Y-%m-%dT%H:%M:%S",
+        showgrid=True,
+        gridcolor="rgba(128,128,128,0.5)",
+        griddash="dash"
+    )
+
+    fig.update_layout(
+        autosize=True,
+        width=width,
+        height=height_per_panel * n,
+        showlegend=False,
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        title=dict(
+            text=shared_title,
+            x=0.5,
+            xanchor="center"
+        )
+    )
+
+    fig.show()

@@ -378,7 +378,7 @@ def generate_small_ls(num_days, num_large_ls, min_ls_volume,
     # generate small landslides
     # draw many from random distribution, should represent the theoretical distribution
     mags_theo = np.random.lognormal(mu, sigma, size=int(1e6))
-    mags_cond = mags_teo[mags_theo <= min_ls_volume]  # represents theoretical distribution but constrained by "min_ls_volume"
+    mags_cond = mags_theo[mags_theo <= min_ls_volume]  # represents theoretical distribution but constrained by "min_ls_volume"
     mags = np.random.choice(mags_cond, num_small_ls)  # n samples from constrained distribution
 
     # output

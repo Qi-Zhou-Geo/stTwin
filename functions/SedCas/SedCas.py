@@ -8,6 +8,7 @@
 #           and is distributed under the terms of the GNU General Public License v3.0 (GPL-3.0).
 
 import ast
+import pickle
 
 import os
 import yaml
@@ -63,6 +64,10 @@ class SedCas():
         self.temperature = None # Temperature time series [degree C]
         self.sun_radiation = None # Sun radiation [W/m^2]
 
+        # the model output
+        self.hydro = None
+        self.sedout = None
+
     def log_config_params(self):
         # you can run this function whenever you want to check the model attributy by:
         # model.log_config_params()
@@ -96,11 +101,11 @@ class SedCas():
 
         # 2) post-processing to get another two more model params
         # normalizing hillslope sediment storage by catchment area considering packing density
-        self.shcap = self.shcap * (self.rho_dry / self.rho_b) / self.area * 10 ** -3
+        self.shcap = self.shcap * (self.rho_dry / self.rho_b) / self.area * 1e-3
 
         # smallest possible sediment amount in debirs flow
         # NOTE: this is only a constraint for the model, the smallest modelled debris flow volume is given by qdf and smax_nodf
-        self.mindf = self.minDF * self.smax_nodf / self.area * 10 ** -3
+        self.mindf = self.minDF * self.smax_nodf / self.area * 1e-3
 
         # 3) print out the loaded model params
         if log_params is True:
@@ -108,7 +113,7 @@ class SedCas():
 
         return self.mindf
 
-    def load_climate(self, data_type="default"):
+    def load_climate_input(self, data_type="default"):
 
         if data_type == "default":
             # use the default data from SedCas model
@@ -185,11 +190,13 @@ class SedCas():
 
         # lumped hydrology: area-weighted aggregation
         hydro = SedCas_h_model.lump_h_model(HYM, num_HRU=self.num_HRU, shares=self.shares, log_print=log_print)
+
+        # update the attribute
         self.hydro = hydro
 
         return hydro, SWE, PET, HYM
         
-    def run_sediment(self, seed=0):
+    def run_sediment(self, seed=0, total_iteration=None):
         
         # initialization of variables for stochastic sediment supply
 
@@ -210,10 +217,10 @@ class SedCas():
         sed.ls = np.zeros([num_data, self.num_iteration]) # self.num_iteration is number of stochastic simulations for hillslope module
 
         # sediment channel storage [mm], shape(time series length, number of simulations)
-        sed.channel_storge = np.zeros([num_data, self.num_iteration])
+        sed.channel_storage = np.zeros([num_data, self.num_iteration])
 
         # sediment hillslope storage [mm]
-        sed.hillslope_storge = np.zeros([num_data, self.num_iteration])
+        sed.hillslope_storage = np.zeros([num_data, self.num_iteration])
 
         # sediment catchment output [mm]
         sed.catchment_output = np.zeros([num_data, self.num_iteration])
@@ -230,11 +237,17 @@ class SedCas():
 
 
         # sediment module with stochastic landslide magnitudes
-        for iteration in tqdm(range(self.num_iteration),
+        if total_iteration is None:
+            total_iteration = self.num_iteration
+        else:
+            total_iteration = int(total_iteration)
+
+        for iteration in tqdm(range(total_iteration),
                               desc="running sediment model by stochastic simulations",
                               file=sys.stdout):
 
-            # large landslides, return daily
+            # large landslides, generate the time series area-normalized landslide thickness
+            # shape by [time, landslides magnitude[mm]]
             large_ls = SedCas_s_model.generate_large_ls(ls_trigger=self.LStrig,
                                                         temperature=self.temperature,
                                                         prec=self.prec,
@@ -248,7 +261,8 @@ class SedCas():
 
             num_large_ls = len(large_ls[large_ls.mag > 0])
 
-            # small landslides
+            # small landslides, generate the time series area-normalized landslide thickness
+            # shape by [time, landslides magnitude[mm]]
             small_ls = SedCas_s_model.generate_small_ls(num_days=num_days,
                                                         num_large_ls=num_large_ls,
                                                         min_ls_volume=self.ls_xmin,
@@ -259,7 +273,7 @@ class SedCas():
             # date index for small landslides
             small_ls.index = large_ls.index
 
-
+            # mix water and sediments
             sed_run = SedCas_t_model.trans_model(large_ls_t=large_ls,
                                                  small_ls_t=small_ls,
                                                  hyd=self.hydro,
@@ -281,16 +295,16 @@ class SedCas():
 
 
             sed.ls[:, iteration] = sed_run.ls.values
-            sed.channel_storge[:, iteration] = sed_run.sc # channel storage time series [mm]
-            sed.hillslope_storge[:, iteration] = sed_run.sh # hillslope storage time series [mm]
-            sed.catchment_output[:, iteration] = sed_run.so # catchment sediment output time series [mm]
-            sed.sopot[:, iteration] = sed_run.sopot # potential sediment output based on discharge [mm]
+            sed.channel_storage[:, iteration] = sed_run.channel_storage # channel storage time series [mm]
+            sed.hillslope_storage[:, iteration] = sed_run.hillslope_storage # hillslope storage time series [mm]
+            sed.catchment_output[:, iteration] = sed_run.sediment_output # catchment sediment output time series [mm]
+            sed.sopot[:, iteration] = sed_run.sediment_output_pot # potential sediment output based on discharge [mm]
             sed.dfs[:, iteration] = sed_run.dfs # debris flows, sediment output above minimum threshold and concentration of debris flows[mm]
 
             seed += 1
 
         sed.dfspot[:] = sed_run.dfspot
-            
+
         self.sed = sed
 
         return sed
@@ -330,78 +344,35 @@ class SedCas():
             sedout.to_csv(file_name, header=True)
             log_print(f"Save file: {file_name} \n \n")
 
-        return sedout, self.sed, self.sed.sopot
+            # update the attribute
+            self.sedout = sedout
 
-    def plot_sedyield_monthly(self, save=True):
+        return sedout
 
-        plt.rcParams.update({'font.size': 7,
-                             'axes.formatter.limits': (-2, 3),
-                             'axes.formatter.use_mathtext': True})
+    def results_visualize(self, list_of_tuples=None):
+        """
+        list_of_tuples: list of tuples
+            [(df, x_col, y_col), ...]
+        """
+        from functions.toolkit.plotly_visualize import plotly_multi_time_series
 
-        cf = (self.area*10**6) * 10**-3 # km2 to m2 and mm to m
-        
-        sy = pd.DataFrame(data = self.sed.dfs*cf, index=self.sed.index)
-        syp = pd.DataFrame(data = self.sed.dfspot*cf, index=self.sed.index)
-        
-        # monthly sediment yields
-        sym = sy.resample('m').sum()
-        sypm = syp.resample('m').sum()
-        
-        # mean monthly sediment yield
-        symm = sym.groupby(by=sym.index.month).mean()
-        sypmm = sypm.groupby(by=sypm.index.month).mean()
+        if list_of_tuples is None:
+            temp = self.hydro.copy()
+            temp = temp.reset_index()
+            temp = temp.rename(columns={"D": "UTC+0DateTime"})
 
-        # quantiles
-        Q = [0,10,25,50,75,90,100] # quantiles
-        SY = pd.DataFrame(index=symm.index)
-        SYP = pd.DataFrame(index=sypmm.index, data=sypmm.values[:,0]) # only one potential since only one climate
-        
-        for q in Q:
-            SY['Q'+str(q)] = np.percentile(symm.values, q,axis=1)
-            # SYP['Q'+str(q)] = np.percentile(sypmm.values, q,axis=1)
-        
-        # # plot
-        ca = 'steelblue' # color actual sedyield
-        cp = 'darkred' # color potential sedyield
-        x = np.arange(1,13)
+            list_of_tuples = [(temp, "UTC+0DateTime", "Pr"), (temp, "UTC+0DateTime", "Q")]
 
-        fig = plt.figure(figsize=(5, 5))
-        gs = gridspec.GridSpec(1, 1)
-        ax = plt.subplot(gs[0])
+            temp = self.sedout.copy()
+            temp = temp.reset_index()
+            temp = temp.rename(columns={"D": "UTC+0DateTime"})
 
-        ax.fill_between(x, SY.Q25, SY.Q75, color=ca, alpha=.5)
-        ax.plot(x, SY.Q10, color=ca, ls='--', alpha=.5)
-        ax.plot(x, SY.Q90, color=ca, ls='--', alpha=.5)
-        ax.plot(x, SY.Q50, color=ca, lw=2)
-        
-        ax.plot(x, SYP.values, color=cp, lw=1, zorder=-1)
-        
-        # # legend
-        l1 = plt.Line2D(x, SY.Q50, color=ca, lw=2, label = 'median supply-limited')
-        l2 = plt.Line2D(x, SY.Q90, color=ca, ls='--', alpha=0.5, label = 'Q10/Q90 supply-limited')
-        l3 = mpatches.Patch(color=ca, label='Q25-Q75 supply-limited')
-        l4 = plt.Line2D(x, SYP, color=cp, lw=2, label='transport-limited')
-        ax.legend(handles=[l1, l2, l3, l4], fontsize='small', frameon=False)
-        
-        # # ax limits
-        ax.set_xlim(1,12)    
-        ax.set_ylim(0,)
+            list_of_tuples.append([temp, "UTC+0DateTime", "Qstl"])
 
-        # # axis labels
-        ax.set_xlabel('Months', weight='bold')
-        ax.set_ylabel('Debris-flow yield [m$^3$/month]', weight='bold')
+        else:
+            list_of_tuples = list_of_tuples
 
-        # # scientific notation
-        ax.ticklabel_format(axis='y', style='sci', scilimits=(3,3))
-        ax.get_yaxis().get_offset_text().set_visible(False)
-        exponent_axis = 3
-        ax.annotate(r'$\times$10$^{%i}$'%(exponent_axis), xy=(0.0, 1.005), xycoords='axes fraction')
-        
-        if save:
-            plt.tight_layout()
-            plt.savefig(f"{self.model_output_dir}/MonthlySedYield.png", dpi=600)
-
-        plt.show()
-
-    def stastic_analysis(self):
-        pass
+        plotly_multi_time_series(list_of_tuples,
+                                 width=2000,
+                                 height_per_panel=300,
+                                 shared_title=None)
