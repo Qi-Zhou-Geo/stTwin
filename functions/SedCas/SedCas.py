@@ -68,7 +68,7 @@ class SedCas():
         self.hydro = None
         self.sedout = None
 
-    def log_config_params(self):
+    def print_config_params(self):
         # you can run this function whenever you want to check the model attributy by:
         # model.log_config_params()
 
@@ -189,7 +189,10 @@ class SedCas():
             # print("h", h.columns, h.shape)
 
         # lumped hydrology: area-weighted aggregation
-        hydro = SedCas_h_model.lump_h_model(HYM, num_HRU=self.num_HRU, shares=self.shares, log_print=log_print)
+        hydro = SedCas_h_model.lump_h_model(HYM,
+                                            num_HRU=self.num_HRU,
+                                            shares=self.shares,
+                                            log_print=log_print)
 
         # update the attribute
         self.hydro = hydro
@@ -197,7 +200,14 @@ class SedCas():
         return hydro, SWE, PET, HYM
         
     def run_sediment(self, seed=0, total_iteration=None):
-        
+
+        # sediment module with stochastic landslide magnitudes
+        if total_iteration is None:
+            # default is 100 times
+            total_iteration = self.num_iteration
+        else:
+            self.num_iteration = int(total_iteration)
+
         # initialization of variables for stochastic sediment supply
 
         # length of time series
@@ -207,40 +217,34 @@ class SedCas():
 
 
         # <editor-fold desc="Add params">
-        class sed:
+        class sed_container:
             pass
 
         # index for date-time
-        sed.index = self.prec.index
+        sed_container.index = self.prec.index
 
         # sediment input from landslides
-        sed.ls = np.zeros([num_data, self.num_iteration]) # self.num_iteration is number of stochastic simulations for hillslope module
+        sed_container.ls = np.zeros([num_data, self.num_iteration]) # self.num_iteration is number of stochastic simulations for hillslope module
 
         # sediment channel storage [mm], shape(time series length, number of simulations)
-        sed.channel_storage = np.zeros([num_data, self.num_iteration])
+        sed_container.channel_storage = np.zeros([num_data, self.num_iteration])
 
         # sediment hillslope storage [mm]
-        sed.hillslope_storage = np.zeros([num_data, self.num_iteration])
+        sed_container.hillslope_storage = np.zeros([num_data, self.num_iteration])
 
         # sediment catchment output [mm]
-        sed.catchment_output = np.zeros([num_data, self.num_iteration])
+        sed_container.catchment_output = np.zeros([num_data, self.num_iteration])
 
         # potential sediment catchment output [mm], i.e. transport-limited case
-        sed.sopot = np.zeros([num_data, self.num_iteration])
+        sed_container.sopot = np.zeros([num_data, self.num_iteration])
 
         # debris flows, from 'so' values above threshold and summed consecutive values
-        sed.dfs = np.zeros([num_data, self.num_iteration])
+        sed_container.dfs = np.zeros([num_data, self.num_iteration])
 
         # debris flows potential (only 1 because only 1 climate)
-        sed.dfspot = np.zeros(num_data)
+        sed_container.dfspot = np.zeros(num_data)
         # </editor-fold>
 
-
-        # sediment module with stochastic landslide magnitudes
-        if total_iteration is None:
-            total_iteration = self.num_iteration
-        else:
-            total_iteration = int(total_iteration)
 
         for iteration in tqdm(range(total_iteration),
                               desc="running sediment model by stochastic simulations",
@@ -294,24 +298,67 @@ class SedCas():
                                                  b=self.b)
 
 
-            sed.ls[:, iteration] = sed_run.ls.values
-            sed.channel_storage[:, iteration] = sed_run.channel_storage # channel storage time series [mm]
-            sed.hillslope_storage[:, iteration] = sed_run.hillslope_storage # hillslope storage time series [mm]
-            sed.catchment_output[:, iteration] = sed_run.sediment_output # catchment sediment output time series [mm]
-            sed.sopot[:, iteration] = sed_run.sediment_output_pot # potential sediment output based on discharge [mm]
-            sed.dfs[:, iteration] = sed_run.dfs # debris flows, sediment output above minimum threshold and concentration of debris flows[mm]
+            sed_container.ls[:, iteration] = sed_run.ls.values
+            sed_container.channel_storage[:, iteration] = sed_run.channel_storage # channel storage time series [mm]
+            sed_container.hillslope_storage[:, iteration] = sed_run.hillslope_storage # hillslope storage time series [mm]
+            sed_container.catchment_output[:, iteration] = sed_run.sediment_output # catchment sediment output time series [mm]
+            sed_container.sopot[:, iteration] = sed_run.sediment_output_pot # potential sediment output based on discharge [mm]
+            sed_container.dfs[:, iteration] = sed_run.dfs # debris flows, sediment output above minimum threshold and concentration of debris flows[mm]
 
             seed += 1
 
-        sed.dfspot[:] = sed_run.dfspot
+        sed_container.dfspot[:] = sed_run.dfspot
 
-        self.sed = sed
+        self.sed_container = sed_container
 
-        return sed
+        return sed_container
 
-    def run_stochastic_simulations(self):
-        # ongoing at 2025-10-02, QZ
-        pass
+    def run_stochastic_simulations(self, seed=0, total_iteration=None):
+
+        # sediment module with stochastic landslide magnitudes
+        if total_iteration is None:
+            # default is 100 times
+            total_iteration = self.num_iteration
+        else:
+            self.num_iteration = int(total_iteration)
+
+
+        # length of time series
+        num_data = len(self.prec)
+        # number of days
+        num_days = len(self.prec.resample('24h').sum())
+
+
+        # <editor-fold desc="Add params">
+        class sed_container:
+            pass
+
+        # index for date-time
+        sed_container.index = self.prec.index
+
+        # sediment input from landslides
+        sed_container.ls = np.zeros([num_data, self.num_iteration]) # self.num_iteration is number of stochastic simulations for hillslope module
+
+        # sediment channel storage [mm], shape(time series length, number of simulations)
+        sed_container.channel_storage = np.zeros([num_data, self.num_iteration])
+
+        # sediment hillslope storage [mm]
+        sed_container.hillslope_storage = np.zeros([num_data, self.num_iteration])
+
+        # sediment catchment output [mm]
+        sed_container.catchment_output = np.zeros([num_data, self.num_iteration])
+
+        # potential sediment catchment output [mm], i.e. transport-limited case
+        sed_container.sopot = np.zeros([num_data, self.num_iteration])
+
+        # debris flows, from 'so' values above threshold and summed consecutive values
+        sed_container.dfs = np.zeros([num_data, self.num_iteration])
+
+        # debris flows potential (only 1 because only 1 climate)
+        sed_container.dfspot = np.zeros(num_data)
+        # </editor-fold>
+
+
 
     def save_output(self, h_name="Hydro_new.txt", s_name="Sediment_new.txt"):
 
@@ -330,7 +377,7 @@ class SedCas():
             pass
         else:
             sedout = pd.DataFrame(index=self.sed.index)
-            quants = [0, 5, 10, 25, 50, 75, 90, 95, 100]
+            quants = [1, 5, 10, 25, 50, 75, 90, 95, 99]
             for q in quants:
                 col_name = f"Q{q}"
                 sedout[col_name] = np.percentile(self.sed.catchment_output, q, axis=1) # catchment sediment output time series [mm]
