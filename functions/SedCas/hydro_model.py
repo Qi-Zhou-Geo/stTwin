@@ -379,17 +379,18 @@ def h_model(snow, PET, precipitation, temperature, alpha, num_reservoir, params)
     # total system storage
     Vw_tot = np.sum(Vw, axis=1)
 
-    data = {'Q': Q,
-            'Qs': Qs,
-            'Qss': Qss,
-            'Vw': Vw_tot,
-            'snow_depth': snow_depth,
-            'snowacc': dsdepth,
-            'PET': PET,
-            'AET': AET,
-            'Pr': precipitation,
-            'temperature': temperature
+    data = {'Q': Q, # dischagre [mm]
+            'Qs': Qs, # discharge from overland flow [mm]
+            'Qss': Qss, # discharge from subsurface flow (outflow from last bucket in the cascasde) [mm]
+            'Vw': Vw_tot, # state of soil water storage [mm]
+            'snow_depth': snow_depth, # snow depth SWE [mm], already in input
+            'snowacc': dsdepth, # snow accumulation [mm]
+            'PET': PET, # Potential ET [mm]
+            'AET': AET, # Actual ET [mm]
+            'Pr': precipitation, # rainfall [mm]
+            'temperature': temperature # [degree C]
             }
+
 
     # single bucket storage
     i = 0

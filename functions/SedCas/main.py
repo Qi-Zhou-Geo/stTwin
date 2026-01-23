@@ -69,4 +69,4 @@ list_of_col_names = [(time_coord, "hillslope_storage_Q50"),
                      (time_coord, "sed_output_catchment_Q50")]
 fig = plotly_multi_time_series_xr(xr_dataset=sed_container_stats_2017,
                                   list_of_col_names=list_of_col_names)
-fig.plot()
+fig.show()

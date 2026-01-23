@@ -299,76 +299,14 @@ def trans_model(large_ls_t, small_ls_t, hyd, Q_theta, s_max, d_h, hs_theta, area
         dfp, concp = get_dfs(q, sopot, mindf, smax_nodf, idx)
 
     # output
-    data = {'hillslope_storage': sh,
+    data = {'ls': ls,
+            'hillslope_storage': sh,
             'channel_storage': sc,
-            'sediment_output': so, # catchment sediment output time series [mm]
-            'sediment_output_pot': sopot, # potential sediment output based on discharge [mm]
-            'ls': ls,
+            'sed_output_catchment': so,  # catchment sediment output time series [mm]
+            'sed_output_catchment_q': sopot,  # potential sediment output based on discharge [mm]
             'dfs': df,
-            'conc': conc,
-            'dfspot': dfp,
-            'concpot': concp}
+            'dfspot': dfp} # potential debris flows events
 
     sed = pd.DataFrame(data=data, index=idx)
 
     return sed
-#
-# import pickle
-#
-# with open(f"{project_root}/trans_model_inputs.pkl", "rb") as f:
-#     data = pickle.load(f)
-#
-# large_ls = data["large_ls_t"]
-# small_ls = data["small_ls_t"]
-# hydro = data["hyd"]
-# qdf = data["Q_theta"]
-# smax = data["s_max"]
-# rhc = data["d_h"]
-# shcap = data["hs_theta"]
-# area = data["area"]
-# method = data["method"]
-# LStrig = data["ls_trigger"]
-# Tpr = data["rainfall_triggered_ls_theta"]
-# shcap = data["initial_hs_storage"]
-# initial_ch_storage = data["initial_ch_storage"]
-# mindf = data["mindf"]
-# smax_nodf = data["smax_nodf"]
-# b = data["b"]
-#
-# large_ls_t = large_ls
-# small_ls_t = small_ls
-# hyd = hydro
-# Q_theta = qdf
-# s_max = smax
-# d_h = rhc
-# hs_theta = shcap
-# area = area
-# method = 'exp'
-# ls_trigger = LStrig
-# rainfall_triggered_ls_theta = Tpr
-#
-# initial_hs_storage = shcap  # careful this
-# initial_ch_storage = 0
-#
-# mindf = mindf
-# smax_nodf = smax_nodf
-# b = b
-#
-# sed_run = trans_model(large_ls_t=large_ls,
-#                       small_ls_t=small_ls,
-#                       hyd=hydro,
-#                       Q_theta=qdf,
-#                       s_max=smax,
-#                       d_h=rhc,
-#                       hs_theta=shcap,
-#                       area=area,
-#                       method='exp',
-#                       ls_trigger=LStrig,
-#                       rainfall_triggered_ls_theta=Tpr,
-#
-#                       initial_hs_storage=shcap,  # careful this
-#                       initial_ch_storage=0,
-#
-#                       mindf=mindf,
-#                       smax_nodf=smax_nodf,
-#                       b=b)
