@@ -261,7 +261,20 @@ class SedCas():
             self.temperature = df["temperature [degree]"]
             self.sun_radiation = df["sun radiation [W per squared m]"]
         else:
-            print("Error! Please check the <data_type>.")
+            try:
+                df = pd.read_csv(f"{self.model_input_dir}/climate_{data_type}.txt", sep=',', header=0)
+                if data_type == "2004_2017_h":
+                    resolution = "Hourly"
+                else:
+                    resolution = "10 minutes"
+
+                # assign the parameters by column
+                df.index = pd.to_datetime(df["timestamp [UTC+0]"])
+                self.prec = df[f"precipitation [mm per {resolution}]"]
+                self.temperature = df["temperature [degree]"]
+                self.sun_radiation = df["sun radiation [W per squared m]"]
+            except FileNotFoundError:
+                print("Error! Please check the <data_type>.")
 
         print(f"input data (climate.met) shape: {df.shape}")
 

@@ -81,6 +81,30 @@ def replace_nan(df, default_value = 0, time_index = 1):
 
     return df_temp
 
+def map_meta_data(time_resolution):
+
+    if time_resolution == "10 minutes":
+        meta_data = {
+            "station": "station_abbr",  # Station name
+            "timestamp [UTC+0]": "reference_timestamp",  # time stamp
+            f"precipitation [mm per {time_resolution}]": "rre150z0",  # Precipitation; ten minutes total, unit by mm
+            "temperature [degree]": "tre200s0",  # Air temperature 2 m above ground; current value, unit by degree C
+            "sun radiation [W per squared m]": "gre000z0"  # Global radiation; ten minutes mean, unit by W/m^2
+        }
+    elif time_resolution == "Hourly":
+        meta_data = {
+            "station": "station_abbr",  # Station name
+            "timestamp [UTC+0]": "reference_timestamp",  # time stamp
+            f"precipitation [mm per {time_resolution}]": "rre150h0",  # Precipitation; hourly total, unit by mm/h
+            "temperature [degree]": "tre200h0",  # Air temperature 2 m above ground; hourly mean, unit by degree C
+            "sun radiation [W per squared m]": "gre000h0"  # Global radiation; hourly mean, unit by W/m^2
+        }
+    else:
+        meta_data = None
+        print(f"Error!\nPlease check the time_resolution {time_resolution}.")
+
+    return meta_data
+
 def fetch_data4SedCas(station="mve", time_resolution="10 minutes",  time_period="Today"):
     '''
     Fetch the climate data from MeteoSwiss
@@ -99,10 +123,10 @@ def fetch_data4SedCas(station="mve", time_resolution="10 minutes",  time_period=
 
         time_period: str, the time period that you prefered
         One of the following parameters,
-        ["Today", "Current year", "2010-2019", "2020-2029"]
+        ["Today", "Current year", "2020-2029", "2010-2019", "2000-2009"]
 
     Returns:
-        df: pandas data frame, row by time, column by "data_type"
+        df: pandas data frame, row by time, column by "meta_data"
     '''
 
     time_resolution_mapping = {"10 minutes":"t", "Hourly":"h"}
@@ -115,26 +139,6 @@ def fetch_data4SedCas(station="mve", time_resolution="10 minutes",  time_period=
     csv_url = f"https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/{station}/" \
               f"ogd-smn_{station}_{time_resolution_mapping.get(time_resolution)}_{time_period_mapping.get(time_period)}.csv"
 
-
-    if time_resolution == "10 minutes":
-        data_type = {
-            "station" : "station_abbr", # Station name
-            "timestamp [UTC+0]": "reference_timestamp", # time stamp
-            f"precipitation [mm per {time_resolution}]":"rre150z0", # Precipitation; ten minutes total, unit by mm
-            "temperature [degree]":"tre200s0", # Air temperature 2 m above ground; current value, unit by degree C
-            "sun radiation [W per squared m]":"gre000z0" # Global radiation; ten minutes mean, unit by W/m^2
-        }
-    elif time_resolution == "Hourly":
-        data_type = {
-            "station" : "station_abbr", # Station name
-            "timestamp [UTC+0]": "reference_timestamp", # time stamp
-            f"precipitation [mm per {time_resolution}]":"rre150h0", # Precipitation; hourly total, unit by mm/h
-            "temperature [degree]":"tre200h0", # Air temperature 2 m above ground; hourly mean, unit by degree C
-            "sun radiation [W per squared m]":"gre000h0" # Global radiation; hourly mean, unit by W/m^2
-        }
-    else:
-        print(f"Error! please check the time_resolution {time_resolution}.")
-
     try:
         r = requests.get(csv_url)
         r.raise_for_status()
@@ -144,12 +148,15 @@ def fetch_data4SedCas(station="mve", time_resolution="10 minutes",  time_period=
     except Exception as e:
         print(e)
 
-    # select only the columns in data_type values
-    selected_cols = [col for col in data_type.values() if col in df.columns]
+    # find the metadata
+    meta_data = map_meta_data(time_resolution)
+
+    # select only the columns in meta_data values
+    selected_cols = [col for col in meta_data.values() if col in df.columns]
     df = df[selected_cols]
 
-    # Rename columns to friendly names (keys of data_type)
-    rename_dict = {v: k for k, v in data_type.items() if v in df.columns}
+    # Rename columns to friendly names (keys of meta_data)
+    rename_dict = {v: k for k, v in meta_data.items() if v in df.columns}
     df.rename(columns=rename_dict, inplace=True)
 
     # convert time format
@@ -171,3 +178,25 @@ def fetch_data4SedCas(station="mve", time_resolution="10 minutes",  time_period=
 # https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/mve/ogd-smn_mve_t_now.csv
 
 # find the station and choose which station you want to use
+
+def main(station, time_resolution, time_period):
+
+    df = fetch_data4SedCas(station, time_resolution, time_period)
+    df = replace_nan(df, default_value=0)
+    df.index = df["timestamp [UTC+0]"]
+
+    return df
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description='input parameters')
+    parser.add_argument("--station", default="mve", type=str)
+    parser.add_argument("--time_resolution", default="10 minutes", type=str)
+    parser.add_argument("--time_period", default="2000-2009", type=str)
+    args = parser.parse_args()
+
+    station = args.station
+    time_resolution = args.time_resolution
+    time_period = args.time_period
+    main(station, time_resolution, time_period)

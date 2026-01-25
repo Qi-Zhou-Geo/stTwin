@@ -26,7 +26,7 @@ sys.path.append(str(project_root))
 
 
 # import the custom functions
-from sediment_model import randht
+from functions.SedCas.sediment_model import randht
 
 
 def get_dfs(q, s, mindf, smax_nodf, idx):
