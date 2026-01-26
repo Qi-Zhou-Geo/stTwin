@@ -1,0 +1,351 @@
+# This is the SedCas model input parameters
+
+# Note: the parameters are stored as a Python List or signle variable
+# e.g.,
+#  params1: 0.1 # this is a signle variable
+#  params2:  # this is a list
+#    - abc
+#    - 0.2
+#    - [abc, 0.2]
+
+# for 10 minutes model
+
+# Model inout params
+model_input:
+  time_resolution:
+    abbr: delta_t
+    value: 10
+    attrs:
+      unit: minutes
+      description: Input climate forcing time resolution
+      calibrate: No
+
+  input_climate_forcing:
+    abbr: in_climate_f
+    value: # as List
+      - Precipitation
+      - Temperature
+      - Sun Radiation
+    attrs:
+      unit: mm / <time_resolution> (millimeters per <time_resolution>), °C, W per m^2 (watts per square meter)
+      description: Input climate forcing
+      calibrate: No
+
+  num_iteration:
+    abbr: num_iteration
+    value: 100
+    attrs:
+      unit: None
+      description: Number of stochastic simulations
+      calibrate: No
+
+# Model config params
+model_config:
+  # (1) Catchment params
+  HRUs:
+    abbr: HRU
+    value:
+      - forest
+      - bedrock
+    attrs:
+      unit: None
+      description: Hydrological response units (HRU)
+      calibrate: No
+
+  num_HRU:
+    abbr: num_HRU
+    value: 2
+    attrs:
+      unit: None
+      description: Number of hydrological response units (HRU)
+      calibrate: No
+
+  # the origional name is: shares
+  ratio_HRU: # Relative share of HRUs to total area
+    abbr: ratio_HRU
+    value: # as List
+      - 0.56 # for forest
+      - 0.44 # for bedrok
+    attrs:
+      unit: ratio
+      description: Relative ratio of HRUs to total area
+      calibrate: Yes, by remote sensing or DEM data
+
+  # the original name is: Ele
+  c_elevation:
+    abbr: c_h
+    value: 1600
+    attrs:
+      unit: m (meter)
+      description: Mean catchment elevation
+      calibrate: Yes, by remote sensing or DEM data
+
+  # area
+  c_area:
+    abbr: c_A
+    value: 4.83
+    attrs:
+      unit: km^2
+      description: Total catchment area
+      calibrate: Yes, by remote sensing or DEM data
+
+  # minDF
+  min_df_v:
+    abbr: min_df_v
+    value: 2000
+    attrs:
+      unit: m^3
+      description: Minium debris-flow volume
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # rho_bulk
+  rho_df:
+    abbr: rho_df
+    value: 2000
+    attrs:
+      unit: kg/m^3
+      description: Density of debris flows
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # rho_b
+  rho_bedrock:
+    abbr: rho_br
+    value: 2600
+    attrs:
+      unit: kg/m^3
+      description: Bedrock density
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # rho_dry
+  rho_sediment:
+    abbr: rho_s
+    value: 2000
+    attrs:
+      unit: kg/m^3
+      description: Dry density of stored sediments
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # shcap
+  hillslope_storage_cap:
+    abbr: epsilon_h
+    value: 750000
+    attrs:
+      unit: m^3
+      description: Hillslope sediment storage capacity
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # (3) Hydrological params
+  # Vwcaps
+  water_storage_cap:
+    abbr: epsilon_w
+    value:
+      - [72, 27] # for the forest
+      - [4] # for the bedrock
+    attrs:
+      unit: mm
+      description: Water storage capacities of HRUs
+      calibrate: Yes, by what ?????
+
+  # ks
+  water_residence_time:
+    abbr: delta_w_t
+    value:
+      - [94, 235] # for the forest
+      - [23] # for the bedrock
+    attrs:
+      unit: h or minutes
+      description: Mean residence time in saturated condition
+      calibrate: Yes, by what ?????
+
+
+  # (4) Climate forcing params
+  # the original name is: Tsa
+  snow_acc:
+    abbr: snow_acc
+    value: 0.6
+    attrs:
+      unit: °C
+      description: Temperature threshold for snow accumulation
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # the original name is: Tsm
+  snow_melt:
+    abbr: snow_melt
+    value: 0.5
+    attrs:
+      unit: °C
+      description: Temperature threshold for snow melt
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # the original name is: mrate
+  snow_melt_r:
+    abbr: snow_melt_r
+    value: 0.08
+    attrs:
+      unit: mm °C⁻¹ <time_resolution>⁻¹
+      description: Snow melt rate (melt per °C above threshold (e.g., 0.08) per <time_resolution>)
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # the original name is: Asnow
+  with_snow_albedo:
+    abbr: snow_albedo_y
+    value:
+      - 0.4 # for forest
+      - 0.65 # for bedrock
+    attrs:
+      unit: None
+      description: Albedo for HRUs when covered with snow
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # the original name is: Anosnow
+  without_snow_albedo:
+    abbr: snow_albedo_n
+    value:
+      - 0.15 # for forest
+      - 0.25 # for bedrock
+    attrs:
+      unit: None
+      description: Albedo for HRUs when NOT covered with snow
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # the original name is: alphaET
+  evapotranspiration:
+    abbr: et
+    value: 20.0
+    attrs:
+      unit: None
+      description: Evapotranspiration efficiency
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+
+  # (5) Sediments generator params
+  # LStrig:
+  ls_trigger_m:
+    abbr: ls_trigger_m
+    value: thermal # can be ['thermal', 'rainfall', 'random']
+    attrs:
+      unit: None
+      description: Landslide triggering mechanism
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # Tsd
+  ls_trigger_SWE:
+    abbr: ls_trigger_SWE
+    value: 20
+    attrs:
+      unit: mm
+      description: SWE threshold for landslide triggered by SWE (snow water equivalent)
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # Tfreeze
+  ls_trigger_freeze:
+    abbr: ls_trigger_f
+    value: 0
+    attrs:
+      unit: °C
+      description: Temperature threshold for landslide triggered by freezing
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # Tpr
+  ls_trigger_rainfall:
+    abbr: ls_trigger_r
+    value: 7.9
+    attrs:
+      unit: mm / <time_resolution>>
+      description: Rainfall threshold for landslide triggered by precipitation
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+
+  # ls_xmin
+  ls_min_v:
+    abbr: ls_min_v
+    value: 233
+    attrs:
+      unit: m^3
+      description: Minimum potential landslide volume
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # ls_alpha:
+  ls_alpha_v:
+    abbr: ls_alpha_v
+    value: 1.69
+    attrs:
+      unit: None
+      description: Power-law exponent for generating landslide
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # ls_cutoff
+  ls_max_v:
+    abbr: ls_max_v
+    value: 3000000
+    attrs:
+      unit: m^3
+      description: Maximum potential landslide volume
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+
+
+  # (6) Sediments transport params
+  # rhc
+  h2s_deposition_rate:
+    abbr: h2s_r
+    value: 0.12
+    attrs:
+      unit: None
+      description: Sediments deposition rate from hillslope to channel
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # qdf
+  discharge_df:
+    abbr: q_df
+    value: 2.40
+    attrs:
+      unit: mm / <time_resolution>
+      description: Discharge threshold for triggering debris flows
+      calibrate: Yes
+
+  # smax
+  max_s2w:
+    abbr: max_s2w
+    value: 0.57
+    attrs:
+      unit: None
+      description: Max volumetric sediment to water ratio
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # bedload related
+  # smax_nodf
+  max_s_concentration:
+    abbr: max_s_c
+    value: 0.4
+    attrs:
+      unit: None
+      description: Max possible sediment concentration for bedload
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # a
+  scaling_a:
+    abbr: scaling_a
+    value: auto
+    attrs:
+      unit: None
+      description: Scaling parameter for bedload transport
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # b
+  scaling_b:
+    abbr: scaling_b
+    value: 1.5
+    attrs:
+      unit: None
+      description: Shape parameter for bedload transport
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
+
+  # Qmin_nondf
+  min_discharge_bl:
+    abbr: min_q_bl
+    value: auto
+    attrs:
+      unit: None
+      description: Minimum discharge for bedload transport initiation
+      calibrate: Yes-No, follow https://doi.org/10.1029/2020JF005739
