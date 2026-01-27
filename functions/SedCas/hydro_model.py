@@ -424,7 +424,13 @@ def lump_h_model(HYM, num_HRU, shares, log_print):
             hydro[column] = np.sum(lumped, axis=0)
 
         except KeyError as e:
-            print(f"Error={e} \n \n")
+            # careful the classic Python gotcha, e != 'Vw1'
+            if e.args[0] == 'Vw1':
+                # the model do not have 'Vw1' wh HRU=1
+                # ingore this
+                pass
+            else:
+                print(e)
 
 
         # check the column contains string "Vw" or not

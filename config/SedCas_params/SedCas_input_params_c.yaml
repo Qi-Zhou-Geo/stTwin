@@ -14,7 +14,7 @@
 model_input:
   delta_t:
     name: time_resolution
-    value: 0.16666666666666666 # 10 minutes = 1/6 hour
+    value: 0.16666666666666666 # 10 minutes = 1/6 = 0.16666666666666666 hour
     attrs:
       unit: hour
       description: Input climate forcing time resolution
