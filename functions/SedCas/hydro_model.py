@@ -157,6 +157,7 @@ def cal_actual_evap(temperature, sps_temperature, radiation, cloud_cover_r, albe
     Epot = np.nan
     Tpot = np.nan
 
+    # Is sps_temperature almost equal to 1.0?
     if not np.isclose(a = sps_temperature, b = 1.0):
         PET = PET * sps_temperature  ##[mm/sps_temperature]
         EP_aer = EP_aer * sps_temperature
@@ -423,9 +424,7 @@ def lump_h_model(HYM, num_HRU, shares, log_print):
             hydro[column] = np.sum(lumped, axis=0)
 
         except KeyError as e:
-            log_print(f"KeyError in < class SedCas() -> run_hydro -> for c in hyd: >:\n"
-                      f"i={column}, HRU_id={HRU_id}\n"
-                      f"Error={e} \n \n")
+            print(f"Error={e} \n \n")
 
 
         # check the column contains string "Vw" or not
