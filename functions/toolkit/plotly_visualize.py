@@ -94,9 +94,14 @@ def plotly_multi_time_series_xr(xr_dataset, list_of_col_names, shared_title=None
     pio.templates.default = "plotly_white"
     pio.renderers.default = "browser"
 
+
+    if list_of_col_names is None:
+        print("No column name provided,\nall columns in the <xr_dataset> will be plotted.")
+        x_col = "time_str"
+        list_of_col_names = [(x_col, y_col) for y_col in xr_dataset.data_vars]
+    else:
+        pass
     n = len(list_of_col_names)
-    if n == 0:
-        raise ValueError("No series provided")
 
     # you can use this as y label or subplot title
     subplot_titles = []
@@ -155,7 +160,7 @@ def plotly_multi_time_series_shade_xr(xr_dataset, list_of_col_names, shared_titl
 
     n = len(list_of_col_names)
     if n == 0:
-        raise ValueError("No series provided")
+        raise ValueError("No column name provided, all columns in the <xr_dataset> will be plotted.")
 
     # you can use this as y label or subplot title
     subplot_titles = []

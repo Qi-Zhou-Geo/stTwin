@@ -215,8 +215,8 @@ def h_model(snow, PET, precipitation, temperature, alpha, num_reservoir, params)
     temperature = np.array(temperature, dtype=float)
 
     Q = np.zeros(num_data)  # dischagre
-    Qss = np.zeros(num_data) # discharge from overland (surface) flow
-    Qs = np.zeros(num_data)  # discharge from subsurface flow
+    Qss = np.zeros(num_data) # discharge from subsurface flow
+    Qs = np.zeros(num_data)  # discharge from overland (surface) flow
 
     # percolation between storages the first column is for the flow between the most upper and the second...
     Qper = np.zeros(shape=(num_data, num_reservoir - 1))
@@ -381,7 +381,7 @@ def h_model(snow, PET, precipitation, temperature, alpha, num_reservoir, params)
     Vw_tot = np.sum(Vw, axis=1)
 
     data = {'Q': Q, # dischagre [mm]
-            'Qs': Qs, # discharge from overland flow [mm]
+            'Qs': Qs, # discharge from overland (surface) flow [mm]
             'Qss': Qss, # discharge from subsurface flow (outflow from last bucket in the cascasde) [mm]
             'Vw': Vw_tot, # state of soil water storage [mm]
             'snow_depth': snow_depth, # snow depth SWE [mm], already in input
