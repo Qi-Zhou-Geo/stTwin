@@ -286,6 +286,7 @@ def h_model(snow, PET, precipitation, temperature, alpha, num_reservoir, params)
 
         # check for continuity of mass
         if Vw[i, 0] < 0:
+            print(f"attemp1: {i}")
             d = abs(Vw[i, 0])
             Vw[i, 0] = Vw[i, 0] + AET[i]
             AET[i] = AET[i] - d
@@ -293,11 +294,13 @@ def h_model(snow, PET, precipitation, temperature, alpha, num_reservoir, params)
                 AET[i] = 0
             Vw[i, 0] = Vw[i, 0] - AET[i]
             if Vw[i, 0] < 0:
+                print(f"attemp2: {i}")
                 d = abs(Vw[i, 0])
                 Vw[i, 0] = Vw[i, 0] + Qs[i]
                 Qs[i] = Qs[i] - d
                 Vw[i, 0] = Vw[i, 0] - Qs[i]
                 if Vw[i, 0] < 0:
+                    print(f"attemp3: {i}")
                     Qs[i] = 0
                     Vw[i, 0] = 0
 
