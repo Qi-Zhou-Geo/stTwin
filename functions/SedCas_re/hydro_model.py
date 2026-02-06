@@ -16,117 +16,44 @@ import numpy as np
 from obspy import UTCDateTime
 import xarray as xr
 
-data = pd.read_csv(f"/Users/qizhou/#python/stTwin/data/SedCas_input/climate_2004_2017_h.txt", header=0)
 
-time = [UTCDateTime(i).timestamp for i in data.iloc[:, 1]]
-time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 1]]
-
-# Extract variables
-precipitation = data.iloc[:, 2].values
-temperature = data.iloc[:, 3].values
-sun_radiation = data.iloc[:, 4].values
-
-data_source = "MeteoSwiss"
-station = data.iloc[0, 0]  # station name
-resolution = time[1] - time[0]  # unit is second
-time_now = UTCDateTime().isoformat()
-
-climate_forcing = xr.Dataset(
-    coords={
-        "time": ("time", np.array(time)),  # numeric UTC+0 time
-        "time_str": ("time", np.array(time_str)),  # string UTC+0 time
-    },
-    data_vars={
-        "precipitation": ("time", precipitation,
-                          {"units": f"mm per {resolution} s", "description": "Total precipitation"}),
-
-        "temperature": ("time", temperature,
-                        {"units": f"°C per {resolution} s", "description": "Air temperature"}),
-
-        "sun_radiation": ("time", sun_radiation,
-                          {"units": "W/m^2", "description": "Incoming solar radiation"})
-    },
-    attrs={
-        "source": data_source,
-        "station": station,
-        "resolution": resolution,
-        "resolution_unit": f"seconds",
-        "create_time": time_now
-    }
-)
-
-num_data = len(precipitation)
-time_now = UTCDateTime().isoformat()
-
-num_HUR = 2
-hydro_output = xr.Dataset(
-    coords={
-        "time": ("time", np.array(time)),  # numeric UTC+0 time
-        "time_str": ("time", np.array(time_str)),  # string UTC+0 time
-        "HRU_id": np.arange(num_HUR),
-    },
-    data_vars={
-        # (1) snow_water_equivalent
-        # snow depth SWE
-        "modelled_SWE": (("time", "HRU_id"), np.zeros((num_data, num_HUR)),
-                         {"units": f"mm per {resolution} s", "description": "Modelled snow-water-equivalent depth"}),
-
-        # Snow pack changes
-        "delta_depth": (("time", "HRU_id"), np.zeros((num_data, num_HUR)),
-                        {"units": f"mm per {resolution} s", "description": "Snow pack changes"}),
-
-        # snow accumulation
-        "snow_acc": (("time", "HRU_id"), np.zeros((num_data, num_HUR)),
-                     {"units": f"mm per {resolution} s", "description": "Snow accumulation"}),
-        # snow melt
-        "snow_melt": (("time", "HRU_id"), np.zeros((num_data, num_HUR)),
-                      {"units": f"mm per {resolution} s", "description": "Snow melting"}),
-
-        # albedo
-        "albedo": (("time", "HRU_id"), np.zeros((num_data, num_HUR)),
-                   {"units": "mm??",
-                    "description": "Snow (when covered with snow) or soil (when no more snow existing) albedo"}),
-
-        # (2)
-        # Potential evapotranspiration [mm]
-        "PET": (("time", "HRU_id"), np.zeros((num_data, num_HUR)),
-                {"units": "mm??", "description": "Potential evapotranspiration"}),
-
-        # Actual evapotranspiration [mm]
-        "AET": (("time", "HRU_id"), np.zeros((num_data, num_HUR)),
-                {"units": "mm??", "description": "Actual evapotranspiration"}),
-
-        # (3)
-        # discharge [mm]
-        "Q": (("time", "HRU_id"), np.zeros((num_data, num_HUR)),
-              {"units": "mm??", "description": "Total discharge"}),
-
-        # discharge from overland flow [mm]
-        "Qs": (("time", "HRU_id"), np.zeros((num_data, num_HUR)),
-               {"units": "mm??", "description": "Discharge from overland (surface) flow"}),
-
-        # discharge from subsurface flow (outflow from last bucket in the cascasde) [mm]
-        "Qss": (("time", "HRU_id"), np.zeros((num_data, num_HUR)),
-                {"units": "mm??", "description": "Discharge from subsurface flow"}),
-
-        # state of soil water storage [mm]
-        "soil_water_storage": (("time", "HRU_id"), np.zeros((num_data, num_HUR)),
-                               {"units": "mm??", "description": "State of soil water storage"}),
-
-    },
-    attrs={
-        "source": data_source,
-        "station": station,
-        "resolution": resolution,
-        "resolution_unit": f"seconds",
-        "create_time": time_now
-    }
-)
-
-
-# Snow Degree-Day-Module
+# Snow water equivalent module
 def snow_water_equivalent(temperature, precipitation,
                           snow_melt_r, T_theta_a, T_theta_m, snow_albedo, soil_albedo):
+    """
+    Compute snow water equivalent (SWE) and surface albedo using a temperature-index snow model.
+
+    Snow accumulates when air temperature is below the accumulation threshold
+    and melts when temperature exceeds the melt threshold.
+
+    Args:
+        temperature (np.ndarray): Air temperature time series [°C, consistent with thresholds], shape (n_time,).
+        precipitation (np.ndarray): Total precipitation time series [mm per time step], shape (n_time,).
+        snow_melt_r (float): Snowmelt rate factor [mm / (time step · °C)].
+
+        T_theta_a (float): Temperature threshold for snow accumulation [°C].
+        Precipitation falls as snow when temperature ≤ T_theta_a.
+
+        T_theta_m (float): Temperature threshold for snowmelt [°C].
+        Snow melts when temperature > T_theta_m.
+
+        snow_albedo (float): Surface albedo when snow cover exists [-].
+        soil_albedo (float): Surface albedo when no snow cover exists [-].
+
+    Returns:
+        modelled_SWE (np.ndarray): Snow water equivalent stored on the ground at each time step [mm], shape (n_time,).
+        delta_depth (np.ndarray): Change in SWE per time step [mm / time step], shape (n_time,).
+
+        snow_acc (np.ndarray): Snow accumulation per time step [mm / time step], shape (n_time,).
+        snow_melt (np.ndarray): Actual snowmelt per time step [mm / time step], shape (n_time,).
+        albedo (np.ndarray): Surface albedo time series [-], shape (n_time,).
+
+    Notes:
+        - The model is evaluated sequentially in time and depends on previous SWE states.
+        - Snowmelt is limited by available snowpack to ensure mass conservation.
+        - All returned arrays are newly allocated; input arrays are not modified in place.
+    """
+
     # snow accumulation
     cold_cond = temperature <= T_theta_a  # cold condition
     warm_cond = temperature > T_theta_a
@@ -136,7 +63,7 @@ def snow_water_equivalent(temperature, precipitation,
     # snow melt
     melt_cond = temperature > T_theta_m
     non_melt_cond = temperature <= T_theta_m
-    T_grad = temperature - T_theta_m  # melting gradient
+    T_grad = temperature.copy() - T_theta_m  # melting gradient
     T_grad[non_melt_cond] = 0.0  # no snowmelt where temperature is below
     snow_melt = snow_melt_r * T_grad  # potential snowmelt based on temperature
 
@@ -171,10 +98,37 @@ def snow_water_equivalent(temperature, precipitation,
     return modelled_SWE, delta_depth, snow_acc, snow_melt, albedo
 
 
-# Potential Evapotranspiration Module
-def potential_et(temperature, sun_radiation, albedo, sps_temperature, cloud_cover_r, elevation, U):
+# Potential evapotranspiration module
+def potential_et(temperature, sun_radiation, albedo, sps_temperature, cloud_cover_r, elevation, relative_humidity):
+    """
+    Compute potential evapotranspiration (PET) using a Priestley–Taylor–type energy balance approach.
+
+    PET is estimated from net radiation, air temperature, humidity,
+    and elevation. Negative PET values (e.g., dew formation) are truncated to zero.
+
+    Args:
+        temperature (np.ndarray): Air temperature time series [°C], shape (n_time,).
+        sun_radiation (np.ndarray): Incoming shortwave solar radiation [W m⁻²], shape (n_time,).
+        albedo (np.ndarray): Surface albedo [-], shape (n_time,).
+
+        sps_temperature (float): Length of the simulation time step [s]. If not equal to 3600 s, PET is scaled accordingly.
+        cloud_cover_r (float): Cloud cover coefficient [-], used to estimate effective atmospheric emissivity.
+        elevation (float): Catchment mean elevation above sea level [m].
+        relative_humidity (float): Relative humidity fraction [-], range [0 extremely dry –> 1 air is saturated].
+
+    Returns:
+        PET (np.ndarray): Potential evapotranspiration per time step [mm], shape (n_time,).
+
+    Notes:
+        - Net radiation includes shortwave absorption and longwave emission.
+        - Atmospheric pressure is corrected for elevation.
+        - The Priestley–Taylor coefficient is fixed at 1.26.
+        - PET values less than zero are set to zero.
+        - The function does not modify input arrays in place.
+    """
+
     esat = 611 * np.exp(17.27 * temperature / (237.3 + temperature))  ## Vapor Pressure Saturation
-    ea = U * esat
+    ea = relative_humidity * esat
 
     #### Net Radiation
     si = 5.6704 * (10 ** -8)  # Stefan-Boltzman Constant [W/m**2.K**4]
@@ -205,7 +159,7 @@ def potential_et(temperature, sun_radiation, albedo, sps_temperature, cloud_cove
     PET = 1.26 * (D / (D + G)) * EP_en  ## [mm/h] Priestly-Taylor
 
     # Is sps_temperature almost equal to 1.0?
-    # the unit of 3600 is second
+    # the unit of sps_temperature and 3600 is second
     if not np.isclose(a=sps_temperature, b=3600):
         PET = PET * sps_temperature  ##[mm/sps_temperature]
 
@@ -216,183 +170,61 @@ def potential_et(temperature, sun_radiation, albedo, sps_temperature, cloud_cove
     return PET
 
 
-# Hydrological Model
-def single_reservoir_o(w_in, initial_w_storage, temperature,
-                       PET, alpha,
-                       w_storage_cap, w_residence_time):
-    '''
-    Simulate water discharge for a single reservoir at one time step.
-    All the input and output is 1D.
-
-    Args:
-        w_in: float, net water input (precipitation - snow_acc + snow_melt) [mm]
-        initial_w_storage: float, water storage from previous timestep [mm]
-        temperature: float, air temperature [°C]
-        PET: float, potential evapotranspiration [mm]
-        alpha: float, parameter controlling AET efficiency (dimensionless)
-        w_storage_cap: float, reservoir storage capacity [mm]
-        w_residence_time: float, mean residence time of water [hours or timesteps]
-
-    Returns:
-        Qs: float, surface runoff [mm]
-        Qss: float, subsurface discharge [mm]
-        AET: float, actual evapotranspiration [mm]
-        c_w_storage: float, updated water storage for next timestep [mm]
-    '''
-
-    # (1) update the current water storage for the reservoir
-    c_w_storage = initial_w_storage + w_in
-
-    # (2) update the AET
-    # when no forzen, there will AET, Qss, but NO Qpercolation
-    if temperature > 0:
-        # theoretical AET
-        b = 1.0 - np.exp(-alpha * c_w_storage / w_storage_cap)
-        AET = b * PET
-        # theoretical Qss
-        Qss = c_w_storage / w_residence_time
-    else:
-        AET = 0
-        Qss = 0
-
-    # (3) check the theoretical valus for AET, Qss
-    if AET + Qss > c_w_storage:
-        # not enoungh water, then reduce the AET and Qss with priority:
-        # (a) AET takes priority (gets what it needs first)
-        # (b) Qss gets whatever remains
-        # e.g., AET (10) + Qss (20) > c_w_storage (25)
-        available_water1 = c_w_storage  # available_water1 -> 25
-        AET = min(AET, available_water1)  # AET -> 10
-
-        available_water2 = c_w_storage - AET  # available_water2 -> 15
-        Qss = min(Qss, available_water2)  # Qss -> 15
-    else:
-        pass
-    # update the c_w_storage, now c_w_storage >=0 always true
-    c_w_storage = c_w_storage - AET - Qss
-
-    # (4) update the surface flow Qs
-    if c_w_storage >= w_storage_cap:
-        Qs = c_w_storage - w_storage_cap
-    else:
-        Qs = 0
-
-    # (5) update the c_w_storage,
-    # now it equals:
-    # initial_w_storage + w_in - AET - Qss - Qs
-    c_w_storage = c_w_storage - Qs
-
-    return Qs, Qss, AET, c_w_storage
-
-
-def single_reservoir_a(w_in, initial_w_storage, temperature,
-                       PET, alpha,
-                       w_storage_cap, w_residence_time):
-    '''
-    Simulate water discharge for a single reservoir at one time step.
-    All the input and output is 1D.
-
-    Notice: there is a logic bug.
-    In real case, AET, Qs, and Qss are happens at the same time,
-    which will lead "initial_w_storage + w_in < AET + Qss + Qs".
-    If this happens, we assign the AET, Qs, and Qss with a fixed ratio of "initial_w_storage + w_in".
-
-    Args:
-        w_in: float, net water input (precipitation - snow_acc + snow_melt) [mm]
-        initial_w_storage: float, water storage from previous timestep [mm]
-        temperature: float, air temperature [°C]
-        PET: float, potential evapotranspiration [mm]
-        alpha: float, parameter controlling AET efficiency (dimensionless)
-        w_storage_cap: float, reservoir storage capacity [mm]
-        w_residence_time: float, mean residence time of water [hours or timesteps]
-
-    Returns:
-        Qs: float, surface runoff [mm]
-        Qss: float, subsurface discharge [mm]
-        AET: float, actual evapotranspiration [mm]
-        c_w_storage: float, updated water storage for next timestep [mm]
-    '''
-
-    # (1) update the current water storage for the reservoir
-    c_w_storage = initial_w_storage + w_in
-
-    # (2) update the AET
-    # when no forzen, there will AET, Qss, but NO Qpercolation
-    if temperature > 0:
-        # theoretical AET
-        b = 1.0 - np.exp(-alpha * c_w_storage / w_storage_cap)
-        AET = b * PET
-    else:
-        AET = 0
-
-    # (3) update the Qss, Qs
-    if c_w_storage >= w_storage_cap:
-        # Notice: if the c_w_storage -> infity, Qss -> infity
-        Qss = c_w_storage / w_residence_time
-        Qs = c_w_storage - w_storage_cap
-    else:
-        Qss = 0
-        Qs = 0
-
-    # (4) update the c_w_storage
-    # the final c_w_storage = initial_w_storage + w_in - AET - Qss - Qs
-    if AET + Qss + Qs > c_w_storage:
-        # when water supply is insufficient,
-        # then reduce the AET, Qss, Qs as part of c_w_storage
-        AET, Qss, Qs = c_w_storage / 2, c_w_storage / 4, c_w_storage / 4
-        print(f"Warning! AET + Qss + Qs > c_w_storage"
-              f"AET={AET}, Qss={Qss}, Qs={Qs}, c_w_storage={c_w_storage}")
-    else:
-        pass
-    c_w_storage = c_w_storage - AET - Qss - Qs
-
-    return Qs, Qss, AET, c_w_storage
-
-
-def check_water_balance(water_t0, water_t1, Qss, Qs, print_log=True):
-    delta_t0_to_t1 = water_t0 - water_t1
-
-    if delta_t0_to_t1 > 0:
-        # when water is lost, probably,
-        # manually add it back
-        Qss, Qs = Qss + (delta_t0_to_t1 / 2), Qs + (delta_t0_to_t1 / 2)
-
-        if print_log is True:
-            print(f"Warning <check_water_balance>!\n"
-                  f"delta_t0_to_t1={delta_t0_to_t1} > 0, "
-                  f"The water before {water_t0} "
-                  f"and after {water_t1} update not equal.")
-    elif delta_t0_to_t1 < 0:
-        # when water is gain, not possible,
-        # manually remove it back
-        Qss, Qs = Qss - (delta_t0_to_t1 / 2), Qs - (delta_t0_to_t1 / 2)
-        if print_log is True:
-            print(f"Warning <check_water_balance>!\n"
-                  f"delta_t0_to_t1={delta_t0_to_t1} < 0, "
-                  f"The water before {water_t0} "
-                  f"and after {water_t1} update not equal.")
-    else:
-        # all good
-        pass
-
-    return Qss, Qs
-
-
-def single_reservoir(w_in, initial_w_storage, temperature,
+# Hydrological module
+def single_reservoir(w_in, temperature,
                      PET, alpha,
-                     w_storage_cap, w_residence_time):
-    # give pority AET, Qss, Qs
+                     initial_w_storage, w_storage_cap, w_residence_time,
+                     tolerance=1e-6):
+    """
+    Compute water balance for a single linear soil reservoir with priority-based outflows.
+
+    The model updates reservoir storage sequentially within one time step following the priority order:
+    1) Actual evapotranspiration (AET)
+    2) Subsurface flow (Qss)
+    3) Surface runoff (Qs)
+
+    All fluxes are limited by available water to ensure mass conservation.
+
+    Args:
+        w_in (float): Liquid water input to the reservoir during the time step (e.g. rainfall + snowmelt) [mm / time step].
+
+        temperature (float): Air temperature at the current time step [°C].
+        Evapotranspiration occurs only when temperature > 0.
+
+        PET (float): Potential evapotranspiration for the time step [mm / time step].
+        alpha (float): Shape parameter controlling the nonlinear relationship between soil moisture and AET [-].
+
+        initial_w_storage (float): Water stored in the reservoir at the previous time step [mm].
+        w_storage_cap (float): Maximum water storage capacity of the reservoir [mm].
+        w_residence_time (float): Mean residence time of water in the reservoir under saturated conditions [time step].
+
+        tolerance (float, optional): Numerical tolerance for water balance closure check. Default is 1e-6 [mm].
+
+    Returns:
+        AET (float): Actual evapotranspiration during the time step [mm].
+
+        Qss (float): Subsurface (baseflow) discharge from the reservoir [mm].
+        Qs (float): Surface runoff generated by storage exceeding capacity [mm].
+        c_w_storage_updated (float): Updated reservoir water storage at the end of the time step [mm].
+
+    Notes:
+        - Evapotranspiration is computed first and limited by available storage.
+        - Subsurface flow follows a linear reservoir formulation.
+        - Surface runoff occurs only after AET and Qss have been satisfied.
+        - The function enforces strict water mass conservation within a tolerance.
+        - Inputs are not modified in place.
+    """
 
     # (1) update the current water storage for the reservoir
-    c_w_storage = initial_w_storage.copy() + w_in.copy()
+    c_w_storage = initial_w_storage.copy() + w_in
 
     # (2) update the AET
     # when no forzen, there will AET, Qss, but NO Qpercolation with one reservoir
     if temperature > 0:
         # theoretical AET
         b = 1.0 - np.exp(-alpha * c_w_storage / w_storage_cap)
-        AET = b * PET
-        AET = min(AET, c_w_storage)
+        AET = min(b * PET, c_w_storage)
+        # print(b, PET, c_w_storage,  w_storage_cap)
     else:
         AET = 0
     # update the reservoir
@@ -419,19 +251,68 @@ def single_reservoir(w_in, initial_w_storage, temperature,
     c_w_storage_updated = c_w_storage - Qs
 
     # (5) make sure the water in-out balance
-    water_t0 = initial_w_storage.copy() + w_in.copy()  # water before update
+    water_t0 = initial_w_storage.copy() + w_in  # water before update
     water_t1 = AET + Qss + Qs + c_w_storage_updated  # water after update
 
-    assert water_t0 == water_t1, (f"Warning!\n"
-                                  f"Water in-out not balance."
-                                  f"water_t0={water_t0}, water_t1={water_t1}")
+    assert abs(water_t0 - water_t1) < tolerance, (f"Warning in single_reservoir!\n"
+                                                  f"Water in-out not balance under tolerance = {tolerance}.\n"
+                                                  f"water_t0={water_t0}, water_t1={water_t1}")
 
     return AET, Qss, Qs, c_w_storage_updated
 
 
-def multiple_reservoir(w_in, initial_w_storage, temperature,
+def multiple_reservoir(w_in, temperature,
                        PET, alpha,
-                       w_storage_cap, w_residence_time):
+                       initial_w_storage, w_storage_cap, w_residence_time,
+                       tolerance=1e-6):
+    """
+    Compute water balance for a vertically stacked system of linear soil reservoirs.
+
+    The model represents an HRU as a cascade of vertically connected reservoirs.
+    Water inputs enter the top reservoir and are redistributed sequentially
+    within one time step following this priority order:
+    1) Actual evapotranspiration (AET) from the top reservoir
+    2) Vertical percolation between reservoirs
+    3) Subsurface discharge (Qss) from the deepest reservoir
+    4) Surface runoff (Qs) from the top reservoir
+
+    All fluxes are limited by available water to ensure mass conservation.
+
+    Args:
+        w_in (float): Liquid water input to the reservoir during the time step (e.g. rainfall + snowmelt) [mm / time step].
+
+        temperature (float): Air temperature at the current time step [°C].
+        Evapotranspiration occurs only when temperature > 0.
+
+        PET (float): Potential evapotranspiration for the time step [mm / time step].
+        alpha (float): Shape parameter controlling the nonlinear relationship between soil moisture and AET [-].
+
+        initial_w_storage (float): Water stored in the reservoir at the previous time step [mm].
+        Reservoirs are ordered from top to bottom, shape (num_reservoirs,).
+
+        w_storage_cap (float): Maximum water storage capacity of the reservoir [mm], shape (num_reservoirs,).
+        w_residence_time (float): Mean residence time of water in the reservoir under saturated conditions [time step],
+        shape (num_reservoirs,).
+
+        tolerance (float, optional): Numerical tolerance for water balance closure check. Default is 1e-6 [mm].
+
+    Returns:
+        AET (float): Actual evapotranspiration during the time step [mm].
+
+        Qss (float): Subsurface (baseflow) discharge from the reservoir [mm].
+        Qs (float): Surface runoff generated by storage exceeding capacity [mm].
+        c_w_storage_updated (float): Updated reservoir water storage at the end of the time step [mm], shape (n_reservoirs,).
+
+    Notes:
+        - Evapotranspiration is computed first and limited by available storage.
+        - Vertical percolation follows a linear reservoir formulation and is limited by available storage.
+        - Subsurface discharge (Qss) occurs only from the deepest reservoir.
+        - Surface runoff (Qs) is generated when the top reservoir exceeds its storage capacity,
+          representing infiltration- or saturation-excess runoff.
+        - The function enforces strict water mass conservation within a tolerance.
+        - Inputs are not modified in place.
+    """
+
     # (0) prepare the params
     num_reservoir = len(w_storage_cap)
     # percolation container
@@ -439,15 +320,14 @@ def multiple_reservoir(w_in, initial_w_storage, temperature,
 
     # (1) update the current water storage for the reservoir
     c_w_storage = initial_w_storage.copy()
-    c_w_storage[0] = c_w_storage[0] + w_in.copy()  # add water input to top reservoir
+    c_w_storage[0] = c_w_storage[0] + w_in  # add water input to top reservoir
 
     # (2) update the AET
     # when no forzen, there will AET, Qss, and Qpercolation
     if temperature > 0:
         # theoretical AET
         b = 1.0 - np.exp(-alpha * c_w_storage[0] / w_storage_cap[0])
-        AET = b * PET
-        AET = min(AET, c_w_storage[0])  # limit the AET
+        AET = min(b * PET, c_w_storage[0])  # limit the AET
     else:
         AET = 0
     # update the top reservoir
@@ -520,156 +400,183 @@ def multiple_reservoir(w_in, initial_w_storage, temperature,
     c_w_storage[0] = c_w_storage[0] - Qs
 
     # (6) make sure the water in-out balance
-    water_t0 = initial_w_storage[0] + w_in + np.sum(initial_w_storage[1:])  # water before update
-    water_t1 = np.sum(c_w_storage) + Qs + Qss  # water after update
+    water_t0 = w_in + np.sum(initial_w_storage.copy())  # water before update
+    water_t1 = np.sum(c_w_storage) + Qs + Qss + AET  # water after update
 
-    assert water_t0 == water_t1, (f"Warning!\n"
-                                  f"Water in-out not balance."
-                                  f"water_t0={water_t0}, water_t1={water_t1}")
+    assert abs(water_t0 - water_t1) < tolerance, (f"Warning in multiple_reservoir!\n"
+                                                  f"Water in-out not balance under tolerance = {tolerance}.\n"
+                                                  f"water_t0={water_t0}, water_t1={water_t1}")
 
     c_w_storage_updated = c_w_storage
 
     return AET, Qss, Qs, c_w_storage_updated
 
 
+def h_model(snow_acc, snow_melt,
+            temperature, precipitation,
+            PET, alpha,
+            initial_w_storage, w_storage_cap, w_residence_time):
+    """
+    Compute coupled precipitation–snow-soil–runoff water balance using a conceptual reservoir model.
 
-def h_model(snow_acc, snow_melt, PET, precipitation, temperature, alpha, initial_w_storage, w_storage_cap,
-            w_residence_time):
-    # initial_w_storage = S0, w_storage_cap = Scap, w_residence_time = k
+    This function integrates precipitation, snow accumulation, and snow melt with a soil water balance
+    model composed of one or multiple linear reservoirs. The model is evaluated sequentially in time,
+    enforcing mass conservation at each time step.
 
-    #  initialization
+    At each time step, liquid water input to the soil system is computed as:
+        w_in = precipitation - snow_acc + snow_melt
+
+    The soil water balance is then solved using either a single-reservoir or
+    multi-reservoir formulation, depending on the number of reservoirs specified.
+
+    Args:
+        snow_acc (np.ndarray): Snow accumulation per time step [mm / time step], shape (n_time,).
+        snow_melt (np.ndarray): Snowmelt per time step [mm / time step], shape (n_time,).
+
+        temperature (np.ndarray): Air temperature time series [°C], shape (n_time,).
+        precipitation (np.ndarray): Total precipitation time series [mm / time step], shape (n_time,).
+
+        PET (np.ndarray): Potential evapotranspiration time series [mm / time step], shape (n_time,).
+
+        alpha (float): Shape parameter controlling the nonlinear relationship
+        between soil moisture and actual evapotranspiration [-].
+
+        initial_w_storage (np.ndarray): Initial water storage in each reservoir
+        at the beginning of the simulation [mm], shape (n_reservoir,).
+
+        w_storage_cap (np.ndarray): Maximum storage capacity of each reservoir [mm], shape (n_reservoir,).
+
+        w_residence_time (np.ndarray): Mean residence time of water in each
+        reservoir under saturated conditions [time step], shape (n_reservoir,).
+
+    Returns:
+        AET (np.ndarray): Actual evapotranspiration time series [mm / time step], shape (n_time,).
+
+        Qss (np.ndarray): Subsurface (baseflow) discharge time series [mm / time step], shape (n_time,).
+
+        Qs (np.ndarray): Surface runoff (overland flow) time series [mm / time step], shape (n_time,).
+
+        Q (np.ndarray): Total discharge time series (Qs + Qss) [mm / time step], shape (n_time,).
+
+        w_storage (np.ndarray): Water storage in each reservoir at each time step [mm], shape (n_time, n_reservoir).
+
+    Notes:
+        - The model is evaluated sequentially in time and depends on previous reservoir states.
+        - Evapotranspiration, subsurface flow, and surface runoff are computed
+          following a priority-based order within each time step.
+        - Strict water mass conservation is enforced inside the reservoir solver.
+        - All output arrays are newly allocated; input arrays are not modified in place.
+    """
+
+
+    # initialization
     num_data = len(snow_acc)
-    num_reservoir = len(w_storage_cap)
+    num_reservoir = int(len(w_storage_cap))
+    # define the loop function in time domain
     if num_reservoir == 1:
-        h_func = single_reservoir
+        h_loop_func = single_reservoir
     else:
-        h_func = multiple_reservoir
+        h_loop_func = multiple_reservoir
 
-    # convert to numpy array
-    Q = np.zeros(num_data)  # dischagre
-    Qs = np.zeros(num_data)  # discharge from overland (surface) flow
+    # prepare the container
+    AET = np.zeros(num_data)  # actural et
     Qss = np.zeros(num_data)  # discharge from subsurface flow
-    AET = np.zeros(num_data)  # Actural et
+    Qs = np.zeros(num_data)  # discharge from overland (surface) flow
+    Q = np.zeros(num_data)  # total dischagre
+    # water storage in reservoir,
+    # row prepresent time, from column_0 to column_n represent reservoir from top to bottom
+    w_storage = np.zeros((num_data, num_reservoir))
 
-    # water store in soli, each column represents one reservoir (from bottom to top)
-    Vw = np.zeros((num_data, num_reservoir))
-    # initial condition
-    for i in range(num_reservoir):
+    # start the loop
+    current_storage = initial_w_storage  # define the water storage in time t_i-1
+    for i in range(1, num_data):
+        # how much watere comes in
         w_in = precipitation[i] - snow_acc[i] + snow_melt[i]
 
-        AET_t, Qss_t, Qs_t, c_w_storage_updated = h_func(w_in, initial_w_storage, temperature[i],
-                                                         PET[i], alpha,
-                                                         w_storage_cap, w_residence_time)
-        initial_w_storage = c_w_storage_updated
-        Qs[i] = Qs_t
-        Qss[i] = Qss_t
+        # start the loop
+        AET_t, Qss_t, Qs_t, c_w_storage_updated = h_loop_func(w_in, temperature[i],
+                                                              PET[i], alpha,
+                                                              current_storage, w_storage_cap, w_residence_time)
+        # update the current_storage
+        current_storage = c_w_storage_updated
+        # assign the values
         AET[i] = AET_t
+        Qss[i] = Qss_t
+        Qs[i] = Qs_t
         Q[i] = Qs_t + Qss_t
-        Vw[i, :] = c_w_storage_updated
+        w_storage[i, :] = current_storage
 
-    # total system storage
-    Vw_tot = np.sum(Vw, axis=1)
+        #if w_in > 0:
+            #print(AET_t, Qss_t, Qs_t, ":", c_w_storage_updated)
 
-    data = {'Q': Q,  # dischagre [mm]
-            'Qs': Qs,  # discharge from overland (surface) flow [mm]
-            'Qss': Qss,  # discharge from subsurface flow (outflow from last bucket in the cascasde) [mm]
-            'Vw': Vw_tot,  # state of total water storage in solis [mm]
-            'AET': AET,  # Actual ET [mm]
-            }
-
-    # single bucket storage
-    i = 0
-    for col in Vw.T:
-        name = 'Vw%i' % i
-        data[name] = col
-        i += 1
-
-    hyd = pd.DataFrame(data=data)
-
-    return hyd
+    return AET, Qss, Qs, Q, w_storage
 
 
-# Lumped Hydrological Model Results
-def lump_h_model(HYM, num_HRU, shares, log_print):
-    # create an empty df with the same column and index name as hydro
-    hydro = pd.DataFrame(columns=HYM[0].columns, index=HYM[0].index)
+# Area-weighted aggregation for hydrological modelled results
+def area_weight_aggregate(hydro_container, weights):
+    """
+    Aggregate hydrological variables across two HRUs using area-weighted averaging.
 
-    for column in hydro.columns:
+    This function aggregates all hydrological variables in an xarray Dataset across
+    the HRU dimension using predefined area weights.
 
-        try:
-            lumped = []
-            for HRU_id in range(num_HRU):
-                # sum the different HRU part based on the shares values
-                temp = np.array(HYM[HRU_id][column], dtype=float) * shares[HRU_id]  # return as
-                lumped.append(temp)
+    All variables except "w_storage" are reduced to a single area-weighted value,
+    while "w_storage" is preserved with its original HRU dimension.
 
-            lumped = np.array(lumped)
-            hydro[column] = np.sum(lumped, axis=0)
+    This implementation assumes exactly 2 HRUs and will not work correctly for a different number of HRUs.
 
-        except KeyError as e:
-            # careful the classic Python gotcha, e != 'Vw1'
-            if e.args[0] == 'Vw1':
-                # the model do not have 'Vw1' wh HRU=1
-                # ingore this
-                pass
-            else:
-                print(e)
+    Args:
+        hydro_container (xr.Dataset): Dataset containing hydrological variables for each HRU.
+        all variables are expected to have an "HRU_id" dimension, except "w_storage",
+        which additionally contains a "reservoir_id" dimension.
 
-        # check the column contains string "Vw" or not
-        if "Vw" in column:
-            # contain something like, "Vw", 'Vw0', 'Vw1'
-            if column == "Vw":
-                # only keep the column 'Vw'
-                pass
-            else:
-                # drop the column like 'Vw0', 'Vw1'
-                hydro.drop(columns=[column], inplace=True)  # drop
-        else:
-            # Do not contain
-            pass  # keep
+        weights (array-like of float): Area weights for HRU aggregation.
+            Must contain exactly two elements:
+                - weights[0]: Area fraction of HRU_id = 0
+                - weights[1]: Area fraction of HRU_id = 1
+            Weights should sum to 1.0.
 
-    return hydro
+    Returns:
+        xr.Dataset: Aggregated hydrological dataset where:
+        - All variables except "w_storage" are area-weighted across HRUs and no longer vary by HRU.
+        - "w_storage" is preserved without aggregation and retains the "HRU_id" dimension.
+
+    Notes:
+        - The function assumes the HRU dimension is named "HRU_id".
+        - No validation is performed to check the length or sum of "weights".
+        - Input dataset variables are not modified in place.
+    """
 
 
-HRU_id = 0
-snow_melt_r, T_theta_a, T_theta_m = 0.08, 0.5, 0.6
-snow_albedo, soil_albedo = [0.4, 0.65], [0.15, 0.25]
+    # weights[0] for bedrock, weights[1] for foret
 
-# the temperature, precipitation are from climate_forcing (xarray.Dataset)
-temperature = climate_forcing.temperature.values  # unit by degree per delta_t
-precipitation = climate_forcing.precipitation.values  # unit by mm per delta_t
+    # except "w_storage", all other varilables will be aggregated
+    vars_to_aggregat = []
+    for var in hydro_container.data_vars:
+        if var != 'w_storage':
+            vars_to_aggregat.append(var)
 
-modelled_SWE, delta_depth, snow_acc, snow_melt, albedo = snow_water_equivalent(temperature, precipitation, snow_melt_r,
-                                                                               T_theta_a, T_theta_m,
-                                                                               snow_albedo[HRU_id], soil_albedo[HRU_id])
+    aggregated_data = {}
+    for var in vars_to_aggregat:
+        # weighted sum across HRU_id dimension
+        aggregated_data[var] = (
+                hydro_container[var].isel(HRU_id=0) * weights[0] +
+                hydro_container[var].isel(HRU_id=1) * weights[1]
+        )
 
-# update the xarray.Dataset
-hydro_output["modelled_SWE"][:, HRU_id] = modelled_SWE
-hydro_output["delta_depth"][:, HRU_id] = delta_depth
-hydro_output["snow_acc"][:, HRU_id] = snow_acc
-hydro_output["snow_melt"][:, HRU_id] = snow_melt
-hydro_output["albedo"][:, HRU_id] = albedo
+    # Keep w_storage as is (with HRU_id dimension)
+    aggregated_data['w_storage'] = hydro_container['w_storage']
 
-cloud_cover_r, elevation, U = 1, 1600.0, 0.8
+    # Create new dataset
+    hydro_output = xr.Dataset(
+        data_vars=aggregated_data,
+        coords={
+            'time': hydro_container.coords['time'],
+            'time_str': hydro_container.coords['time_str'],
+            'reservoir_id': hydro_container.coords['reservoir_id'],
+            'HRU_id': hydro_container.coords['HRU_id'],  # Keep for w_storage
+        },
+        attrs=hydro_container.attrs
+    )
 
-# the temperature, precipitation are from climate_forcing (xarray.Dataset)
-temperature = climate_forcing.temperature.values  # unit by degree per delta_t
-sun_radiation = climate_forcing.sun_radiation.values  # unit by mm per delta_t
-albedo = hydro_output.albedo[:, HRU_id].values
-sps_temperature = climate_forcing.attrs["resolution"]
-PET = potential_et(temperature, sun_radiation, albedo, sps_temperature, cloud_cover_r, elevation, U)
-hydro_output["PET"][:, HRU_id] = PET
-hydro_output["PET"].sel(HRU_id=1,
-                        time=slice(float(UTCDateTime("2004-03-13T11:00:00")),
-                                   float(UTCDateTime("2004-03-14T11:00:00")))
-                        )
-
-# one reservoir
-alpha, initial_w_storage, w_storage_cap, w_residence_time = 20.0, [0], [4], [23]
-hyd = h_model(snow_acc, snow_melt, PET, precipitation, temperature,
-              alpha, initial_w_storage, w_storage_cap, w_residence_time)
-
-# multiple reservoir
-alpha, initial_w_storage, w_storage_cap, w_residence_time = 20.0, [0, 0], [72, 27], [94, 235]
-hyd = h_model(snow_acc, snow_melt, PET, precipitation, temperature,
-              alpha, initial_w_storage, w_storage_cap, w_residence_time)
+    return hydro_output

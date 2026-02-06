@@ -47,8 +47,8 @@ def get_dfs(q, s, mindf, smax_nodf, idx):
     # if there are consecutive values, add them
     dfsnew = dfs.copy()
     for i in range(len(dt) - 1, 0, -1):
-        if dt[i] == pd.to_timedelta(
-                '1 hour'):  # this should mean, that when using daily data, the values are not added
+        # this should mean, that when using daily data, the values are not added
+        if dt[i] == pd.to_timedelta('1 hour'):
             dfsnew[i - 1] = dfsnew[i - 1] + dfsnew[i]  # add to the previous hour
             dfsnew[i] = 0
     idxdfs = idxdfs[dfsnew > 0]
@@ -62,76 +62,23 @@ def get_dfs(q, s, mindf, smax_nodf, idx):
     return dfs, conc
 
 # sediment transfer model
-def trans_model(large_ls_t, small_ls_t, hyd, Q_theta, s_max, d_h, hs_theta, area, method, ls_trigger,
-                rainfall_triggered_ls_theta, initial_hs_storage=0, initial_ch_storage=0,
+def trans_model(large_ls_t, small_ls_t,
+                Qs, modelled_SWE,
+                hyd, Q_theta, s_max, d_h, hs_theta, area, method, ls_trigger,
+
+                rainfall_triggered_ls_theta,
+                initial_hs_storage=0, initial_ch_storage=0,
+                b, mindf, smax_nodf,
                 **kwargs):
-    '''
-    Sediment cascade from hillslope to channel to outlet.
-    Note: inactive storage not considered yet, but it's not really needed...
+    # min_df_v -> mindf, b (Shape parameter for bedload transport) -> scaling_b, smax_nodf ->max_s_c
+    q = Qs.copy()
+    snow = modelled_SWE.copy()
 
-    Args:
-        large_ls_t : time series of sum of large landslides
-        small_ls_t : time series of sum of small landslides
-        hydro : discharge from hydro model [mm]
-        Q_theta : critical discharge for triggering of debris flow [mm/t?]
-        s_max : maximim potential volumetric ration of sediment (with density of bedrock) to water in the flow
-        d_h : redopsition rate from hillslope to channel [-]
-        hs_theta : hillslope storage capacity [mm]
-        area : catchment area [km2]
-        method : method for sediment transport, ['lin' 'exp']
-        ls_trigger: landslide trigger mechiam
-        rainfall_triggered_ls_theta: Precipitation threshold for rainfall-landslides to be triggered
-        initial_hs_storage : initial hillslope storage [mm]
-        initial_ch_storage : initial channel storage [mm]
-
-        kwargs : depending on the method
-            if method is 'lin' semdiment transport starts when a critical discharge is exceeded:
-                no additional inputs required (only Q_theta)
-            if method is 'exp' sediment transport is follows discharge in an exponential relationship:
-                (a : scaling parameter , determined automatically)
-                b : shape parameter
-            mindf : if given, sediment output will also be given in terms of debris flows [mm]
-            smax_nodf : max sediement concentration for sub-critical flow conditions
-
-    Returns:
-        sed : data frame containing...
-    sh : hillslope storage time series [mm]
-    sc : channel storage time series [mm]
-    so : catchment sediment output time series [mm]
-    sopot : potential sediment output based on discharge [mm]
-    dfs : debris flows, sediment output above minimum threshold and concentration of debris flows[mm]
-    conc : sediment concentration in flow [-]
-    '''
-
-    q = hyd.Qs.copy()
-    snow = hyd.snow_depth.copy()
-
-    # check if given kwargs are valid
-    valid_kwargs = ['b', 'mindf', 'smax_nodf']
-    for key in kwargs.keys():
-        if not key in valid_kwargs:
-            raise AttributeError('%s is not a valid property.' % key)
-
-    # check if required arguments are povided, else raise error
-    if method == 'exp':
-        if not ('a' and 'b' and 'smax_nodf' and 'mindf') in kwargs.keys():
-            raise AttributeError('for method "exp" keyword arguments a and b must be provided.')
-
-    # unpack kwargs
-    def unpack_kwargs(kwargs, key):
-        try:
-            var = kwargs[key]
-        except KeyError:
-            var = np.nan
-        return var
-
-    b = unpack_kwargs(kwargs, 'b') # Shape parameter for bedload transport
-    mindf = unpack_kwargs(kwargs, 'mindf')
-    smax_nodf = unpack_kwargs(kwargs, 'smax_nodf')
 
     # determine 'a' and 'Qmin_nondf'
     # this is based on two facts
-    # 1) the sediment concentration for sub-critical bedload transport cannot exceed the concentration given by smax_nodf
+    # 1) the sediment concentration for sub-critical bedload transport
+    # cannot exceed the concentration given by smax_nodf
     # 2) the volume of the sediment transported cannot exceed the minimal debris-flow solid volume
     if method == 'exp':
         Qmin_nodf = Q_theta - (mindf * (1 - smax_nodf) / (smax_nodf * Q_theta)) ** (1 / (1 - b))
@@ -154,7 +101,7 @@ def trans_model(large_ls_t, small_ls_t, hyd, Q_theta, s_max, d_h, hs_theta, area
     else:
         raise AttributeError('Your input index must be of type "timedelta" or "datetime"')
 
-    if (ls_trigger == 'thermal') or (ls_trigger == 'random'):
+    if ls_trigger in ['thermal', 'random']:
         # the ls is daily SPS now
         ls = large_ls_t.mag.copy() + small_ls_t.mag.copy()
 
@@ -169,42 +116,6 @@ def trans_model(large_ls_t, small_ls_t, hyd, Q_theta, s_max, d_h, hs_theta, area
             cond1 = ls.index.astype('timedelta64[h]').astype('int64') % 12 == 0
             cond2 = ls.index.astype('timedelta64[h]').astype('int64') / 12 % 2 == 1
             ls[~(cond1 & cond2)] = 0
-
-    elif ls_trigger == 'rainfall':
-        ### NOT SURE THIS IS GENERIC FOR ALL TEMPORAL RESOLUTIONS AND DATA TYPES
-        Prc = hyd.Pr.groupby(pd.Grouper(freq='24h')).cumsum()  # daily cumsum
-        Prc[Prc <= rainfall_triggered_ls_theta] = np.nan  # set all smaller than the triggering threshold to nan
-
-        daily_min = Prc.groupby(pd.Grouper(freq='24h')).min()  # this is the minimum of each day
-        daily_min.index = dates
-        daily_min = daily_min.resample(freq).pad()  # assign min for every modeling time step
-
-        diff = Prc - daily_min
-        cond1 = diff == 0  # where the difference to the min is 0, is the first time the precipitation exceeds the triggering threshold on that day
-        dfcond = pd.DataFrame(data=cond1)
-        dfcond.columns = ['cond1']
-        dfcond['cond2'] = np.nan
-        dfcond['cond2'][1:] = dfcond.cond1[:-1]
-        dfcond.cond2.iloc[0] = False
-        cond1 = dfcond.cond1.values
-        cond2 = dfcond.cond2.values
-
-        large_ls_t.index = dates
-        large_ls_t = large_ls_t.resample(freq).pad()
-        large_ls_t[~cond1] = 0  # where the difference is not 0
-        large_ls_t[cond2] = 0  # where the the difference is 0, but the previous one is already tagged
-
-        small_ls_t.index = dates
-        small_ls_t = small_ls_t.resample(freq).pad()
-        if 'datetime' in str(small_ls_t.index.dtype):
-            cond = small_ls_t.index.time == pd.to_datetime('12:00').time()  # hillslope failure always happen at noon
-            small_ls_t[~cond] = 0  # set the other hours to 0
-        elif 'timedelta' in str(small_ls_t.index.dtype):
-            cond1 = small_ls_t.index.astype('timedelta64[h]').astype('int64') % 12 == 0
-            cond2 = small_ls_t.index.astype('timedelta64[h]').astype('int64') / 12 % 2 == 1
-            small_ls_t[~(cond1 & cond2)] = 0
-
-        ls = large_ls_t.mag.copy() + small_ls_t.mag.copy()
 
     # test if too long
     i = np.argwhere(ls.index == q.index[-1])[0][0]
@@ -221,7 +132,10 @@ def trans_model(large_ls_t, small_ls_t, hyd, Q_theta, s_max, d_h, hs_theta, area
 
     # initialize
     num_t = len(q)  # length of time series
-    sh, sc, so, sopot = np.zeros(num_t), np.zeros(num_t), np.zeros(num_t), np.zeros(num_t)  # initialize output arrays
+    sh = np.zeros(num_t) # hillslope_storage
+    sc = np.zeros(num_t) # channel_storage
+    so = np.zeros(num_t) # catchment sediment output
+    sopot = np.zeros(num_t) # potential sediment output based on discharge
 
     # initial conditions
     sh[0] = initial_hs_storage
@@ -310,3 +224,4 @@ def trans_model(large_ls_t, small_ls_t, hyd, Q_theta, s_max, d_h, hs_theta, area
     sed = pd.DataFrame(data=data, index=idx)
 
     return sed
+

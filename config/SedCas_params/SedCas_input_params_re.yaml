@@ -8,40 +8,15 @@
 #    - 0.2
 #    - [abc, 0.2]
 
-# for 10 minutes model
 
 # Model input params
 model_input:
   delta_t:
     name: time_resolution
-    value: 0.16666666666666666 # 10 minutes -> 1/6 = 0.16666666666666666 hour, 1 hour -> 1
+    value: 3600 # 10 minutes -> 1/6 = 0.16666666666666666 hour, 1 hour -> 1
     attrs:
-      unit: hour
+      unit: second
       description: Input climate forcing time resolution
-      calibrate: No
-
-  in_prec:
-    name: precipitation
-    value: 1.0
-    attrs:
-      unit: mm / <time_resolution> (millimeters per <time_resolution>)
-      description: Input climate forcing
-      calibrate: No
-
-  in_temp:
-    name: temperature
-    value: 0.0
-    attrs:
-      unit: °C
-      description: Input climate forcing
-      calibrate: No
-
-  in_sun:
-    name: Sun Radiation
-    value: 0.0
-    attrs:
-      unit: °C
-      description: W per m^2 (watts per square meter)
       calibrate: No
 
   num_iteration:
@@ -58,8 +33,8 @@ model_config:
   HRUs:
     name: hru
     value:
-      - forest
       - bedrock
+      - forest
     attrs:
       unit: None
       description: Hydrological response units (HRU)
@@ -74,15 +49,21 @@ model_config:
       calibrate: No
 
   # the origional name is: shares
-  ratio_HRU: # Relative share of HRUs to total area
+  area_ratio_HRU: # Relative share of HRUs to total area
     name: ratio_hru
-    value: # as List
-      - 0.56 # for forest
-      - 0.44 # for bedrok
+    value: [0.44, 0.56] # for [bedrok, forest]
     attrs:
       unit: ratio
       description: Relative ratio of HRUs to total area
       calibrate: Yes, by remote sensing or DEM data
+
+  num_reservoir:
+    name: num_reservoir
+    value: 3
+    attrs:
+      unit: None
+      description: Number of reservoirs in HRU, 1 in bedrock HRU (id=0), 2 in forest HRU (top id=1, bottom id=2)
+      calibrate: No
 
   # the original name is: Ele
   c_elevation:
@@ -139,7 +120,7 @@ model_config:
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
   # shcap
-  epsilon_h:
+  hillslope_storage_cap:
     name: hillslope_storage_cap
     value: 750000.0
     attrs:
@@ -148,12 +129,22 @@ model_config:
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
   # (2) Hydrological params
+  initial_w_storage:
+    name: initial_w_storage
+    value:
+      - [100] # for the bedrock
+      - [100, 100] # for the forest
+    attrs:
+      unit: mm
+      description: initial water storage in each reservoir
+      calibrate: No
+
   # Vwcaps
   w_storage_cap:
     name: water_storage_cap
     value:
-      - [72, 27] # for the forest
       - [4] # for the bedrock
+      - [72, 27] # for the forest
     attrs:
       unit: mm
       description: Water storage capacities of HRUs
@@ -163,8 +154,8 @@ model_config:
   w_residence_time:
     name: water_residence_time
     value:
-      - [94, 235] # for the forest
       - [23] # for the bedrock
+      - [94, 235] # for the forest
     attrs:
       unit: h or minutes
       description: Mean residence time in saturated condition
@@ -173,8 +164,8 @@ model_config:
 
   # (3) Climate forcing params
   # the original name is: Tsa
-  snow_acc:
-    name: snow_acc
+  snow_acc_theta:
+    name: snow_acc_theta
     value: 0.6
     attrs:
       unit: °C
@@ -182,8 +173,8 @@ model_config:
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
   # the original name is: Tsm
-  snow_melt:
-    name: snow_melt
+  snow_melt_theta:
+    name: snow_melt_theta
     value: 0.5
     attrs:
       unit: °C
@@ -203,8 +194,8 @@ model_config:
   snow_albedo_y:
     name: with_snow_albedo
     value:
-      - 0.4 # for forest
       - 0.65 # for bedrock
+      - 0.40 # for forest
     attrs:
       unit: None
       description: Albedo for HRUs when covered with snow
@@ -214,8 +205,8 @@ model_config:
   snow_albedo_n:
     name: without_snow_albedo
     value:
-      - 0.15 # for forest
       - 0.25 # for bedrock
+      - 0.15 # for forest
     attrs:
       unit: None
       description: Albedo for HRUs when NOT covered with snow

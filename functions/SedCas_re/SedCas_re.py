@@ -41,14 +41,14 @@ sys.path.append(str(project_root))
 # import the custom functions
 from functions.toolkit.log_infor import log_print
 
-from functions.SedCas.model_config import ModelConfig
-from functions.SedCas import hydro_model as SedCas_h_model
-from functions.SedCas import sediment_model as SedCas_s_model
-from functions.SedCas import transport_model as SedCas_t_model
+from functions.SedCas_re.model_config import ModelConfig
+from functions.SedCas_re import hydro_model as SedCas_h_model
+from functions.SedCas_re import sediment_model as SedCas_s_model
+from functions.SedCas_re import transport_model as SedCas_t_model
 
 from functions.download_MeteoSwiss.fetch_data import fetch_data4SedCas
 
-class SedCas_new():
+class SedCas():
 
     def __init__(self, project_root, model_input_params="default"):
 
@@ -68,78 +68,153 @@ class SedCas_new():
         # self.cfg.print_config_params(check_params="all") # for all params
         # self.cfg.print_config_params(check_params="in_prec") # for "in_prec" param
 
+        self.climate_forcing = None
+
+    # for model input
+    def load_climate_input(self, data_type):
+
+        data = pd.read_csv(f"/Users/qizhou/#python/stTwin/data/SedCas_input/climate_2004_2017_h.txt", header=0)
+
+        time_float = [UTCDateTime(i).timestamp for i in data.iloc[:, 1]]
+        time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 1]]
+
+        # Extract variables
+        precipitation = data.iloc[:, 2].values
+        temperature = data.iloc[:, 3].values
+        sun_radiation = data.iloc[:, 4].values
+
+        data_source = "MeteoSwiss"
+        station = data.iloc[0, 0]  # station name
+        resolution = time_float[1] - time_float[0]  # unit is second
+        time_now = UTCDateTime().isoformat()
+
+
+        climate_forcing = xr.Dataset(
+            coords={
+                "time": ("time", np.array(time_float)),  # numeric UTC+0 time
+                "time_str": ("time", np.array(time_str)),  # string UTC+0 time
+            },
+            data_vars={
+                "precipitation": ("time", precipitation,
+                                  {"units": f"mm per {resolution} s", "description": "Total precipitation"}),
+
+                "temperature": ("time", temperature,
+                                {"units": f"°C per {resolution} s", "description": "Air temperature"}),
+
+                "sun_radiation": ("time", sun_radiation,
+                                  {"units": "W/m^2", "description": "Incoming solar radiation"})
+            },
+            attrs={
+                "data_source": data_source,
+                "station": station,
+                "resolution": resolution,
+                "resolution_unit": f"seconds",
+                "create_time": time_now
+            }
+        )
+
+        self.climate_forcing = climate_forcing
+        return climate_forcing
+
     # for model output
+    def _load_climate_meta(self):
 
-    def _create_time_label(self):
+        time_float = self.climate_forcing.time.values # note: values with s
+        time_str = self.climate_forcing.time_str.values
+        num_data = len(time_str)
+        num_HRU = self.cfg.num_HRU.value  # note: value without s
 
-        # length of time series
-        num_data = len(self.cfg.in_prec.value)
+        resolution = time_float[1] - time_float[0]
 
-        # set time stamps, if self.prec.index is UTC+0, then the following is UTC+0
-        time = self.cfg.in_prec.value.index.to_numpy(dtype="datetime64[ns]")
-        time_str = self.cfg.in_prec.value.index.strftime("%Y-%m-%dT%H:%M:%S")
+        data_source = self.climate_forcing.attrs["data_source"]
+        station = self.climate_forcing.attrs["station"]
 
-        return num_data, time_str, time
+        time_now = UTCDateTime().isoformat()
+
+        return time_float, time_str, num_data, num_HRU, resolution, data_source, station, time_now
 
     def _create_hydro_dataset(self):
 
-        num_data, time_str, time = self._create_time_label()
+        temp = self._load_climate_meta()
+        time_float, time_str, num_data, num_HRU, resolution, data_source, station, time_now = temp
 
-        # sed_container by shape(number of time series, number of simulations)
+        num_reservoir = self.cfg.num_reservoir.value
+        # hydro_output by dimenssion time, HRU_id
         hydro_container = xr.Dataset(
-            coords={"time": time,
-                    "time_str": ("time", time_str)
-                    },
-
+            coords={
+                "time": ("time", np.array(time_float)),  # numeric UTC+0 time
+                "time_str": ("time", np.array(time_str)),  # string UTC+0 time
+                "HRU_id": np.arange(num_HRU),
+                # 1 in bedrock HRU (id=0), 2 in forest HRU (top id=1, bottom id=2)
+                "reservoir_id": np.arange(num_reservoir),
+            },
             data_vars={
-                # discharge [mm]
-                "discharge": ("time", np.zeros(num_data),
-                              {"units": "mm", "full name": "Total discharge"}),
+                # (1) snow_water_equivalent
+                # snow depth SWE
+                "modelled_SWE": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
+                                 {"units": f"mm per {resolution} s",
+                                  "description": "Modelled snow-water-equivalent depth"}),
 
-                # discharge from overland flow [mm]
-                "discharge_surface": ("time", np.zeros(num_data),
-                                      {"units": "mm", "full name": "Discharge from overland flow"}),
+                # Snow pack changes
+                "delta_depth": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
+                                {"units": f"mm per {resolution} s", "description": "Snow pack changes"}),
 
-                # discharge from subsurface flow (outflow from last bucket in the cascasde) [mm]
-                "discharge_sub_surface": ("time",np.zeros(num_data),
-                                          {"units": "mm", "full name": "Discharge from subsurface flow"}),
+                # snow accumulation
+                "snow_acc": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
+                             {"units": f"mm per {resolution} s", "description": "Snow accumulation"}),
+                # snow melt
+                "snow_melt": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
+                              {"units": f"mm per {resolution} s", "description": "Snow melting"}),
 
-                # state of soil water storage [mm]
-                "soil_water_storage": ("time", np.zeros(num_data),
-                                       {"units": "mm", "full name": "Soil water storage"}),
+                # albedo
+                "albedo": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
+                           {"units": "mm??",
+                            "description": "Snow (when covered with snow) or soil (when no more snow existing) albedo"}),
 
-                # snow depth SWE [mm]
-                "snow_depth": ("time", np.zeros(num_data),
-                               {"units": "mm", "full name": "Snow depth"}),
-
-                # snow accumulation [mm]
-                "snow_accumulation": ("time", np.zeros(num_data),
-                                      {"units": "mm", "full name": "Snow accumulation"}),
-
+                # (2)
                 # Potential evapotranspiration [mm]
-                "potential_ET": ("time", np.zeros(num_data),
-                                 {"units": "mm", "full name": "Potential evapotranspiration"}),
+                "PET": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
+                        {"units": "mm??", "description": "Potential evapotranspiration"}),
 
                 # Actual evapotranspiration [mm]
-                "actual_ET": ("time", np.zeros(num_data),
-                              {"units": "mm", "full name": "Actual evapotranspiration"}),
+                "AET": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
+                        {"units": "mm??", "description": "Actual evapotranspiration"}),
 
-                # precipitation [mm]
-                "precipitation": ("time", np.zeros(num_data),
-                                  {"units": "mm", "full name": "Precipitation"}),
+                # (3)
+                # discharge from subsurface flow (outflow from last bucket in the cascasde) [mm]
+                "Qss": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
+                        {"units": "mm??", "description": "Discharge from subsurface flow"}),
 
-                # temperature [degree C]
-                "temperature": ("time", np.zeros(num_data),
-                                {"units": "degree C", "full name": "Temperature"})
+                # discharge from overland flow
+                "Qs": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
+                       {"units": "mm??", "description": "Discharge from overland (surface) flow"}),
+
+                # discharge
+                "Q": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
+                      {"units": "mm??", "description": "Total discharge"}),
+
+                # water stored in reservoir 0 (top), reservoir 1 (after-top), w_storage_n (bottom)
+                "w_storage": (("time", "HRU_id", "reservoir_id"), np.zeros((num_data, num_HRU, num_reservoir)),
+                                  {"units": "mm??", "description": "Total water stored in each reservoir",
+                                   "reservoir_id=0": "top reservoir in bedrock HRU",
+                                   "reservoir_id=1": "top reservoir in forest HRU ",
+                                   "reservoir_id=2": "bottom reservoi in forest HRU"}),
+
+
+            },
+            attrs={
+                "resolution": resolution,
+                "resolution_unit": f"seconds",
+                "create_time": time_now
             }
-
         )
 
         return hydro_container
 
     def _create_sed_dataset(self, num_iteration=None):
 
-        num_data, time_str, time = self._create_time_label()
+        temp = self._load_climate_meta()
+        time_float, time_str, num_data, num_HRU, resolution, data_source, station, time_now = temp
 
         # sed_container by shape(number of time series, number of simulations)
         sed_container = xr.Dataset(
@@ -181,135 +256,81 @@ class SedCas_new():
         return sed_container
 
 
-    # for model input
-    def load_climate_input(self, data_type="default"):
-
-        if data_type == "default":
-            # use the default data from SedCas model
-            df = pd.read_csv(f"{self.model_input_dir}/climate.met", sep='\t')
-            df.D = pd.to_datetime(df.D)
-
-            # assign the parameters by column
-            df.index = df.D
-            self.cfg.in_prec.value = df.Pr
-            self.cfg.in_temp.value = df.Ta
-            self.cfg.in_sun.value = df.Rsw
-        elif data_type == "near-real-time":
-            df = fetch_data4SedCas(station="mve", time_resolution="10 minutes", time_period="Today")
-            resolution = "10 minutes"
-
-            # assign the parameters by column
-            df.index = df["timestamp [UTC+0]"]
-            self.cfg.in_prec.value = df[f"precipitation [mm per {resolution}]"]
-            self.cfg.in_temp.value = df["temperature [degree]"]
-            self.cfg.in_sun.value = df["sun radiation [W per squared m]"]
-        elif data_type == "2017-2025":
-            df = pd.read_csv(f"{self.model_input_dir}/climate_2017_2025.txt", sep=',', header=0)
-            resolution = "Hourly"
-
-            # assign the parameters by column
-            df.index = pd.to_datetime(df["timestamp [UTC+0]"])
-            self.cfg.in_prec.value = df[f"precipitation [mm per {resolution}]"]
-            self.cfg.in_temp.value = df["temperature [degree]"]
-            self.cfg.in_sun.value = df["sun radiation [W per squared m]"]
-        else:
-            try:
-                df = pd.read_csv(f"{self.model_input_dir}/climate_{data_type}.txt", sep=',', header=0)
-                if data_type == "2004_2017_h":
-                    resolution = "Hourly"
-                else:
-                    resolution = "10 minutes"
-
-                # assign the parameters by column
-                df.index = pd.to_datetime(df["timestamp [UTC+0]"])
-                self.cfg.in_prec.value = df[f"precipitation [mm per {resolution}]"]
-                self.cfg.in_temp.value = df["temperature [degree]"]
-                self.cfg.in_sun.value = df["sun radiation [W per squared m]"]
-            except FileNotFoundError:
-                print("Error! Please check the <data_type>.")
-
-        print(f"input data (climate.met) shape: {df.shape}")
-
-        return df
-
-
     # for single model componment
     def run_hydro(self):
 
-        # running the individual HRUs
-        SWE = []  # snow water equivalent
-        PET = []  # potential evapotranspiration
-        HYM = []  # hydrological model output
+        self.hydro_container = self._create_hydro_dataset()
+        # loop the individual HRUs
         for HRU_id in range(self.cfg.num_HRU.value):
-            s_w_e = SedCas_h_model.snow_water_equivalent(temperature=self.cfg.in_temp.value.copy(),
-                                                         precipitation=self.cfg.in_prec.value.copy(),
-                                                         melt_rate_f=self.cfg.snow_melt_r.value,
-                                                         T_theta_a=self.cfg.snow_acc.value,
-                                                         T_theta_m=self.cfg.snow_melt.value,
+
+            # <editor-fold desc="snow_water_equivalent">
+            s_w_e = SedCas_h_model.snow_water_equivalent(temperature=self.climate_forcing.temperature.values.copy(), # values with s
+                                                         precipitation=self.climate_forcing.precipitation.values.copy(),
+                                                         snow_melt_r=self.cfg.snow_melt_r.value, # value without s
+                                                         T_theta_a=self.cfg.snow_acc_theta.value,
+                                                         T_theta_m=self.cfg.snow_melt_theta.value,
                                                          snow_albedo=self.cfg.snow_albedo_y.value[HRU_id],
-                                                         soil_albedo=self.cfg.snow_albedo_n.value[HRU_id])
-            SWE.append(s_w_e)
-            # print("s_w_e", s_w_e.columns, s_w_e.shape)
+                                                         soil_albedo=self.cfg.snow_albedo_n.value[HRU_id]
+                                                         )
 
-            p_e_t = SedCas_h_model.cal_actual_evap(temperature=self.cfg.in_temp.value.copy(),
-                                                   sps_temperature=self.cfg.delta_t.value,
-                                                   radiation=self.cfg.in_sun.value.copy(),
-                                                   cloud_cover_r=self.cfg.cloud_cover_r.value,
-                                                   albedo=s_w_e.albedo,
-                                                   elevation=self.cfg.c_elevation.value,
-                                                   U=self.cfg.r_humidity.value)
-            PET.append(p_e_t)
-            # print("p_e_t", p_e_t.shape)
+            modelled_SWE, delta_depth, snow_acc, snow_melt, albedo = s_w_e
+            # update the hydro_output
+            self.hydro_container["modelled_SWE"].loc[:, HRU_id].values = modelled_SWE
+            self.hydro_container["delta_depth"].loc[:, HRU_id].values = delta_depth
+            self.hydro_container["snow_acc"].loc[:, HRU_id].values = snow_acc
+            self.hydro_container["snow_melt"].loc[:, HRU_id].values = snow_melt
+            self.hydro_container["albedo"].loc[:, HRU_id].values = albedo
+            # </editor-fold>
 
-            h = SedCas_h_model.h_model(snow=s_w_e,
-                                       PET=p_e_t,
-                                       precipitation=self.cfg.in_prec.value.copy(),
-                                       temperature=self.cfg.in_temp.value.copy(),
-                                       alpha=self.cfg.et.value,
-                                       num_reservoir=len(self.cfg.epsilon_w.value[HRU_id]),
-                                       params={'k': self.cfg.delta_t_water.value[HRU_id],
-                                               'Scap': self.cfg.epsilon_w.value[HRU_id],
-                                               'S0': [0, 0]}
+            # <editor-fold desc="potential evapotranspiration">
+            p_e_t = SedCas_h_model.potential_et(temperature=self.climate_forcing.temperature.values.copy(),  # values with s
+                                                sun_radiation=self.climate_forcing.sun_radiation.values.copy(),
+                                                albedo=self.hydro_container["albedo"].loc[:, HRU_id].values.copy(),
+                                                sps_temperature=self.climate_forcing.attrs["resolution"],
+                                                cloud_cover_r=self.cfg.cloud_cover_r.value, # value without s
+                                                elevation=self.cfg.c_elevation.value,
+                                                relative_humidity=self.cfg.r_humidity.value
+                                                )
+
+            PET = p_e_t
+            # update the hydro_output
+            self.hydro_container["PET"].loc[:, HRU_id] = PET
+            # </editor-fold>
+
+            # <editor-fold desc="hydrological process">
+            h = SedCas_h_model.h_model(snow_acc=self.hydro_container["snow_acc"].loc[:, HRU_id].values.copy(), # values with s
+                                       snow_melt=self.hydro_container["snow_melt"].loc[:, HRU_id].values.copy(),
+                                       temperature=self.climate_forcing.temperature.values.copy(),
+                                       precipitation=self.climate_forcing.precipitation.values.copy(),
+                                       PET=self.hydro_container["PET"].loc[:, HRU_id].values,
+                                       alpha=self.cfg.et.value, # value without s
+                                       initial_w_storage=self.cfg.initial_w_storage.value[HRU_id],
+                                       w_storage_cap=self.cfg.w_storage_cap.value[HRU_id],
+                                       w_residence_time=self.cfg.w_residence_time.value[HRU_id]
                                        )
-            HYM.append(h)
-            # print("h", h.columns, h.shape)
+
+            AET, Qss, Qs, Q, w_storage = h
+            # update the hydro_output
+            self.hydro_container["AET"].loc[:, HRU_id] = AET
+            self.hydro_container["Qss"].loc[:, HRU_id] = Qss
+            self.hydro_container["Qs"].loc[:, HRU_id] = Qs
+            self.hydro_container["Q"].loc[:, HRU_id] = Q
+            # this will contain all reservoirs,
+            # row prepresent time, from column_0 to column_n represent reservoir from top to bottom
+            if HRU_id == 0:
+                idx = [0]
+            elif HRU_id == 1:
+                idx = [1, 2] # [top, bottom reservoir]
+            else:
+                print("error")
+                exit()
+
+            self.hydro_container["w_storage"].loc[:, HRU_id, idx] = w_storage
+            # </editor-fold>
 
         # lumped hydrology: area-weighted aggregation
-        hydro = SedCas_h_model.lump_h_model(HYM,
-                                            num_HRU=self.cfg.num_HRU.value,
-                                            shares=self.cfg.ratio_HRU.value,
-                                            log_print=None)
-
-        # update the attribute
-        self.hydro = hydro
-
-        hydro_container = self._create_hydro_dataset()
-        # <editor-fold desc="add the params to hydro_container">
-        # discharge [mm]
-        hydro_container["discharge"].values = hydro["Q"].values
-        # discharge from overland flow [mm]
-        hydro_container["discharge_surface"].values = hydro["Qs"].values
-        # discharge from subsurface flow (outflow from last bucket in the cascasde) [mm]
-        hydro_container["discharge_sub_surface"].values = hydro["Qss"].values
-        # state of soil water storage [mm]
-        hydro_container["soil_water_storage"].values = hydro["Vw"].values
-        # snow depth SWE [mm], already in input
-        hydro_container["snow_depth"].values = hydro["snow_depth"].values
-        # snow accumulation [mm]
-        hydro_container["snow_accumulation"].values = hydro["snowacc"].values
-        # Potential evapotranspiration [mm]
-        hydro_container["potential_ET"].values = hydro["PET"].values
-        # Actual evapotranspiration [mm]
-        hydro_container["actual_ET"].values = hydro["AET"].values
-        # precipitation [mm]
-        hydro_container["precipitation"].values = hydro["Pr"].values
-        # temperature [degree C]
-        hydro_container["temperature"].values = hydro["temperature"].values
-        # </editor-folder>
-
-        self.cfg.out_hydro_container.value = hydro_container
-
-        return hydro_container
+        self.hydro_output = SedCas_h_model.area_weight_aggregate(hydro_container=self.hydro_container,
+                                                                 weights=self.cfg.area_ratio_HRU.value)
 
     def run_sediment(self, seed_i, iteration, sed_container):
 

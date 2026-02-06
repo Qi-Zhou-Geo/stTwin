@@ -38,7 +38,7 @@ class ModelConfig:
     def __init__(self, model_input_params: str):
 
         if model_input_params == "default":
-            yaml_path = f"{project_root}/config/SedCas_params/SedCas_input_params_c.yaml"
+            yaml_path = f"{project_root}/config/SedCas_params/SedCas_input_params_re.yaml"
         else:
             yaml_path = model_input_params
 
