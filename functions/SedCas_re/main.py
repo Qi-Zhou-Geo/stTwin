@@ -30,8 +30,9 @@ from functions.toolkit.plotly_visualize import plotly_multi_time_series_xr
 from functions.toolkit.plotly_visualize import plotly_multi_time_series_shade_xr
 
 # initial the SedCas model
+model_params = "SedCas_input_params_1h.yaml"
 model = SedCas(project_root=project_root,
-               model_input_params=f"/Users/qizhou/#python/stTwin/config/SedCas_params/SedCas_input_params_re.yaml")
+               model_input_params=f"{project_root}/config/SedCas_params/{model_params}")
 
 # (2) load the climate forcing data
 data_type = "default"  # "2017-2025"
@@ -49,17 +50,17 @@ time_coord = "time_str"
 t1, t2 = "2005-01-01T00:00:00", "2018-01-01T00:00:00"
 mask = (model.climate_forcing.time_str >= t1) & (model.climate_forcing.time_str < t2)
 climate_forcing_2017 = model.climate_forcing.isel(time=mask)
-sss
 
 
 # climate forcing
-
 list_of_col_names = [(time_coord, "precipitation"), (time_coord, "temperature"), (time_coord, "sun_radiation")]
 fig = plotly_multi_time_series_xr(xr_dataset=climate_forcing_2017, list_of_col_names=list_of_col_names)
 fig.show()
 
 
 # hydro
+mask = (model.hydro_output.time_str >= t1) & (model.hydro_output.time_str < t2)
+hydro_output_2017 = model.hydro_output.isel(time=mask)
 
 # SWE
 list_of_col_names = [(time_coord, "modelled_SWE"), (time_coord, "delta_depth"),
@@ -93,14 +94,9 @@ fig = plotly_multi_time_series_xr(xr_dataset=sed_output_2017,
 fig.show()
 
 
-
-
-
-
 # sedmient
 mask = (model.sed_output.time_str >= t1) & (model.sed_output.time_str < t2)
 sed_output_2017 = model.sed_output.isel(time=mask)
-
 
 list_of_col_names = [(time_coord, "hillslope_storage_Q50"),
                      (time_coord, "channel_storage_Q50"),
@@ -108,10 +104,6 @@ list_of_col_names = [(time_coord, "hillslope_storage_Q50"),
 fig = plotly_multi_time_series_xr(xr_dataset=sed_output_2017,
                                   list_of_col_names=list_of_col_names)
 fig.show()
-
-
-
-
 
 
 # sed

@@ -469,7 +469,7 @@ class SedCas():
                                                          max_s_c=self.cfg.max_s_c.value,
                                                          bedload_param_b=self.cfg.bedload_param_b.value)
         Qbl, bedload_param_a = bl_params
-        print(Qbl, bedload_param_a)
+
         # desired_freq unit by minutes
         desired_freq = self.climate_forcing.attrs['resolution'] / 60  # divide 60 -> convert second to minute
         print(self.cfg.initial_hs_storage.value, self.cfg.initial_ch_storage.value)
