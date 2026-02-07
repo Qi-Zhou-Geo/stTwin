@@ -29,8 +29,8 @@ def randht(n, *varargin, seed='none'):
     *args:
         xmin : 
         Type : type of distribution as string
-            - PL : pwerlaw, reqires alpha
-            - PC : cutoff, requires alpha and Lambda (?)
+            - PL : pwerlaw, reqires ls_alpha_v
+            - PC : cutoff, requires ls_alpha_v and Lambda (?)
             - EX : exponential, requires Lambda
             - LN : log-normal, requires mu and sigma
             - ST : stretched, requires Lambda and beta
@@ -50,7 +50,7 @@ def randht(n, *varargin, seed='none'):
     # update variables
     #    v = {'Type': '',
     #         'xmin': 1,
-    #         'alpha': 2.5,
+    #         'ls_alpha_v': 2.5,
     #         'beta': 1,
     #         'Lambda': 1,
     #         'mu': 1,
@@ -72,7 +72,7 @@ def randht(n, *varargin, seed='none'):
 
     Type = ''
     xmin = 1
-    alpha = 2.5
+    ls_alpha_v = 2.5
     beta = 1
     Lambda = 1
     mu = 1
@@ -88,11 +88,11 @@ def randht(n, *varargin, seed='none'):
                 i = i + 1
             elif varargin[i] == 'powerlaw':
                 Type = 'PL'
-                alpha = varargin[i + 1]
+                ls_alpha_v = varargin[i + 1]
                 i = i + 1
             elif varargin[i] == 'cutoff':
                 Type = 'PC'
-                alpha = varargin[i + 1]
+                ls_alpha_v = varargin[i + 1]
                 Lambda = varargin[i + 2]
                 i = i + 2
             elif varargin[i] == 'exponential':
@@ -174,7 +174,7 @@ def randht(n, *varargin, seed='none'):
             ytemp = []
 
             for i in range(10 * n):
-                if random() < pow(y[i] / float(xmin), -alpha):
+                if random() < pow(y[i] / float(xmin), -ls_alpha_v):
                     ytemp.append(y[i])
 
             y = ytemp
@@ -204,7 +204,7 @@ def randht(n, *varargin, seed='none'):
         x = []
         for i in range(n):
             x.append(
-                xmin * pow(1. - random.random(), -1. / (alpha - 1.)))  # random.random() is uniform distribution [0,1]
+                xmin * pow(1. - random.random(), -1. / (ls_alpha_v - 1.)))  # random.random() is uniform distribution [0,1]
 
     return x
 
@@ -215,7 +215,7 @@ def generate_large_ls(ls_trigger,
                       temperature, prec, snow,
                       theta_sd, theta_prec, theta_sa,
                       theta_ls_freeze,
-                      min_ls_volume, alpha, cutoff,
+                      ls_min_v, ls_alpha_v, cutoff,
                       area=1e6,
                       seed=0,
                       max_attempts=1000):
@@ -231,7 +231,7 @@ def generate_large_ls(ls_trigger,
         theta_prec : threshold liquid precipitation for landslides to be triggered [mm]
         theta_sa : snow temperature accumulation threshold [°C]
         xmin :
-        alpha : power law scaling exponent in landslide distribution
+        ls_alpha_v : power law scaling exponent in landslide distribution
         cutoff :
         theta_ls_freeze :
         ls_trigger : Landslide triggering mechanism ['thermal', 'rainfall', 'random']
@@ -267,35 +267,6 @@ def generate_large_ls(ls_trigger,
 
         num_ls = np.sum(ls_days)  # number of big lansdslides, False -> 0, Ture -> 1
         large_ls = np.zeros(len(temperature_daily))
-
-    elif ls_trigger == 'rainfall':
-        Prl = prec.copy()
-        Prl[temperature <= theta_sa] = 0  # liquid precipitation
-
-        Prl_day = Prl.resample('24h').sum()  # daily sums
-        idx = Prl_day.index
-        ls_days = Prl_day > theta_prec
-
-        num_ls = len(ls_days[ls_days == True])
-
-        large_ls = np.zeros(len(Prl_day))
-
-    # this elif will introduce bugs
-    elif ls_trigger == 'random':
-        # N from thermal triggering
-        nt = len(temperature_daily)
-        dt = int(nt / N)  # mean (?) spacing between small landslides
-        dtexp = np.random.exponential(dt, N)
-        dtexp = np.ceil(dtexp)  # get full days, in this case max one per day
-        ids = np.cumsum(dtexp)
-        if max(ids) >= nt:
-            # if the days go beyond the time series length,
-            # rescale to length of time series // (t-2) to ensure max value after ceiling in next line as well
-            nids = ids / max(ids) * (nt - 2)
-            nids = np.ceil(nids)
-            ids = nids
-        ids = [int(i) for i in ids]
-        ls_days = ids
     else:
         print(f"Error! please check the ls_trigger={ls_trigger}")
 
@@ -303,7 +274,7 @@ def generate_large_ls(ls_trigger,
     # iteration is needed in order to avoid unreasonable large volumes, greater than "cutoff"
     for attempt in range(max_attempts):
         # mags is a list
-        mags = randht(num_ls, 'xmin', min_ls_volume, 'powerlaw', alpha, seed=seed)
+        mags = randht(num_ls, 'xmin', ls_min_v, 'powerlaw', ls_alpha_v, seed=seed)
         if max(mags) < cutoff:
             break
         seed = seed + 1e4
@@ -336,7 +307,7 @@ def generate_large_ls(ls_trigger,
     return large_ls
 
 
-def generate_small_ls(num_days, num_large_ls, min_ls_volume,
+def generate_small_ls(num_days, num_large_ls, ls_min_v,
                       area=1e6,
                       seed=0,
                       mu=3.36, sigma=1.18, ratio=3.36):
@@ -347,7 +318,7 @@ def generate_small_ls(num_days, num_large_ls, min_ls_volume,
     Args:
         num_days: length of time series, number of days as integer
         num_large_ls: number of large landslides, because the number of small landslides comes from a ratio
-        min_ls_volume: Minimum landslide volume from the power-law tail
+        ls_min_v: Minimum landslide volume from the power-law tail
         area: catchment area, unit by m^2
         seed: initilaize random state of the generator, defualt=None, else set a number
         mu: Mean of lognormal distribution
@@ -378,7 +349,7 @@ def generate_small_ls(num_days, num_large_ls, min_ls_volume,
     # generate small landslides
     # draw many from random distribution, should represent the theoretical distribution
     mags_theo = np.random.lognormal(mu, sigma, size=int(1e6))
-    mags_cond = mags_theo[mags_theo <= min_ls_volume]  # represents theoretical distribution but constrained by "min_ls_volume"
+    mags_cond = mags_theo[mags_theo <= ls_min_v]  # represents theoretical distribution but constrained by "ls_min_v"
     mags = np.random.choice(mags_cond, num_small_ls)  # n samples from constrained distribution
 
     # output

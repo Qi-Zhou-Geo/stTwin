@@ -53,7 +53,7 @@ class ModelConfig:
 
         # post-processing to get another two more model params
         # normalizing hillslope sediment storage by catchment area considering packing density
-        self.epsilon_h.value = self.epsilon_h.value * (self.rho_sediment.value / self.rho_bedrock.value) / self.c_area.value * 1e-3
+        self.hillslope_storage_cap.value = self.hillslope_storage_cap.value * (self.rho_sediment.value / self.rho_bedrock.value) / self.c_area.value * 1e-3
 
         # smallest possible sediment amount in debirs flow
         # NOTE: this is only a constraint for the model,

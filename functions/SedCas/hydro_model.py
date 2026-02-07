@@ -205,10 +205,13 @@ def h_model(snow, PET, precipitation, temperature, alpha, num_reservoir, params)
     num_data = len(snow)
 
     # convert to numpy array
-    snow_depth = np.array(snow.modelled_s_depth, dtype=float)
+    modelled_s_depth = np.array(snow.modelled_s_depth, dtype=float)
     dsdepth =  np.array(snow.delta_depth, dtype=float)
     snow_acc = np.array(snow.snow_acc, dtype=float)
     snow_melt = np.array(snow.snow_melt, dtype=float)
+    delta_depth = np.array(snow.delta_depth, dtype=float)
+    albedo = np.array(snow.albedo, dtype=float)
+
 
     PET = np.array(PET, dtype=float)
     precipitation = np.array(precipitation, dtype=float)
@@ -286,7 +289,7 @@ def h_model(snow, PET, precipitation, temperature, alpha, num_reservoir, params)
 
         # check for continuity of mass
         if Vw[i, 0] < 0:
-            print(f"attemp1: {i}")
+            #print(f"attemp1: {i}")
             d = abs(Vw[i, 0])
             Vw[i, 0] = Vw[i, 0] + AET[i]
             AET[i] = AET[i] - d
@@ -387,10 +390,13 @@ def h_model(snow, PET, precipitation, temperature, alpha, num_reservoir, params)
             'Qs': Qs, # discharge from overland (surface) flow [mm]
             'Qss': Qss, # discharge from subsurface flow (outflow from last bucket in the cascasde) [mm]
             'Vw': Vw_tot, # state of soil water storage [mm]
-            'snow_depth': snow_depth, # snow depth SWE [mm], already in input
+            'modelled_s_depth': modelled_s_depth, # snow depth SWE [mm], already in input
             'snowacc': dsdepth, # snow accumulation [mm]
+            'snow_melt': snow_melt, # snow melt [mm]
+            'delta_depth': delta_depth, # snow changes
             'PET': PET, # Potential ET [mm]
             'AET': AET, # Actual ET [mm]
+            'albedo': albedo, # snow or soil albedo
             'Pr': precipitation, # rainfall [mm]
             'temperature': temperature # [degree C]
             }

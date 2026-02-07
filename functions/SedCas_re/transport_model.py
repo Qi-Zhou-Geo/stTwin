@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-#__modification time__ = 2025-09-24
-#__author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
-#__find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
-#__note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
+# __modification time__ = 2025-09-24
+# __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
+# __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
+# __note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
 #           and is distributed under the terms of the GNU General Public License v3.0 (GPL-3.0).
 
 
@@ -16,11 +16,13 @@ import numpy as np
 
 # <editor-fold desc="add the sys.path to search for custom modules">
 from pathlib import Path
+
 current_dir = Path(__file__).resolve().parent
 # using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
 
 project_root = current_dir.parent.parent
 import sys
+
 sys.path.append(str(project_root))
 # </editor-fold>
 
@@ -30,7 +32,6 @@ from functions.SedCas.sediment_model import randht
 
 
 def get_dfs(q, s, mindf, smax_nodf, idx):
-
     q2 = q.copy()
     q2[q2 == 0] = np.nan
     conc = s / (s + q2)  # volumetric sediment concentration in flow
@@ -61,167 +62,227 @@ def get_dfs(q, s, mindf, smax_nodf, idx):
 
     return dfs, conc
 
+
+def sediment_transport_model(ls, h2s_r, Qs, modelled_SWE,
+                             initial_hs_storage, initial_ch_storage,
+                             hillslope_storage_cap,
+                             ls_min_v, ls_alpha_v, c_area,
+                             bedload_param_a, bedload_param_b, max_s2w,
+                             Qbl, Qdf):
+    ### (1) hillslope -> channel transfer
+    # (a) hillslope storage receives: ls * h2s_r,
+    #     where h2s_r is the fraction of landslide material temporarily retained on the hillslope
+    # (b) channel storage receives: ls * (1 - h2s_r)
+    hillslope_storage = initial_hs_storage + ls * h2s_r  # hillslope storage change
+    channel_storage = initial_ch_storage + ls * (1 - h2s_r)  # channel storage change
+
+    # remobilize the sediments
+    if hillslope_storage > hillslope_storage_cap:
+
+        # the hillslope has accumulated more sediment than it can stably store, then:
+        # (1) a secondary landslide / remobilization will be triggered,
+        # (2) the hillslope storage and channel storage will be updated
+
+        # * 2 does not contain any physical meaning,
+        # it just makes the condition is True
+        ls_remobilize = hillslope_storage_cap * 2
+        while ls_remobilize >= hillslope_storage_cap:
+            ls_remobilize = randht(1, 'xmin', ls_min_v, 'powerlaw', ls_alpha_v)[0]
+
+            ls_remobilize = ls_remobilize / (c_area * 1e6)  # return area-normalized landslide thickness, unit: m
+            ls_remobilize = ls_remobilize * 1e3  # convert m to mm
+
+        # update the storage
+        hillslope_storage = hillslope_storage - ls_remobilize
+        assert hillslope_storage >= 0, f"Warning! hillslope_storage={hillslope_storage} is negative."
+        channel_storage = channel_storage + ls_remobilize
+    else:
+        # do not need to remobilize
+        ls_remobilize = ls
+
+    ### (2) channel -> outlet transfer
+    # 0     ->      Qbl  ->   Qdf    ->   infinity
+    # | no transport | bedload | debris flow |
+
+    # theoretical sediment transport
+    if 0 <= Qs < Qbl:
+        # no sediemnts transport in the channel
+        sed_transport_theory = 0
+    elif Qbl <= Qs < Qdf:
+        # bedload transport
+        if modelled_SWE > 0:
+            # if there is snow, bedload will not be initiated
+            sed_transport_theory = 0
+        else:
+            sed_transport_theory = bedload_param_a * (Qs - Qbl) ** bedload_param_b
+    else:
+        # debris flow
+        sed_transport_theory = (max_s2w / (1 - max_s2w)) * Qs
+
+    # check the channel_storage and theoretical transport
+    if channel_storage >= sed_transport_theory:
+        # transport limited
+        # channel storage (sediment) is sufficient, but Qs is too small
+        sed_transport_real = sed_transport_theory
+    else:
+        # supply limited
+        # channel storage (sediment) is too small, but Qs is sufficient
+        sed_transport_real = channel_storage
+
+    # update the channel_storage
+    channel_storage = channel_storage - sed_transport_real
+    assert channel_storage >= 0, f"Channel_storage is negative: {channel_storage}"
+
+    return ls_remobilize, hillslope_storage, channel_storage, sed_transport_real
+
+
+def redistribute_ls_time(daily_ls, desired_freq, redistribute_method="fixed"):
+    # accept both Series and DataFrame
+    if isinstance(daily_ls, pd.DataFrame):
+        daily_ls = daily_ls.iloc[:, 0]
+
+    # build sub-daily time axis
+    start_time = pd.to_datetime(daily_ls.index[0]).normalize()
+    end_time = pd.to_datetime(daily_ls.index[-1]).normalize() + pd.Timedelta("1D")
+
+    q_index = pd.date_range(
+        start=start_time,
+        end=end_time,
+        freq=f"{desired_freq}min",  # minutes
+        inclusive="left"
+    )
+
+    num_data = len(q_index)
+    processed_ls = np.zeros(num_data)
+    steps_per_day = int(1440 / desired_freq)
+
+    for day, mag in daily_ls.items():
+        day = pd.to_datetime(day).normalize()
+
+        if mag == 0:
+            continue
+
+        if redistribute_method == "fixed":
+            # all landslide happens at noon 12:00
+            t = day + pd.Timedelta(hours=12)
+            idx = q_index.get_indexer([t])[0]
+            if idx >= 0:
+                processed_ls[idx] = processed_ls[idx] + mag
+
+        elif redistribute_method == "uniform":
+            # distribute uniformly within the day
+            mask = (q_index >= day) & (q_index < day + pd.Timedelta("1D"))
+            processed_ls[mask] = processed_ls[mask] + mag / steps_per_day
+
+        elif redistribute_method == "random":
+            # intentionally empty (future extension)
+            pass
+
+        else:
+            raise ValueError(f"Unknown redistribute_method: {redistribute_method}")
+
+    processed_ls = pd.DataFrame(
+        processed_ls,
+        index=q_index,
+        columns=["Magnitude [mm per area-normalized landslide thickness]"]
+    )
+
+    return processed_ls
+
+def define_bedload_params(Qdf, min_df_v, max_s_c, bedload_param_b):
+
+    Qbl_theory = Qdf - (min_df_v * (1 - max_s_c) / (max_s_c * Qdf)) ** (1 / (1 - bedload_param_b))
+    Qbl = max(Qbl_theory, 0) # make sure the thorshlds not negative
+
+    bedload_param_a = max_s_c * Qdf / ((Qdf - Qbl) ** bedload_param_b * (1 - max_s_c))
+
+    return Qbl, bedload_param_a
+
 # sediment transfer model
-def trans_model(large_ls_t, small_ls_t,
-                Qs, modelled_SWE,
-                hyd, Q_theta, s_max, d_h, hs_theta, area, method, ls_trigger,
-
-                rainfall_triggered_ls_theta,
-                initial_hs_storage=0, initial_ch_storage=0,
-                b, mindf, smax_nodf,
-                **kwargs):
+def trans_model(large_ls, small_ls, Qs, modelled_SWE,
+                desired_freq,
+                h2s_r,
+                initial_hs_storage, initial_ch_storage,
+                hillslope_storage_cap,
+                ls_min_v, ls_alpha_v, c_area,
+                bedload_param_a, bedload_param_b, max_s2w,
+                Qbl, Qdf
+                ):
     # min_df_v -> mindf, b (Shape parameter for bedload transport) -> scaling_b, smax_nodf ->max_s_c
-    q = Qs.copy()
-    snow = modelled_SWE.copy()
 
+    # large_ls_t, small_ls_t is daily landslides (sediments) inputs at 12:00:00
 
     # determine 'a' and 'Qmin_nondf'
     # this is based on two facts
     # 1) the sediment concentration for sub-critical bedload transport
     # cannot exceed the concentration given by smax_nodf
     # 2) the volume of the sediment transported cannot exceed the minimal debris-flow solid volume
-    if method == 'exp':
-        Qmin_nodf = Q_theta - (mindf * (1 - smax_nodf) / (smax_nodf * Q_theta)) ** (1 / (1 - b))
-        if Qmin_nodf < 0:
-            Qmin_nodf = 0
-        a = smax_nodf * Q_theta / ((Q_theta - Qmin_nodf) ** b * (1 - smax_nodf))
+    # if method == 'exp':
+    #     Qmin_nodf = Qdf - (mindf * (1 - smax_nodf) / (smax_nodf * Qdf)) ** (1 / (1 - b))
+    #     if Qmin_nodf < 0:
+    #         Qmin_nodf = 0
+    #     a = smax_nodf * Qdf / ((Qdf - Qmin_nodf) ** b * (1 - smax_nodf))
+    #
 
-    # landslides (ls) are daily, needs to be padded
-    freq = q.index[1] - q.index[0]  # desired frequency
-    # print(f"Simulated data sampling Freq.: {freq}")
+    # desired_freq = 10  # unit is minutes
+    large_ls = redistribute_ls_time(daily_ls=large_ls, desired_freq=desired_freq, redistribute_method="fixed")
+    small_ls = redistribute_ls_time(daily_ls=small_ls, desired_freq=desired_freq, redistribute_method="fixed")
 
-    delta = pd.to_timedelta('1 day') - freq
-    dates = large_ls_t.index.values.copy()
-    dates[-1] = dates[-1] + delta
-
-    if 'datetime' in str(large_ls_t.index.dtype):
-        dates = pd.to_datetime(dates)
-    elif 'timedelta' in str(large_ls_t.index.dtype):
-        dates = pd.to_timedelta(dates, unit='h')
-    else:
-        raise AttributeError('Your input index must be of type "timedelta" or "datetime"')
-
-    if ls_trigger in ['thermal', 'random']:
-        # the ls is daily SPS now
-        ls = large_ls_t.mag.copy() + small_ls_t.mag.copy()
-
-        ls.index = dates  # the last value is now the same as for the sub-daily time-series, needed for padding
-        #ls = ls.resample(freq).pad()  # this is the time series at desired frequency
-        ls = ls.resample(freq).ffill() # this is the time series at desired frequency
-
-        if 'datetime' in str(ls.index.dtype):
-            cond = ls.index.time == pd.to_datetime('12:00').time()  # hillslope failure always happen at noon
-            ls[~cond] = 0  # set the other hours to 0
-        elif 'timedelta' in str(ls.index.dtype):
-            cond1 = ls.index.astype('timedelta64[h]').astype('int64') % 12 == 0
-            cond2 = ls.index.astype('timedelta64[h]').astype('int64') / 12 % 2 == 1
-            ls[~(cond1 & cond2)] = 0
-
-    # test if too long
-    i = np.argwhere(ls.index == q.index[-1])[0][0]
-    ls = ls[:i + 1]
-
-    # convert to arrays if Data Frames or Series
-    try:
-        idx = ls.index
-        ls = ls.values
-        q = q.values
-        snow = snow.values
-    except AttributeError:
-        pass
+    ls = large_ls.iloc[:, 0].values + small_ls.iloc[:, 0].values
+    assert len(ls) == len(Qs), (f"length Qs != ls.\n"
+                                f"len(Qs) = {len(Qs)}, len(ls) = {len(ls)}")
 
     # initialize
-    num_t = len(q)  # length of time series
-    sh = np.zeros(num_t) # hillslope_storage
-    sc = np.zeros(num_t) # channel_storage
-    so = np.zeros(num_t) # catchment sediment output
-    sopot = np.zeros(num_t) # potential sediment output based on discharge
+    num_data = len(Qs)  # length of time series
+    ls_remobilize = np.zeros(num_data) # when the slope can not hold the new coming ls, landslides remobilize
+    hillslope_storage = np.zeros(num_data)  # hillslope_storage
+    channel_storage = np.zeros(num_data)  # channel_storage
+    sed_transport_real = np.zeros(num_data)  # catchment sediment output
 
-    # initial conditions
-    sh[0] = initial_hs_storage
-    sc[0] = initial_ch_storage
+    # hillslope_storage_cap
+    current_hs_storage = initial_hs_storage
+    current_ch_storage = initial_ch_storage
+    for i in range(1, num_data):
+        current_ls = ls[i]
+        current_Qs = Qs[i]
+        current_modelled_SWE = modelled_SWE[i]
+        temp = sediment_transport_model(current_ls, h2s_r, current_Qs, current_modelled_SWE,
+                                        current_hs_storage, current_ch_storage,
+                                        hillslope_storage_cap,
+                                        ls_min_v, ls_alpha_v, c_area,
+                                        bedload_param_a, bedload_param_b, max_s2w,
+                                        Qbl, Qdf)
 
-    # parameters for large landslides distribution, from Bennett et al. (2012)
-    xmin = 233  # Minimum landslide volume from the power-law tail
-    alpha = 1.65  # Power law scaling exponent in landslide distribution
+        updated_ls, hillslope_storage_t, channel_storage_t, sed_transport_real_t = temp
+        # update the current storage
+        current_hs_storage = hillslope_storage_t
+        current_ch_storage = channel_storage_t
 
-    for i in range(1, num_t):
+        # add to container
+        ls_remobilize[i] = updated_ls
+        hillslope_storage[i] = hillslope_storage_t
+        channel_storage[i] = channel_storage_t
+        sed_transport_real[i] = sed_transport_real_t
 
-        ## TRANSFER NUMERICAL SCHEME: outputs at t depend on storage states at t,
-        # i.e. first the storages, considering inputs, are recomputed, then the debris flow triggering is computed.
+    # # output is debris flow when
+    # # 1) the volume is larger than mindf, and
+    # # 2) the sediment concentration is larger than smax_nodf
+    # if ('mindf') in kwargs.keys():
+    #     df, conc = get_dfs(q, so, mindf, smax_nodf, idx)
+    #     dfp, concp = get_dfs(q, sopot, mindf, smax_nodf, idx)
+    #
 
-        # hillslope -> channel transfer
-        # concept: from each landslide a fraction defined by the d_h parameter is redeposited in the channel storage,
-        # the rest of the landslide goes directly into the channel
-        # (1) like the landslids (materials) trapped on the slope
-        re_deposition = ls[i] * d_h  # redeposition according to redeposition rate
-        sh[i] = sh[i - 1] + re_deposition  # hillslope storage change
-        # (2) except the landslids (materials) trapped on the slope, the rest of materies will go to the channel
-        sc[i] = sc[i - 1] + ls[i] - re_deposition  # channel storage change
+    #
+    # # output
+    # data = {'ls': ls,
+    # data = {'ls': ls,
+    #         'hillslope_storage': sh,
+    #         'channel_storage': sc,
+    #         'sed_output_catchment': so,  # catchment sediment output time series [mm]
+    #         'sed_output_catchment_q': sopot,  # potential sediment output based on discharge [mm]
+    #         'dfs': df,
+    #         'dfspot': dfp} # potential debris flows events
+    #
+    # sed = pd.DataFrame(data=data, index=idx)
 
-        if sh[i] > hs_theta:
-            # if this conditional is Ture, it means:
-            # the hillslope has accumulated more sediment than it can stably store, then ->
-            # (1) a secondary landslide / remobilization will be triggered,
-            # (2) the hillslope storage "sh[i]" and channel storage "sc[i]" will be updated with "ls_sh"
-            ls_sh = hs_theta * 2 # 2 does not contain any physical meaning, it just makes the condition (ls_sh >= hs_theta) is True
-            while ls_sh >= hs_theta:
-                ls_sh = randht(1, 'xmin', xmin, 'powerlaw', alpha)[0]
-
-                ls_sh = ls_sh / area * 1e-3  # convert m3 to mm
-
-            sh[i] = sh[i] - ls_sh
-            sc[i] = sc[i] + ls_sh
-
-        # channel -> outlet transfer
-        # there are two methods for sediment entrainment: lin and exp...
-        # Note
-        # Q_theta is equivalent to the critical shear stress
-        # q-qdf is equivalent to the excess shear stress
-        if method == 'lin':
-            # # (1) If runoff exceeds a threshold, Qdf, a debris flow is triggered
-            if q[i] >= Q_theta:
-                sopot[i] = s_max / (1 - s_max) * q[i]  # - Q_theta) # potential sediment output
-
-        if method == 'exp':
-            if (q[i] < Q_theta) and (q[i] >= Qmin_nodf):
-                sopot[i] = a * (q[i] - Qmin_nodf) ** b  # exponential function for small flows
-            elif q[i] >= Q_theta:
-                sopot[i] = s_max / (1 - s_max) * q[i]  # linear function for debris flows (flows above Q_theta)
-
-        # # the sediment flow might not be initiated because:
-        # case 1: there is snow --> no DF
-        if snow[i] > 0:
-            so[i] = 0
-            sopot[i] = 0
-        # case 2: transport limited, channel storage is big enough
-        elif sc[i] >= sopot[i]:
-            so[i] = sopot[i]
-            sc[i] = sc[i] - so[i]
-        # case 3: supply limited, channel storage is too small
-        else:
-            so[i] = sc[i]
-            sc[i] = 0
-
-    ############
-
-    # output is debris flow when
-    # 1) the volume is larger than mindf, and
-    # 2) the sediment concentration is larger than smax_nodf
-    if ('mindf') in kwargs.keys():
-        df, conc = get_dfs(q, so, mindf, smax_nodf, idx)
-        dfp, concp = get_dfs(q, sopot, mindf, smax_nodf, idx)
-
-    # output
-    data = {'ls': ls,
-            'hillslope_storage': sh,
-            'channel_storage': sc,
-            'sed_output_catchment': so,  # catchment sediment output time series [mm]
-            'sed_output_catchment_q': sopot,  # potential sediment output based on discharge [mm]
-            'dfs': df,
-            'dfspot': dfp} # potential debris flows events
-
-    sed = pd.DataFrame(data=data, index=idx)
-
-    return sed
-
+    return ls_remobilize, hillslope_storage, channel_storage, sed_transport_real

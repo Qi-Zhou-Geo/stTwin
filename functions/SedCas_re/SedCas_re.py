@@ -48,6 +48,7 @@ from functions.SedCas_re import transport_model as SedCas_t_model
 
 from functions.download_MeteoSwiss.fetch_data import fetch_data4SedCas
 
+
 class SedCas():
 
     def __init__(self, project_root, model_input_params="default"):
@@ -73,20 +74,38 @@ class SedCas():
     # for model input
     def load_climate_input(self, data_type):
 
-        data = pd.read_csv(f"/Users/qizhou/#python/stTwin/data/SedCas_input/climate_2004_2017_h.txt", header=0)
+        # use the default data from SedCas model
+        data = pd.read_csv(f"{self.model_input_dir}/climate.met", sep='\t')
 
-        time_float = [UTCDateTime(i).timestamp for i in data.iloc[:, 1]]
-        time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 1]]
+        time_float = [UTCDateTime(i).timestamp for i in data.iloc[:, 0]]
+        time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 0]]
 
         # Extract variables
-        precipitation = data.iloc[:, 2].values
-        temperature = data.iloc[:, 3].values
-        sun_radiation = data.iloc[:, 4].values
+        precipitation = data.Pr.values
+        temperature = data.Ta.values
+        sun_radiation = data.Rsw.values
 
         data_source = "MeteoSwiss"
-        station = data.iloc[0, 0]  # station name
-        resolution = time_float[1] - time_float[0]  # unit is second
+        station = "AAA"  # station name
+        resolution = 3600  # unit is second
         time_now = UTCDateTime().isoformat()
+
+
+        # data = pd.read_csv(f"/Users/qizhou/#python/stTwin/data/SedCas_input/climate_2004_2017_h.txt", header=0)
+        #
+        # time_float = [UTCDateTime(i).timestamp for i in data.iloc[:, 1]]
+        # time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 1]]
+        #
+        # # Extract variables
+        # precipitation = data.iloc[:, 2].values
+        # temperature = data.iloc[:, 3].values
+        # sun_radiation = data.iloc[:, 4].values
+        #
+        # data_source = "MeteoSwiss"
+        # station = data.iloc[0, 0]  # station name
+        # resolution = time_float[1] - time_float[0]  # unit is second
+        # time_now = UTCDateTime().isoformat()
+
 
 
         climate_forcing = xr.Dataset(
@@ -119,7 +138,7 @@ class SedCas():
     # for model output
     def _load_climate_meta(self):
 
-        time_float = self.climate_forcing.time.values # note: values with s
+        time_float = self.climate_forcing.time.values  # note: values with s
         time_str = self.climate_forcing.time_str.values
         num_data = len(time_str)
         num_HRU = self.cfg.num_HRU.value  # note: value without s
@@ -195,11 +214,10 @@ class SedCas():
 
                 # water stored in reservoir 0 (top), reservoir 1 (after-top), w_storage_n (bottom)
                 "w_storage": (("time", "HRU_id", "reservoir_id"), np.zeros((num_data, num_HRU, num_reservoir)),
-                                  {"units": "mm??", "description": "Total water stored in each reservoir",
-                                   "reservoir_id=0": "top reservoir in bedrock HRU",
-                                   "reservoir_id=1": "top reservoir in forest HRU ",
-                                   "reservoir_id=2": "bottom reservoi in forest HRU"}),
-
+                              {"units": "mm??", "description": "Total water stored in each reservoir",
+                               "reservoir_id=0": "top reservoir in bedrock HRU",
+                               "reservoir_id=1": "top reservoir in forest HRU ",
+                               "reservoir_id=2": "bottom reservoi in forest HRU"}),
 
             },
             attrs={
@@ -211,6 +229,66 @@ class SedCas():
 
         return hydro_container
 
+    def _create_landslide_dataset(self, num_iteration):
+
+        temp = self._load_climate_meta()
+        time_float, time_str, num_data, num_HRU, resolution, data_source, station, time_now = temp
+
+        landslide_container_daily = xr.Dataset(
+            coords={
+                "time": ("time", np.array(time_float)),  # numeric UTC+0 time
+                "time_str": ("time", np.array(time_str)),  # string UTC+0 time
+                "iteration": np.arange(num_iteration),
+            },
+            data_vars={
+                # sediment input from landslides
+                "large_ls": (
+                    ("time", "iteration", "resolution"),
+                    np.zeros([num_data, num_iteration]),
+                    {"units": "mm per day", "description": "Generated large landslide"}
+                ),
+
+                "small_ls": (
+                    ("time", "iteration"),
+                    np.zeros([num_data, num_iteration]),
+                    {"units": "mm per day", "description": "Generated small landslide"}
+                ),
+
+            },
+            attrs={
+                "create_time": time_now
+            }
+        )
+
+        landslide_container_minute = xr.Dataset(
+            coords={
+                "time": ("time", np.array(time_float)),  # numeric UTC+0 time
+                "time_str": ("time", np.array(time_str)),  # string UTC+0 time
+                "iteration": np.arange(num_iteration),
+            },
+            data_vars={
+                # sediment input from landslides
+
+                "large_ls": (
+                    ("time", "iteration"),
+                    np.zeros([num_data, num_iteration]),
+                    {"units": f"mm / {resolution} s", "description": "Generated large landslide"}
+                ),
+
+                "small_ls": (
+                    ("time", "iteration"),
+                    np.zeros([num_data, num_iteration]),
+                    {"units": f"mm / {resolution} s", "description": "Generated small landslide"}
+                ),
+
+            },
+            attrs={
+                "create_time": time_now
+            }
+        )
+
+        return landslide_container
+
     def _create_sed_dataset(self, num_iteration=None):
 
         temp = self._load_climate_meta()
@@ -218,7 +296,7 @@ class SedCas():
 
         # sed_container by shape(number of time series, number of simulations)
         sed_container = xr.Dataset(
-            coords={"time": time,
+            coords={"time": time_float,
                     "time_str": ("time", time_str),
                     "iteration": np.arange(num_iteration)},
 
@@ -255,7 +333,6 @@ class SedCas():
 
         return sed_container
 
-
     # for single model componment
     def run_hydro(self):
 
@@ -264,9 +341,10 @@ class SedCas():
         for HRU_id in range(self.cfg.num_HRU.value):
 
             # <editor-fold desc="snow_water_equivalent">
-            s_w_e = SedCas_h_model.snow_water_equivalent(temperature=self.climate_forcing.temperature.values.copy(), # values with s
+            s_w_e = SedCas_h_model.snow_water_equivalent(temperature=self.climate_forcing.temperature.values.copy(),
+                                                         # values with s
                                                          precipitation=self.climate_forcing.precipitation.values.copy(),
-                                                         snow_melt_r=self.cfg.snow_melt_r.value, # value without s
+                                                         snow_melt_r=self.cfg.snow_melt_r.value,  # value without s
                                                          T_theta_a=self.cfg.snow_acc_theta.value,
                                                          T_theta_m=self.cfg.snow_melt_theta.value,
                                                          snow_albedo=self.cfg.snow_albedo_y.value[HRU_id],
@@ -275,19 +353,20 @@ class SedCas():
 
             modelled_SWE, delta_depth, snow_acc, snow_melt, albedo = s_w_e
             # update the hydro_output
-            self.hydro_container["modelled_SWE"].loc[:, HRU_id].values = modelled_SWE
-            self.hydro_container["delta_depth"].loc[:, HRU_id].values = delta_depth
-            self.hydro_container["snow_acc"].loc[:, HRU_id].values = snow_acc
-            self.hydro_container["snow_melt"].loc[:, HRU_id].values = snow_melt
-            self.hydro_container["albedo"].loc[:, HRU_id].values = albedo
+            self.hydro_container["modelled_SWE"].loc[:, HRU_id] = modelled_SWE
+            self.hydro_container["delta_depth"].loc[:, HRU_id] = delta_depth
+            self.hydro_container["snow_acc"].loc[:, HRU_id] = snow_acc
+            self.hydro_container["snow_melt"].loc[:, HRU_id] = snow_melt
+            self.hydro_container["albedo"].loc[:, HRU_id] = albedo
             # </editor-fold>
 
             # <editor-fold desc="potential evapotranspiration">
-            p_e_t = SedCas_h_model.potential_et(temperature=self.climate_forcing.temperature.values.copy(),  # values with s
+            p_e_t = SedCas_h_model.potential_et(temperature=self.climate_forcing.temperature.values.copy(),
+                                                # values with s
                                                 sun_radiation=self.climate_forcing.sun_radiation.values.copy(),
                                                 albedo=self.hydro_container["albedo"].loc[:, HRU_id].values.copy(),
                                                 sps_temperature=self.climate_forcing.attrs["resolution"],
-                                                cloud_cover_r=self.cfg.cloud_cover_r.value, # value without s
+                                                cloud_cover_r=self.cfg.cloud_cover_r.value,  # value without s
                                                 elevation=self.cfg.c_elevation.value,
                                                 relative_humidity=self.cfg.r_humidity.value
                                                 )
@@ -298,12 +377,13 @@ class SedCas():
             # </editor-fold>
 
             # <editor-fold desc="hydrological process">
-            h = SedCas_h_model.h_model(snow_acc=self.hydro_container["snow_acc"].loc[:, HRU_id].values.copy(), # values with s
+            h = SedCas_h_model.h_model(snow_acc=self.hydro_container["snow_acc"].loc[:, HRU_id].values.copy(),
+                                       # values with s
                                        snow_melt=self.hydro_container["snow_melt"].loc[:, HRU_id].values.copy(),
                                        temperature=self.climate_forcing.temperature.values.copy(),
                                        precipitation=self.climate_forcing.precipitation.values.copy(),
                                        PET=self.hydro_container["PET"].loc[:, HRU_id].values,
-                                       alpha=self.cfg.et.value, # value without s
+                                       alpha=self.cfg.et.value,  # value without s
                                        initial_w_storage=self.cfg.initial_w_storage.value[HRU_id],
                                        w_storage_cap=self.cfg.w_storage_cap.value[HRU_id],
                                        w_residence_time=self.cfg.w_residence_time.value[HRU_id]
@@ -320,7 +400,7 @@ class SedCas():
             if HRU_id == 0:
                 idx = [0]
             elif HRU_id == 1:
-                idx = [1, 2] # [top, bottom reservoir]
+                idx = [1, 2]  # [top, bottom reservoir]
             else:
                 print("error")
                 exit()
@@ -334,77 +414,111 @@ class SedCas():
 
     def run_sediment(self, seed_i, iteration, sed_container):
 
-        # large landslides, generate the time series area-normalized landslide thickness
+        # <editor-fold desc="generate the large landslides">
+        # generate the time series area-normalized landslide thickness
+
+        temperature = pd.Series(
+            self.climate_forcing.temperature.values,
+            index=pd.to_datetime(self.climate_forcing.time_str.values)
+        )
+        prec = pd.Series(
+            self.climate_forcing.precipitation.values,
+            index=pd.to_datetime(self.climate_forcing.time_str.values)
+        )
+        snow = pd.Series(
+            self.hydro_output.modelled_SWE.values,
+            index=pd.to_datetime(self.climate_forcing.time_str.values)
+        )
+
         # shape by [time, landslides magnitude[mm]]
         large_ls = SedCas_s_model.generate_large_ls(ls_trigger=self.cfg.ls_trigger_m.value,
-                                                    temperature=self.cfg.in_temp.value.copy(),
-                                                    prec=self.cfg.in_prec.value.copy(),
-                                                    snow=self.hydro.snow_depth, # model
+                                                    temperature=temperature, # need pd series for resample
+                                                    prec=prec,
+                                                    snow=snow,  # need pd series for resample
                                                     theta_sd=self.cfg.ls_trigger_SWE.value,
                                                     theta_prec=self.cfg.ls_trigger_r.value,
-                                                    theta_sa=self.cfg.snow_acc.value,
+                                                    theta_sa=self.cfg.snow_acc_theta.value,
                                                     theta_ls_freeze=self.cfg.ls_trigger_f.value,
-                                                    min_ls_volume=self.cfg.ls_min_v.value,
-                                                    alpha=self.cfg.ls_alpha_v.value,
+                                                    ls_min_v=self.cfg.ls_min_v.value,
+                                                    ls_alpha_v=self.cfg.ls_alpha_v.value,
                                                     cutoff=self.cfg.ls_max_v.value,
                                                     area=self.cfg.c_area.value,
                                                     seed=seed_i)
 
         num_large_ls = len(large_ls[large_ls.mag > 0])
+        # </editor-fold>
 
-        # small landslides, generate the time series area-normalized landslide thickness
+        # <editor-fold desc="generate the small landslides">
+        # generate the time series area-normalized landslide thickness
         # shape by [time, landslides magnitude[mm]]
-        num_days = len(self.cfg.in_prec.value.resample('24h').sum())
+        num_days = len(prec.resample('24h').sum())
         small_ls = SedCas_s_model.generate_small_ls(num_days=num_days,
                                                     num_large_ls=num_large_ls,
-                                                    min_ls_volume=self.cfg.ls_min_v.value,
+                                                    ls_min_v=self.cfg.ls_min_v.value,
                                                     area=self.cfg.c_area.value,
                                                     seed=seed_i,
                                                     mu=3.36, sigma=1.18, ratio=3.36)
 
         # date index for small landslides
         small_ls.index = large_ls.index
+        # </editor-fold>
 
-        # mix water and sediments
-        sed_run = SedCas_t_model.trans_model(large_ls_t=large_ls,
-                                             small_ls_t=small_ls,
-                                             hyd=self.hydro,
-                                             Q_theta=self.cfg.q_df.value,
-                                             s_max=self.cfg.max_s2w.value,
-                                             d_h=self.cfg.h2s_r.value,
-                                             hs_theta=self.cfg.epsilon_h.value,
-                                             area=self.cfg.c_area.value,
-                                             method='exp',
-                                             ls_trigger=self.cfg.ls_trigger_m.value,
-                                             rainfall_triggered_ls_theta=self.cfg.ls_trigger_r.value,
+        # <editor-fold desc="mix water and sediments">
+        bl_params = SedCas_t_model.define_bedload_params(Qdf=self.cfg.Qdf.value,
+                                                         min_df_v=self.cfg.min_df_v.value,
+                                                         max_s_c=self.cfg.max_s_c.value,
+                                                         bedload_param_b=self.cfg.bedload_param_b.value)
+        Qbl, bedload_param_a = bl_params
+        print(Qbl, bedload_param_a)
+        # desired_freq unit by minutes
+        desired_freq = self.climate_forcing.attrs['resolution'] / 60  # divide 60 -> convert second to minute
+        print(self.cfg.initial_hs_storage.value, self.cfg.initial_ch_storage.value)
+        sed_run = SedCas_t_model.trans_model(large_ls=large_ls.copy(),
+                                             small_ls=small_ls.copy(),
+                                             Qs=self.hydro_output["Qs"].values.copy(),
+                                             modelled_SWE=self.hydro_output.modelled_SWE.values.copy(),
 
-                                             initial_hs_storage=self.cfg.epsilon_h.value,  # careful this
-                                             initial_ch_storage=0,
+                                             desired_freq=desired_freq,
 
-                                             mindf=self.cfg.min_df_v.value,
-                                             smax_nodf=self.cfg.max_s_c.value,
-                                             b=self.cfg.scaling_b.value)
+                                             h2s_r=self.cfg.h2s_r.value,
+                                             initial_hs_storage=self.cfg.initial_hs_storage.value,
+                                             initial_ch_storage=self.cfg.initial_ch_storage.value,
+                                             hillslope_storage_cap=self.cfg.hillslope_storage_cap.value,
+
+                                             ls_min_v=self.cfg.ls_min_v.value,
+                                             ls_alpha_v=self.cfg.ls_alpha_v.value,
+                                             c_area=self.cfg.c_area.value,
+
+                                             bedload_param_a=bedload_param_a,
+                                             bedload_param_b=self.cfg.bedload_param_b.value,
+                                             max_s2w=self.cfg.max_s2w.value,
+
+                                             Qbl=Qbl,
+                                             Qdf=self.cfg.Qdf.value
+                                             )
+        ls_remobilize, hillslope_storage, channel_storage, sed_transport_real = sed_run
+
+        # </editor-fold>
 
         # <editor-fold desc="add the params to sed_container">
         # sediment input from landslides
-        sed_container["ls"][:, iteration] = sed_run.ls.values
+        sed_container["ls"][:, iteration] = ls_remobilize
         # hillslope storage time series [mm]
-        sed_container["hillslope_storage"][:, iteration] = sed_run.hillslope_storage.values
+        sed_container["hillslope_storage"][:, iteration] = hillslope_storage
         # channel storage time series [mm]
-        sed_container["channel_storage"][:, iteration] = sed_run.channel_storage.values
+        sed_container["channel_storage"][:, iteration] = channel_storage
         # catchment sediment output time series [mm]
-        sed_container["sed_output_catchment"][:, iteration] = sed_run.sed_output_catchment.values
-        # potential sediment output based on discharge [mm]
-        sed_container["sed_output_catchment_q"][:, iteration] = sed_run.sed_output_catchment_q.values
-        # debris flows, sediment output above minimum threshold and concentration of debris flows[mm]
-        sed_container["dfs"][:, iteration] = sed_run.dfs.values
-        # debris flows potential (only 1 because only 1 climate)
-        sed_container["df_potential"][:, iteration] = sed_run.dfspot.values
+        sed_container["sed_output_catchment"][:, iteration] = sed_transport_real
+        # # potential sediment output based on discharge [mm]
+        # sed_container["sed_output_catchment_q"][:, iteration] = sed_run.sed_output_catchment_q.values
+        # # debris flows, sediment output above minimum threshold and concentration of debris flows[mm]
+        # sed_container["dfs"][:, iteration] = sed_run.dfs.values
+        # # debris flows potential (only 1 because only 1 climate)
+        # sed_container["df_potential"][:, iteration] = sed_run.dfspot.values
 
         # </editor-folder>
 
         return sed_run
-
 
     # for combine model together
     def run_stochastic_simulations(self, seed=0, num_iteration=None):
@@ -425,9 +539,7 @@ class SedCas():
 
         # calculate the stastic values
         sed_container_stats = self.post_process_quantiles(xr_dataset=sed_container)
-        self.cfg.out_sed_container.value = sed_container_stats
-
-        return sed_container, sed_container_stats
+        self.sed_output = sed_container_stats
 
 
     # for results post-process

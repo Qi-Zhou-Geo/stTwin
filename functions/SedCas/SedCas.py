@@ -112,12 +112,20 @@ class SedCas():
                                        {"units": "mm", "full name": "Soil water storage"}),
 
                 # snow depth SWE [mm]
-                "snow_depth": ("time", np.zeros(num_data),
-                               {"units": "mm", "full name": "Snow depth"}),
+                "modelled_s_depth": ("time", np.zeros(num_data),
+                               {"units": "mm", "full name": "modelled_s_depth"}),
 
                 # snow accumulation [mm]
                 "snow_accumulation": ("time", np.zeros(num_data),
                                       {"units": "mm", "full name": "Snow accumulation"}),
+
+                # snow melt [mm]
+                "snow_melt": ("time", np.zeros(num_data),
+                                      {"units": "mm", "full name": "Snow melt"}),
+
+                # snow melt [mm]
+                "delta_depth": ("time", np.zeros(num_data),
+                              {"units": "mm", "full name": "Snow delta_depth"}),
 
                 # Potential evapotranspiration [mm]
                 "potential_ET": ("time", np.zeros(num_data),
@@ -127,13 +135,21 @@ class SedCas():
                 "actual_ET": ("time", np.zeros(num_data),
                               {"units": "mm", "full name": "Actual evapotranspiration"}),
 
+                # Actual evapotranspiration [mm]
+                "albedo": ("time", np.zeros(num_data),
+                              {"units": "??", "full name": "albedo"}),
+
                 # precipitation [mm]
                 "precipitation": ("time", np.zeros(num_data),
                                   {"units": "mm", "full name": "Precipitation"}),
 
                 # temperature [degree C]
                 "temperature": ("time", np.zeros(num_data),
-                                {"units": "degree C", "full name": "Temperature"})
+                                {"units": "degree C", "full name": "Temperature"}),
+
+                # sun_radiation
+                "sun_radiation": ("time", np.zeros(num_data),
+                                {"units": "??", "full name": "sun_radiation"})
             }
 
         )
@@ -338,17 +354,25 @@ class SedCas():
         # state of soil water storage [mm]
         hydro_container["soil_water_storage"].values = hydro["Vw"].values
         # snow depth SWE [mm], already in input
-        hydro_container["snow_depth"].values = hydro["snow_depth"].values
+        hydro_container["modelled_s_depth"].values = hydro["modelled_s_depth"].values
         # snow accumulation [mm]
         hydro_container["snow_accumulation"].values = hydro["snowacc"].values
+        # snow melt [mm]
+        hydro_container["snow_melt"].values = hydro["snow_melt"].values
+        # snow changes [mm]
+        hydro_container["delta_depth"].values = hydro["delta_depth"].values
         # Potential evapotranspiration [mm]
         hydro_container["potential_ET"].values = hydro["PET"].values
         # Actual evapotranspiration [mm]
         hydro_container["actual_ET"].values = hydro["AET"].values
+        # Actual evapotranspiration [mm]
+        hydro_container["albedo"].values = hydro["albedo"].values
         # precipitation [mm]
         hydro_container["precipitation"].values = hydro["Pr"].values
         # temperature [degree C]
         hydro_container["temperature"].values = hydro["temperature"].values
+        # sun_radiation
+        hydro_container["sun_radiation"].values = self.sun_radiation
         # </editor-folder>
 
         return hydro_container
@@ -360,7 +384,7 @@ class SedCas():
         large_ls = SedCas_s_model.generate_large_ls(ls_trigger=self.LStrig,
                                                     temperature=self.temperature,
                                                     prec=self.prec,
-                                                    snow=self.hydro.snow_depth,
+                                                    snow=self.hydro.modelled_s_depth,
                                                     theta_sd=self.Tsd, theta_prec=self.Tpr, theta_sa=self.Tsa,
                                                     theta_ls_freeze=self.Tfreeze,
                                                     min_ls_volume=self.ls_xmin, alpha=self.ls_alpha,

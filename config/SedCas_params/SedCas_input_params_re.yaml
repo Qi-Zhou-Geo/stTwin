@@ -316,13 +316,30 @@ model_config:
       description: Sediments deposition rate from hillslope to channel
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
+  initial_hs_storage:
+    name: initial_hs_storage
+    value: 120
+    attrs:
+      unit: ??
+      description: Initlal hillslope storage
+      calibrate: No
+
+  initial_ch_storage:
+    name: initial_ch_storage
+    value: 0
+    attrs:
+      unit: ??
+      description: Initlal channel storage
+      calibrate: No
+
+
   # qdf
-  q_df:
+  Qdf:
     name: discharge_df
-    value: 0.40 # 10 minutes -> 0.4 = 2.4 / 6, 1 hour -> 2.4
+    value: 2.40 # 10 minutes -> 0.4 = 2.4 / 6, 1 hour -> 2.4
     attrs:
       unit: mm / <time_resolution>
-      description: Discharge threshold for triggering debris flows
+      description: Discharge threshold for triggering debris flows, if Qs > Qdf, DF could be generated
       calibrate: Yes
 
   # smax
@@ -344,31 +361,13 @@ model_config:
       description: Max possible sediment concentration for bedload
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
-  # a
-  scaling_a:
-    name: scaling_a
-    value: auto
-    attrs:
-      unit: None
-      description: Scaling parameter for bedload transport
-      calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
-
   # b
-  scaling_b:
-    name: scaling_b
+  bedload_param_b:
+    name: bedload_scaling_param_b,
     value: 1.5
     attrs:
       unit: None
-      description: Shape parameter for bedload transport
-      calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
-
-  # Qmin_nondf
-  min_q_bl:
-    name: min_discharge_bl
-    value: ????
-    attrs:
-      unit: None
-      description: Minimum discharge for bedload transport initiation
+      description: Shape parameter for bedload transport, bedload_scaling_param_a will be calculated based on b
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
 
