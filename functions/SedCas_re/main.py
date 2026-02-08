@@ -100,16 +100,17 @@ sed_output_2017 = model.sed_output.isel(time=mask)
 
 list_of_col_names = [(time_coord, "hillslope_storage_Q50"),
                      (time_coord, "channel_storage_Q50"),
-                     (time_coord, "sed_output_catchment_Q50")]
+                     (time_coord, "sed_transport_real_Q50"),
+                     (time_coord, "sed_transport_theory_Q50")]
 fig = plotly_multi_time_series_xr(xr_dataset=sed_output_2017,
                                   list_of_col_names=list_of_col_names)
 fig.show()
 
 
 # sed
-lower_b, mean_x, upper_b = "Q1", "Q50", "Q99"
-list_of_col_names = [(time_coord, "hillslope_storage", lower_b, mean_x, upper_b),
-                     (time_coord, "channel_storage", lower_b, mean_x, upper_b),
-                     (time_coord, "sed_output_catchment", lower_b, mean_x, upper_b)]
-fig = plotly_multi_time_series_shade_xr(xr_dataset=sed_output_2017, list_of_col_names=list_of_col_names)
-fig.show()
+# lower_b, mean_x, upper_b = "Q1", "Q50", "Q99"
+# list_of_col_names = [(time_coord, "hillslope_storage", lower_b, mean_x, upper_b),
+#                      (time_coord, "channel_storage", lower_b, mean_x, upper_b),
+#                      (time_coord, "sed_output_catchment", lower_b, mean_x, upper_b)]
+# fig = plotly_multi_time_series_shade_xr(xr_dataset=sed_output_2017, list_of_col_names=list_of_col_names)
+# fig.show()

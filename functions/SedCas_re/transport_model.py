@@ -31,36 +31,66 @@ sys.path.append(str(project_root))
 from functions.SedCas.sediment_model import randht
 
 
-def get_dfs(q, s, mindf, smax_nodf, idx):
-    q2 = q.copy()
-    q2[q2 == 0] = np.nan
-    conc = s / (s + q2)  # volumetric sediment concentration in flow
+def define_debris_flow(Qs, sed_transport, min_df_v, max_s_c):
+    """
+    Identify debris-flow events from surface discharge (Qs) and sediment transport (sed_transport) time series.
 
-    cond1 = s >= mindf  # first condition, sediment output must be greater than the minimum possibld DF
-    cond2 = conc > smax_nodf  # second condition, the sediment concentration must be greater than for fluvial transport
+    A debris flow is defined when:
+    (1) sediment transport exceeds a minimum debris-flow volume (min_df_v), and
+    (2) sediment concentration exceeds the maximum concentration (max_s_c) for fluvial transport.
 
-    dfs = s[cond1 & cond2]
-    idxdfs = idx[cond1 & cond2]
+    Consecutive time steps that satisfy both conditions are merged into a single debris-flow event,
+    with the total volume assigned to the event start time.
 
-    dt = idxdfs[1:] - idxdfs[:-1]  # get spacing between debris flows
-    dt = dt.insert(0, pd.NaT)  # put a NaT at the first position becuase  it doesn't have a valiue before
+    Args:
+        Qs (pd.Series): Discharge time series [mm per time step], indexed by pandas DatetimeIndex.
+        sed_transport (pd.Series): Realized sediment transport time series [mm].
+        min_df_v (float): Minimum sediment volume required to form a debris flow [mm].
+        max_s_c (float): Maximum sediment concentration for non-debris-flow (bedload) transport [-].
 
-    # if there are consecutive values, add them
-    dfsnew = dfs.copy()
+    Returns:
+        dfs (np.ndarray): Debris-flow event time series [mm], same length as Qs.
+                          Non-zero values indicate debris-flow initiation times.
+        conc (np.ndarray): Sediment concentration time series [-].
+    """
+
+    idx = Qs.index
+    desired_freq = idx[1] - idx[0]
+
+    # sediment concentration
+    Qs_copy = Qs.copy()
+    Qs_copy[Qs_copy == 0] = np.nan # avoid division by zero
+    sed_concentration = sed_transport / (sed_transport + Qs_copy)
+
+    # debris-flow conditions:
+    # (1) sufficient sediment volume
+    cond1 = sed_transport >= min_df_v
+    # (2) exceeds fluvial concentration limit
+    cond2 = sed_concentration > max_s_c
+
+    dfs_candidates = sed_transport[cond1 & cond2]
+    idx_candidates = idx[cond1 & cond2]
+
+    # merge consecutive debris-flow timesteps into single events
+    dt = idx_candidates[1:] - idx_candidates[:-1]
+    dt = dt.insert(0, pd.NaT)
+
+    dfs_merged = dfs_candidates.copy()
     for i in range(len(dt) - 1, 0, -1):
-        # this should mean, that when using daily data, the values are not added
-        if dt[i] == pd.to_timedelta('1 hour'):
-            dfsnew[i - 1] = dfsnew[i - 1] + dfsnew[i]  # add to the previous hour
-            dfsnew[i] = 0
-    idxdfs = idxdfs[dfsnew > 0]
-    dfsnew = dfsnew[dfsnew > 0]
+        if dt[i] == desired_freq:
+            # if two events are close to each other -> merge them
+            dfs_merged.iloc[i - 1] = dfs_merged.iloc[i - 1] + dfs_merged.iloc[i]
+            dfs_merged.iloc[i] = 0
 
-    # insert values in full modelling time series
-    dfs = pd.Series(np.zeros(len(idx)), index=idx)
-    dfs.loc[idxdfs] = dfsnew
-    dfs = dfs.values
+    # keep only event start times
+    idx_events = idx_candidates[dfs_merged > 0]
+    dfs_events = dfs_merged[dfs_merged > 0]
 
-    return dfs, conc
+    # insert into full time series
+    dfs = pd.Series(0.0, index=idx)
+    dfs.loc[idx_events] = dfs_events
+
+    return dfs.values, sed_concentration.values
 
 
 def sediment_transport_model(ls, h2s_r, Qs, modelled_SWE,
@@ -69,6 +99,68 @@ def sediment_transport_model(ls, h2s_r, Qs, modelled_SWE,
                              ls_min_v, ls_alpha_v, c_area,
                              bedload_param_a, bedload_param_b, max_s2w,
                              Qbl, Qdf):
+
+    """
+    Simulate (1) sediment transfer from hillslopes to channels and
+    (2) from channels to the catchment outlet.
+
+    The model represents two coupled processes:
+    (1) hillslope-to-channel sediment transfer, including temporary hillslope storage and
+    stochastic remobilization when storage capacity is exceeded;
+    (2) channel-to-outlet sediment transport by bedload or debris flow,
+    limited by sediment availability in channel storage.
+
+    Transport mechanisms are controlled by two discharge thresholds, Qbl and Qdf:
+    # 0     ->      Qbl  ->   Qdf    ->   infinity
+    # | no transport | bedload | debris flow |
+
+    Args:
+        ls (float): Landslide sediment input at the current time step [mm, area-normalized sediment thickness].
+
+        h2s_r (float): Fraction of landslide material temporarily retained on the hillslope [-].
+        The remaining fraction (1 - h2s_r) enters the channel directly.
+
+        Qs (float): Surface discharge at the current time step [same units as Qbl and Qdf].
+
+        modelled_SWE (float): Modelled snow water equivalent on the ground [mm SWE].
+        Bedload transport is suppressed when SWE > 0.
+
+        initial_hs_storage (float): Hillslope sediment storage at the previous time step [mm].
+        initial_ch_storage (float): Channel sediment storage at the previous time step [mm].
+        hillslope_storage_cap (float): Maximum stable sediment storage on the hillslope [mm].
+
+        ls_min_v (float): Minimum landslide volume parameter used for stochastic remobilization [m³ before area normalization].
+        ls_alpha_v (float): Power-law exponent controlling the landslide size distribution [-].
+        c_area (float): Catchment area [km²]. Used to convert landslide volumes to area-normalized sediment thickness.
+
+        bedload_param_a (float): Scale parameter of the bedload transport rating curve.
+        bedload_param_b (float): Shape parameter of the bedload transport rating curve [-].
+        max_s2w (float): Maximum sediment-to-water volumetric ratio for debris flows [-].
+        Qbl (float): Discharge threshold for initiation of bedload transport [mm / <time_resolution>].
+        Qdf (float): Discharge threshold for initiation of debris-flow transport [mm / <time_resolution>].
+
+    Returns:
+        ls_remobilize (float): Sediment remobilized from hillslope storage during the current time step [mm].
+
+        hillslope_storage (float): Updated hillslope sediment storage after deposition and remobilization [mm].
+        channel_storage (float): Updated channel sediment storage after hillslope input and sediment export [mm].
+
+        sed_transport_real (float): Actual sediment exported from the channel
+            to the outlet during the current time step, limited by channel storage [mm].
+        sed_transport_theory (float): Theoretical sediment exported from the channel
+            to the outlet during the current time step, [mm].
+        sed_limited (float): Status of sediment limited in channel storage,
+            0 (Fasle) represents no sediment limited, 1 (True) represents sediment limited,
+
+    Notes:
+        - Hillslope remobilization is triggered only when hillslope storage exceeds its prescribed capacity
+            and follows a stochastic power-law distribution.
+        - Bedload transport occurs only under snow-free conditions.
+        - Sediment export from the channel is supply-limited when channel storage is insufficient to meet transport capacity.
+        - Mass conservation is enforced by preventing negative sediment storage.
+    """
+
+
     ### (1) hillslope -> channel transfer
     # (a) hillslope storage receives: ls * h2s_r,
     #     where h2s_r is the fraction of landslide material temporarily retained on the hillslope
@@ -124,19 +216,56 @@ def sediment_transport_model(ls, h2s_r, Qs, modelled_SWE,
         # transport limited
         # channel storage (sediment) is sufficient, but Qs is too small
         sed_transport_real = sed_transport_theory
+        sed_limited = 0 # False
     else:
         # supply limited
         # channel storage (sediment) is too small, but Qs is sufficient
         sed_transport_real = channel_storage
+        sed_limited = 1  # True
 
     # update the channel_storage
     channel_storage = channel_storage - sed_transport_real
     assert channel_storage >= 0, f"Channel_storage is negative: {channel_storage}"
 
-    return ls_remobilize, hillslope_storage, channel_storage, sed_transport_real
+    return ls_remobilize, hillslope_storage, channel_storage, sed_transport_real, sed_transport_theory, sed_limited
 
 
 def redistribute_ls_time(daily_ls, desired_freq, redistribute_method="fixed"):
+    """
+    Redistribute daily landslide magnitudes onto a sub-daily time grid.
+
+    This function converts a daily landslide time series into a sub-daily
+    time series by assigning each day's landslide magnitude to specific
+    sub-daily time steps according to a chosen redistribution method.
+
+    Supported redistribution strategies include:
+        - fixed: all landslide material is released at a fixed time of day (12:00).
+        - uniform: landslide material is distributed evenly across all sub-daily time steps within the day.
+        - random: placeholder for future stochastic redistribution (not implemented).
+
+    Args:
+        daily_ls (pd.Series or pd.DataFrame): Daily landslide magnitude time series indexed by date.
+            Values represent area-normalized landslide thickness [mm per day].
+            If a DataFrame is provided, the first column is used as "daily_ls".
+
+        desired_freq (int): Sub-daily temporal resolution in minutes.
+            For example, "desired_freq=10" creates a 10-minute time step.
+
+        redistribute_method (str, optional): Method used to redistribute daily landslide magnitudes in time.
+            Must be one of {"fixed", "uniform", "random"}. Default is "fixed".
+
+    Returns:
+        pd.DataFrame: Sub-daily landslide time series with a DatetimeIndex at the specified resolution.
+            The single column contains redistributedlandslide magnitudes with units:
+            "Magnitude [mm per area-normalized landslide thickness]".
+
+    Notes:
+        - The output time index spans from the start of the first day to the end of the last day (exclusive), with sub-daily resolution.
+        - Days with zero landslide magnitude are skipped efficiently.
+        - The "random" redistribution method is intentionally left empty for future extension.
+        - Mass is conserved: the sum of sub-daily magnitudes equals the original daily magnitude for each day.
+    """
+
     # accept both Series and DataFrame
     if isinstance(daily_ls, pd.DataFrame):
         daily_ls = daily_ls.iloc[:, 0]
@@ -189,7 +318,49 @@ def redistribute_ls_time(daily_ls, desired_freq, redistribute_method="fixed"):
 
     return processed_ls
 
+
 def define_bedload_params(Qdf, min_df_v, max_s_c, bedload_param_b):
+
+    """
+    Derive bedload transport parameters and
+    an effective bedload threshold consistent with a debris-flow triggering discharge.
+
+    This function computes:
+    (1) an effective bedload initiation discharge threshold Qbl, and
+    (2) the scaling parameter of the bedload transport rating curve,
+
+    such that bedload transport smoothly transitions into debris-flow
+    transport at the debris-flow threshold Qdf while respecting a minimum debris-flow sediment volume and concentration.
+
+    The formulation ensures:
+    - Bedload sediment concentration remains below debris-flow concentration.
+    - The minimum debris-flow solid volume is not exceeded by bedload transport.
+    - Continuity of sediment transport at Qdf.
+
+    Args:
+        Qdf (float): Critical discharge for debris-flow initiation.
+            Units must be consistent with sediment volume formulation (e.g., mm per time step).
+
+        min_df_v (float): Minium debris-flow volume required to classify an event as a debris flow [m^3].
+
+        max_s_c (float): Max possible sediment concentration for bedload [-].
+
+        bedload_param_b (float): Shape exponent of the bedload transport rating curve [-].
+            Typical values range from 1.3 to 1.7 for bedload transport.
+
+    Returns:
+        Qbl (float): Effective bedload initiation discharge threshold.
+            Below this discharge, no sediment transport occurs. Constrained to be non-negative.
+
+        bedload_param_a (float): Scaling parameter of the bedload transport rating curve, defined such that sediment transport is continuous at Qdf.
+
+    Notes:
+        - Qbl is not a physically observed threshold
+            but a derived transition discharge ensuring consistency between bedload and debris-flow transport regimes.
+        - The bedload transport formulation follows a power-law of the form:
+            O_bedload = bedload_param_a · (Q - Qbl)^bedload_param_b
+        - Debris-flow transport above Qdf is governed by a fixed sediment concentration equal to max_s_c.
+    """
 
     Qbl_theory = Qdf - (min_df_v * (1 - max_s_c) / (max_s_c * Qdf)) ** (1 / (1 - bedload_param_b))
     Qbl = max(Qbl_theory, 0) # make sure the thorshlds not negative
@@ -208,23 +379,77 @@ def trans_model(large_ls, small_ls, Qs, modelled_SWE,
                 bedload_param_a, bedload_param_b, max_s2w,
                 Qbl, Qdf
                 ):
-    # min_df_v -> mindf, b (Shape parameter for bedload transport) -> scaling_b, smax_nodf ->max_s_c
+    """
+    Simulate time-resolved sediment transfer from hillslopes to the catchment outlet
+    driven by landslide inputs and discharge-dependent transport capacity.
 
-    # large_ls_t, small_ls_t is daily landslides (sediments) inputs at 12:00:00
+    The model couples:
+    (1) landslide sediment inputs (large and small),
+    (2) hillslope and channel sediment storage dynamics, and
+    (3) discharge-controlled sediment transport regimes (no transport, bedload, debris flow).
 
-    # determine 'a' and 'Qmin_nondf'
-    # this is based on two facts
-    # 1) the sediment concentration for sub-critical bedload transport
-    # cannot exceed the concentration given by smax_nodf
-    # 2) the volume of the sediment transported cannot exceed the minimal debris-flow solid volume
-    # if method == 'exp':
-    #     Qmin_nodf = Qdf - (mindf * (1 - smax_nodf) / (smax_nodf * Qdf)) ** (1 / (1 - b))
-    #     if Qmin_nodf < 0:
-    #         Qmin_nodf = 0
-    #     a = smax_nodf * Qdf / ((Qdf - Qmin_nodf) ** b * (1 - smax_nodf))
-    #
+    Daily landslide volumes are first redistributed to a sub-daily time resolution
+    and then routed through hillslope and channel storages at each time step.
 
-    # desired_freq = 10  # unit is minutes
+    Args:
+        large_ls (pd.Series or pd.DataFrame): Daily large-landslide sediment input
+            [mm, area-normalized sediment thickness].
+            Landslides are assumed to occur at 12:00 unless redistributed otherwise.
+
+        small_ls (pd.Series or pd.DataFrame): Daily small-landslide sediment input
+            [mm, area-normalized sediment thickness].
+            Landslides are assumed to occur at 12:00 unless redistributed otherwise.
+
+        Qs (np.ndarray): Discharge time series at sub-daily resolution [consistent discharge units], shape (n_time,).
+
+        modelled_SWE (np.ndarray): Snow water equivalent time series [mm], shape (n_time,).
+            Bedload transport is suppressed when SWE > 0.
+
+        desired_freq (int): Sub-daily time resolution in minutes (e.g., 10 or 60).
+
+        h2s_r (float): Fraction of incoming landslide material temporarily retained on hillslopes [-].
+
+        initial_hs_storage (float): Initial hillslope sediment storage [mm].
+        initial_ch_storage (float): Initial channel sediment storage [mm].
+        hillslope_storage_cap (float): Maximum stable hillslope sediment storage capacity [mm].
+            Excess sediment triggers secondary remobilization.
+
+        ls_min_v (float): Minimum landslide volume used in stochastic remobilization [m³].
+        ls_alpha_v (float): Power-law exponent for landslide volume distribution [-].
+
+        c_area (float): Catchment area [km^2], used to convert volumes to area-normalized thickness.
+
+        bedload_param_a (float): Scaling parameter of the bedload transport rating curve.
+        bedload_param_b (float): Exponent of the bedload transport rating curve.
+        max_s2w (float): Maximum sediment-to-water ratio for debris flows [-].
+
+        Qbl (float): Bedload initiation discharge threshold. No sediment transport occurs when Qs < Qbl.
+        Qdf (float): Debris-flow initiation discharge threshold.
+            Transport above this threshold follows a concentration-based formulation.
+
+    Returns:
+        ls_remobilize (np.ndarray): Remobilized landslide sediment per time step [mm],
+            including secondary landslides triggered by hillslope overfilling.
+
+        hillslope_storage (np.ndarray): Hillslope sediment storage time series [mm].
+        channel_storage (np.ndarray): Channel sediment storage time series [mm].
+
+        sed_transport_real (np.ndarray): Actual sediment export at the catchment outlet per time step [mm].
+        sed_transport_theory (np.ndarray): Theoretical sediment exported from the channel
+            to the outlet during the current time step, [mm].
+        sed_limited (np.ndarray): Status of sediment limited in channel storage,
+            0 (Fasle) represents no sediment limited, 1 (True) represents sediment limited,
+
+    Notes:
+        - Landslide inputs are redistributed from daily to sub-daily resolution
+            using a fixed-time assumption (12:00 by default).
+        - Sediment transport is limited by the minimum of transport capacity
+            (discharge-controlled) and available channel storage.
+        - Bedload transport is suppressed during snow-covered conditions (SWE > 0).
+        - The model is evaluated sequentially in time and depends on previous storage states.
+        - All arrays returned are newly allocated; inputs are not modified in place.
+    """
+
     large_ls = redistribute_ls_time(daily_ls=large_ls, desired_freq=desired_freq, redistribute_method="fixed")
     small_ls = redistribute_ls_time(daily_ls=small_ls, desired_freq=desired_freq, redistribute_method="fixed")
 
@@ -238,6 +463,8 @@ def trans_model(large_ls, small_ls, Qs, modelled_SWE,
     hillslope_storage = np.zeros(num_data)  # hillslope_storage
     channel_storage = np.zeros(num_data)  # channel_storage
     sed_transport_real = np.zeros(num_data)  # catchment sediment output
+    sed_transport_theory = np.zeros(num_data)  # catchment sediment output in theory
+    sed_limited = np.zeros(num_data) # whether sediments are limited in channel storage, 0(False), 1(True)
 
     # hillslope_storage_cap
     current_hs_storage = initial_hs_storage
@@ -253,7 +480,9 @@ def trans_model(large_ls, small_ls, Qs, modelled_SWE,
                                         bedload_param_a, bedload_param_b, max_s2w,
                                         Qbl, Qdf)
 
-        updated_ls, hillslope_storage_t, channel_storage_t, sed_transport_real_t = temp
+        (updated_ls, hillslope_storage_t, channel_storage_t,
+         sed_transport_real_t, sed_transport_theory_t, sed_limited_t) = temp
+
         # update the current storage
         current_hs_storage = hillslope_storage_t
         current_ch_storage = channel_storage_t
@@ -263,26 +492,7 @@ def trans_model(large_ls, small_ls, Qs, modelled_SWE,
         hillslope_storage[i] = hillslope_storage_t
         channel_storage[i] = channel_storage_t
         sed_transport_real[i] = sed_transport_real_t
+        sed_transport_theory[i] = sed_transport_theory_t
+        sed_limited[i] = sed_limited_t
 
-    # # output is debris flow when
-    # # 1) the volume is larger than mindf, and
-    # # 2) the sediment concentration is larger than smax_nodf
-    # if ('mindf') in kwargs.keys():
-    #     df, conc = get_dfs(q, so, mindf, smax_nodf, idx)
-    #     dfp, concp = get_dfs(q, sopot, mindf, smax_nodf, idx)
-    #
-
-    #
-    # # output
-    # data = {'ls': ls,
-    # data = {'ls': ls,
-    #         'hillslope_storage': sh,
-    #         'channel_storage': sc,
-    #         'sed_output_catchment': so,  # catchment sediment output time series [mm]
-    #         'sed_output_catchment_q': sopot,  # potential sediment output based on discharge [mm]
-    #         'dfs': df,
-    #         'dfspot': dfp} # potential debris flows events
-    #
-    # sed = pd.DataFrame(data=data, index=idx)
-
-    return ls_remobilize, hillslope_storage, channel_storage, sed_transport_real
+    return ls_remobilize, hillslope_storage, channel_storage, sed_transport_real, sed_transport_theory, sed_limited

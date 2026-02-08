@@ -229,66 +229,6 @@ class SedCas():
 
         return hydro_container
 
-    def _create_landslide_dataset(self, num_iteration):
-
-        temp = self._load_climate_meta()
-        time_float, time_str, num_data, num_HRU, resolution, data_source, station, time_now = temp
-
-        landslide_container_daily = xr.Dataset(
-            coords={
-                "time": ("time", np.array(time_float)),  # numeric UTC+0 time
-                "time_str": ("time", np.array(time_str)),  # string UTC+0 time
-                "iteration": np.arange(num_iteration),
-            },
-            data_vars={
-                # sediment input from landslides
-                "large_ls": (
-                    ("time", "iteration", "resolution"),
-                    np.zeros([num_data, num_iteration]),
-                    {"units": "mm per day", "description": "Generated large landslide"}
-                ),
-
-                "small_ls": (
-                    ("time", "iteration"),
-                    np.zeros([num_data, num_iteration]),
-                    {"units": "mm per day", "description": "Generated small landslide"}
-                ),
-
-            },
-            attrs={
-                "create_time": time_now
-            }
-        )
-
-        landslide_container_minute = xr.Dataset(
-            coords={
-                "time": ("time", np.array(time_float)),  # numeric UTC+0 time
-                "time_str": ("time", np.array(time_str)),  # string UTC+0 time
-                "iteration": np.arange(num_iteration),
-            },
-            data_vars={
-                # sediment input from landslides
-
-                "large_ls": (
-                    ("time", "iteration"),
-                    np.zeros([num_data, num_iteration]),
-                    {"units": f"mm / {resolution} s", "description": "Generated large landslide"}
-                ),
-
-                "small_ls": (
-                    ("time", "iteration"),
-                    np.zeros([num_data, num_iteration]),
-                    {"units": f"mm / {resolution} s", "description": "Generated small landslide"}
-                ),
-
-            },
-            attrs={
-                "create_time": time_now
-            }
-        )
-
-        return landslide_container
-
     def _create_sed_dataset(self, num_iteration=None):
 
         temp = self._load_climate_meta()
@@ -299,35 +239,36 @@ class SedCas():
             coords={"time": time_float,
                     "time_str": ("time", time_str),
                     "iteration": np.arange(num_iteration)},
-
             data_vars={
                 # sediment input from landslides
                 "ls": (("time", "iteration"), np.zeros([num_data, num_iteration]),
-                       {"units": "mm", "full name": "Generated large landslide"}),
+                       {"units": "mm ??", "description": "Generated large landslide"}),
 
-                # sediment hillslope storage [mm]
+                # sediment hillslope storage
                 "hillslope_storage": (("time", "iteration"), np.zeros([num_data, num_iteration]),
-                                      {"units": "mm", "full name": "Sediment stored in hillslope"}),
+                                      {"units": "mm ??", "description": "Sediment stored in hillslope"}),
 
-                # sediment channel storage [mm]
+                # sediment channel storage
                 "channel_storage": (("time", "iteration"), np.zeros([num_data, num_iteration]),
-                                    {"units": "mm", "full name": "Sediment stored in channel"}),
+                                    {"units": "mm", "description": "Sediment stored in channel"}),
 
-                # sediment catchment output [mm]
-                "sed_output_catchment": (("time", "iteration"), np.zeros([num_data, num_iteration]),
-                                         {"units": "mm", "full name": "Sediment transfered out catchment"}),
+                # sediment catchment output
+                "sed_transport_real": (("time", "iteration"), np.zeros([num_data, num_iteration]),
+                                         {"units": "mm", "description": "Actual sediment transfered out catchment"}),
 
-                # potential sediment catchment output [mm], i.e. transport-limited case
-                "sed_output_catchment_q": (("time", "iteration"), np.zeros([num_data, num_iteration]),
-                                           {"units": "mm", "full name": "???"}),
+                # sediment catchment output
+                "sed_transport_theory": (("time", "iteration"), np.zeros([num_data, num_iteration]),
+                                       {"units": "mm", "description": "Theoretical sediment transfered out catchment"}),
 
-                # debris flows, from 'so' values above threshold and summed consecutive values
-                "dfs": (("time", "iteration"), np.zeros([num_data, num_iteration]),
-                        {"units": "mm", "full name": "???"}),
-
-                # debris flows potential (only 1 because only 1 climate)
-                "df_potential": (("time", "iteration"), np.zeros([num_data, num_iteration]),
-                                 {"units": "mm", "full name": "???"}),
+                # sediment catchment output
+                "sed_limited": (("time", "iteration"), np.zeros([num_data, num_iteration]),
+                                         {"units": "0(False)_1(True)",
+                                          "description": "Status of sediment limited in channel storage"}),
+            },
+            attrs={
+                "resolution": resolution,
+                "resolution_unit": f"seconds",
+                "create_time": time_now
             }
         )
 
@@ -496,26 +437,24 @@ class SedCas():
                                              Qbl=Qbl,
                                              Qdf=self.cfg.Qdf.value
                                              )
-        ls_remobilize, hillslope_storage, channel_storage, sed_transport_real = sed_run
+        ls_remobilize, hillslope_storage, channel_storage, sed_transport_real, sed_transport_theory, sed_limited = sed_run
 
         # </editor-fold>
 
         # <editor-fold desc="add the params to sed_container">
         # sediment input from landslides
         sed_container["ls"][:, iteration] = ls_remobilize
-        # hillslope storage time series [mm]
+        # hillslope storage time series
         sed_container["hillslope_storage"][:, iteration] = hillslope_storage
-        # channel storage time series [mm]
+        # channel storage time series
         sed_container["channel_storage"][:, iteration] = channel_storage
-        # catchment sediment output time series [mm]
-        sed_container["sed_output_catchment"][:, iteration] = sed_transport_real
-        # # potential sediment output based on discharge [mm]
-        # sed_container["sed_output_catchment_q"][:, iteration] = sed_run.sed_output_catchment_q.values
-        # # debris flows, sediment output above minimum threshold and concentration of debris flows[mm]
-        # sed_container["dfs"][:, iteration] = sed_run.dfs.values
-        # # debris flows potential (only 1 because only 1 climate)
-        # sed_container["df_potential"][:, iteration] = sed_run.dfspot.values
-
+        # actual catchment sediment output time series
+        sed_container["sed_transport_real"][:, iteration] = sed_transport_real
+        # theoretical catchment sediment output time series
+        sed_container["sed_transport_theory"][:, iteration] = sed_transport_theory
+        # sediments limited status
+        sed_container["sed_limited"][:, iteration] = sed_limited
+        print(np.max(sed_transport_real), np.min(sed_transport_real), max(sed_transport_real), min(sed_transport_real))
         # </editor-folder>
 
         return sed_run
@@ -530,16 +469,15 @@ class SedCas():
         else:
             self.cfg.num_iteration.value = int(num_iteration)
 
-        sed_container = self._create_sed_dataset(num_iteration=num_iteration)
+        self.sed_container = self._create_sed_dataset(num_iteration=num_iteration)
         for iteration in tqdm(range(num_iteration),
                               desc="running sediment model by stochastic simulations",
                               file=sys.stdout):
-            sed_run = self.run_sediment(seed_i=seed, iteration=iteration, sed_container=sed_container)
+            sed_run = self.run_sediment(seed_i=seed, iteration=iteration, sed_container=self.sed_container)
             seed = seed + 1
 
         # calculate the stastic values
-        sed_container_stats = self.post_process_quantiles(xr_dataset=sed_container)
-        self.sed_output = sed_container_stats
+        self.sed_output = self.post_process_quantiles(xr_dataset=self.sed_container)
 
 
     # for results post-process
