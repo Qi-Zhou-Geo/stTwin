@@ -69,7 +69,7 @@ def snow_water_equivalent(temperature, precipitation,
 
     # compute actual snow depth
     modelled_SWE = np.zeros(len(precipitation))  # modelled snow water equivalent [mm]
-    delta_depth = np.zeros(len(precipitation))  # snow pack change SWE
+    snow_delta_depth = np.zeros(len(precipitation))  # snow pack change SWE
 
     for i in range(1, len(precipitation)):
         # modelled_SWE[i] is total snow water equivalent (SWE) stored on the ground at time step i
@@ -83,8 +83,8 @@ def snow_water_equivalent(temperature, precipitation,
         # update the SWE
         modelled_SWE[i] = available_snow - actual_melt
 
-        # delta_depth is change in SWE during one time step i
-        delta_depth[i] = modelled_SWE[i] - modelled_SWE[i - 1]
+        # snow_delta_depth is change in SWE during one time step i
+        snow_delta_depth[i] = modelled_SWE[i] - modelled_SWE[i - 1]
 
     # Albedo
     albedo = np.zeros(len(modelled_SWE))
@@ -95,7 +95,7 @@ def snow_water_equivalent(temperature, precipitation,
     without_snow_cond = modelled_SWE <= 0
     albedo[without_snow_cond] = soil_albedo
 
-    return modelled_SWE, delta_depth, snow_acc, snow_melt, albedo
+    return modelled_SWE, snow_delta_depth, snow_acc, snow_melt, albedo
 
 
 # Potential evapotranspiration module

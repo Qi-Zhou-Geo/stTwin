@@ -110,7 +110,7 @@ def plotly_multi_time_series_xr(xr_dataset, list_of_col_names, shared_title=None
         unit = xr_dataset[y_col].attrs['units']
         y_col = y_col.replace("_", " ")
         y_col = y_col.title()
-        y_label = f"{y_col} [{unit}]"
+        y_label = f"{y_col}<br>[{unit}]"
 
         subplot_titles.append(y_label)
 
@@ -170,7 +170,7 @@ def plotly_multi_time_series_shade_xr(xr_dataset, list_of_col_names, shared_titl
         unit = xr_dataset[col_name].attrs['units']
         y_col = col_name.replace("_", " ").replace(mean_x, "")
         y_col = y_col.title()
-        y_label = f"{y_col} [{unit}]"
+        y_label = f"{y_col}<br>[{unit}]"
 
         subplot_titles.append(y_label)
 

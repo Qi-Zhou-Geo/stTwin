@@ -87,7 +87,7 @@ def map_meta_data(time_resolution):
         meta_data = {
             "station": "station_abbr",  # Station name
             "timestamp [UTC+0]": "reference_timestamp",  # time stamp
-            f"precipitation [mm per {time_resolution}]": "rre150z0",  # Precipitation; ten minutes total, unit by mm
+            f"precipitation [mm per time_step]": "rre150z0",  # Precipitation; ten minutes total, unit by mm
             "temperature [degree]": "tre200s0",  # Air temperature 2 m above ground; current value, unit by degree C
             "sun radiation [W per squared m]": "gre000z0"  # Global radiation; ten minutes mean, unit by W/m^2
         }
@@ -95,7 +95,7 @@ def map_meta_data(time_resolution):
         meta_data = {
             "station": "station_abbr",  # Station name
             "timestamp [UTC+0]": "reference_timestamp",  # time stamp
-            f"precipitation [mm per {time_resolution}]": "rre150h0",  # Precipitation; hourly total, unit by mm/h
+            f"precipitation [mm per time_step]": "rre150h0",  # Precipitation; hourly total, unit by mm/h
             "temperature [degree]": "tre200h0",  # Air temperature 2 m above ground; hourly mean, unit by degree C
             "sun radiation [W per squared m]": "gre000h0"  # Global radiation; hourly mean, unit by W/m^2
         }
@@ -105,7 +105,7 @@ def map_meta_data(time_resolution):
 
     return meta_data
 
-def fetch_data4SedCas(station="mve", time_resolution="10 minutes",  time_period="Today"):
+def fetch_data4SedCas(station="mve", time_resolution="10 minutes", time_period="Today"):
     '''
     Fetch the climate data from MeteoSwiss
 
@@ -130,8 +130,11 @@ def fetch_data4SedCas(station="mve", time_resolution="10 minutes",  time_period=
     '''
 
     time_resolution_mapping = {"10 minutes":"t", "Hourly":"h"}
+    # never change this
     time_period_mapping = {"Today":"now", "Current year":"recent",
-                           "2010-2019":"historical_2010-2019", "2020-2029":"historical_2020-2029"}
+                           "2000-2009":"historical_2000-2009",
+                           "2010-2019":"historical_2010-2019",
+                           "2020-2029":"historical_2020-2029"}
 
     # t_now denotes the latest 10 minutes resolution data since midnight UT+0 2025-03-27T00:00:00
     # t_recent denotes the latest 10 minutes resolution data since this year UT+0 2025-01-01T00:00:00

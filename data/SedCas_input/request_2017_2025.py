@@ -21,35 +21,44 @@ sys.path.append(str(project_root))
 # import the custom functions
 from functions.download_MeteoSwiss.fetch_data import fetch_data4SedCas, replace_nan
 
+def request_1h_data(time_resolution="Hourly"):
 
-df1 = fetch_data4SedCas(station="mve", time_resolution="Hourly",  time_period="2010-2019")
-df1 = replace_nan(df1, default_value = 0)
+    df0 = fetch_data4SedCas(station="mve", time_resolution=time_resolution,  time_period="2000-2009")
+    df0 = replace_nan(df0, default_value = 0)
 
-df2 = fetch_data4SedCas(station="mve", time_resolution="Hourly",  time_period="2020-2029")
-df2 = replace_nan(df2, default_value = 0)
+    df1 = fetch_data4SedCas(station="mve", time_resolution=time_resolution,  time_period="2010-2019")
+    df1 = replace_nan(df1, default_value = 0)
 
-df3 = fetch_data4SedCas(station="mve", time_resolution="Hourly",  time_period="Current year")
-df3 = replace_nan(df3, default_value = 0)
-
-df4 = fetch_data4SedCas(station="mve", time_resolution="Hourly",  time_period="Today")
-df4 = replace_nan(df4, default_value = 0)
+    df2 = fetch_data4SedCas(station="mve", time_resolution=time_resolution,  time_period="2020-2029")
+    df2 = replace_nan(df2, default_value = 0)
 
 
-df = pd.concat([df1, df2, df3, df4], ignore_index=True)
-df['timestamp'] = pd.to_datetime(df['timestamp [UTC+0]'], utc=True)
-df = df.sort_values(by='timestamp')
-df = df.reset_index(drop=True)
-df.drop(columns=['timestamp'], inplace=True)
-aaa
-# the data should be always start with 00:00:00 and end at 23:00:00
-time1 = "2017-01-01T00:00:00"
-time2 = "2025-10-01T00:00:00"
+    df = pd.concat([df0, df1, df2], ignore_index=True)
+    df['timestamp'] = pd.to_datetime(df['timestamp [UTC+0]'], utc=True)
+    df = df.sort_values(by='timestamp')
+    df = df.reset_index(drop=True)
+    df.drop(columns=['timestamp'], inplace=True)
 
-date = np.array(df.iloc[:, 1])
+    # the data should be always start with 00:00:00 and end at 23:00:00
+    time1 = "2005-01-01T00:00:00"
+    time2 = "2023-01-01T00:00:00"
 
-idx1 = np.where(date == time1)[0][0]
-idx2 = np.where(date == time2)[0][0]
+    date = np.array(df.iloc[:, 1])
 
-df = df.iloc[idx1:idx2, :]
+    idx1 = np.where(date == time1)[0][0]
+    idx2 = np.where(date == time2)[0][0]
 
-df.to_csv(f"{current_dir}/climate_2017_2025.txt", index=False, mode='w')
+    df = df.iloc[idx1:idx2, :]
+
+    if time_resolution == "Hourly":
+        marker = "h"
+    elif time_resolution == "10 minutes":
+        marker = "t"
+    else:
+        raise ValueError("time_resolution must be 'Hourly' or '10'")
+
+    df.to_csv(f"{current_dir}/climate_{time1[:4]}_{time2[:4]}_{marker}.txt", index=False, mode='w')
+
+if __name__ == "__main__":
+    request_1h_data(time_resolution="Hourly")
+    request_1h_data(time_resolution="10 minutes")

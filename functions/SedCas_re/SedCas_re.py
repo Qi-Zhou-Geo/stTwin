@@ -74,38 +74,46 @@ class SedCas():
     # for model input
     def load_climate_input(self, data_type):
 
-        # use the default data from SedCas model
-        data = pd.read_csv(f"{self.model_input_dir}/climate.met", sep='\t')
-
-        time_float = [UTCDateTime(i).timestamp for i in data.iloc[:, 0]]
-        time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 0]]
-
-        # Extract variables
-        precipitation = data.Pr.values
-        temperature = data.Ta.values
-        sun_radiation = data.Rsw.values
-
         data_source = "MeteoSwiss"
-        station = "AAA"  # station name
-        resolution = 3600  # unit is second
+        station = "Montana (MVE)"
         time_now = UTCDateTime().isoformat()
 
+        if data_type == "default":
+            # use the default data from SedCas model
+            data = pd.read_csv(f"{self.model_input_dir}/climate.met", sep='\t')
 
-        # data = pd.read_csv(f"/Users/qizhou/#python/stTwin/data/SedCas_input/climate_2004_2017_h.txt", header=0)
-        #
-        # time_float = [UTCDateTime(i).timestamp for i in data.iloc[:, 1]]
-        # time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 1]]
-        #
-        # # Extract variables
-        # precipitation = data.iloc[:, 2].values
-        # temperature = data.iloc[:, 3].values
-        # sun_radiation = data.iloc[:, 4].values
-        #
-        # data_source = "MeteoSwiss"
-        # station = data.iloc[0, 0]  # station name
-        # resolution = time_float[1] - time_float[0]  # unit is second
-        # time_now = UTCDateTime().isoformat()
+            time_float = [UTCDateTime(i).timestamp for i in data.iloc[:, 0]]
+            time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 0]]
 
+            # Extract variables
+            precipitation = data.Pr.values
+            temperature = data.Ta.values
+            sun_radiation = data.Rsw.values
+
+            resolution = 3600  # unit is second
+        elif data_type in ["1-hour", "10-minutes"]:
+
+            if data_type == "1-hour":
+                climate_frocing_input = "climate_2005_2023_h.txt"
+                resolution = 3600  # unit is second
+            elif data_type == "10-minutes":
+                climate_frocing_input = "climate_2005_2023_t.txt"
+                resolution = 600  # unit is second
+            else:
+                raise ValueError("data_type must be '1-hour' or '10-minutes'")
+
+            data = pd.read_csv(f"{project_root}/data/SedCas_input/{climate_frocing_input}", header=0)
+
+            time_float = [UTCDateTime(i).timestamp for i in data.iloc[:, 1]]
+            time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 1]]
+
+            # Extract variables
+            precipitation = data.iloc[:, 2].values
+            temperature = data.iloc[:, 3].values
+            sun_radiation = data.iloc[:, 4].values
+
+        elif data_type == "sediment":
+            pass
 
 
         climate_forcing = xr.Dataset(
@@ -175,8 +183,8 @@ class SedCas():
                                   "description": "Modelled snow-water-equivalent depth"}),
 
                 # Snow pack changes
-                "delta_depth": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
-                                {"units": f"mm per {resolution} s", "description": "Snow pack changes"}),
+                "snow_delta_depth": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
+                                     {"units": f"mm per {resolution} s", "description": "Snow pack changes"}),
 
                 # snow accumulation
                 "snow_acc": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
@@ -187,37 +195,41 @@ class SedCas():
 
                 # albedo
                 "albedo": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
-                           {"units": "mm??",
-                            "description": "Snow (when covered with snow) or soil (when no more snow existing) albedo"}),
+                           {"units": "None",
+                            "description": "Snow (when covered with snow) or soil (when no more snow existing) albedo, 0->low, 1->high"}),
 
                 # (2)
                 # Potential evapotranspiration [mm]
                 "PET": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
-                        {"units": "mm??", "description": "Potential evapotranspiration"}),
+                        {"units": f"mm per {resolution} s", "description": "Potential evapotranspiration"}),
 
                 # Actual evapotranspiration [mm]
                 "AET": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
-                        {"units": "mm??", "description": "Actual evapotranspiration"}),
+                        {"units": f"mm per {resolution} s", "description": "Actual evapotranspiration"}),
 
                 # (3)
                 # discharge from subsurface flow (outflow from last bucket in the cascasde) [mm]
                 "Qss": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
-                        {"units": "mm??", "description": "Discharge from subsurface flow"}),
+                        {"units": f"mm per {resolution} s",
+                         "description": "Discharge from subsurface flow (normalized by catchment area)"}),
 
                 # discharge from overland flow
                 "Qs": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
-                       {"units": "mm??", "description": "Discharge from overland (surface) flow"}),
+                       {"units": f"mm per {resolution} s",
+                        "description": "Discharge from overland (surface) flow (normalized by catchment area)"}),
 
                 # discharge
                 "Q": (("time", "HRU_id"), np.zeros((num_data, num_HRU)),
-                      {"units": "mm??", "description": "Total discharge"}),
+                      {"units": f"mm per {resolution} s",
+                       "description": "Total discharge (normalized by catchment area)"}),
 
                 # water stored in reservoir 0 (top), reservoir 1 (after-top), w_storage_n (bottom)
                 "w_storage": (("time", "HRU_id", "reservoir_id"), np.zeros((num_data, num_HRU, num_reservoir)),
-                              {"units": "mm??", "description": "Total water stored in each reservoir",
-                               "reservoir_id=0": "top reservoir in bedrock HRU",
-                               "reservoir_id=1": "top reservoir in forest HRU ",
-                               "reservoir_id=2": "bottom reservoi in forest HRU"}),
+                              {"units": f"mm per {resolution} s",
+                               "description": "Total water stored in each reservoir.\n",
+                               "reservoir_id=0": "top reservoir in bedrock HRU\n",
+                               "reservoir_id=1": "top reservoir in forest HRU\n",
+                               "reservoir_id=2": "bottom reservoi in forest HRU\n"}),
 
             },
             attrs={
@@ -242,28 +254,33 @@ class SedCas():
             data_vars={
                 # sediment input from landslides
                 "ls": (("time", "iteration"), np.zeros([num_data, num_iteration]),
-                       {"units": "mm ??", "description": "Generated large landslide"}),
+                       {"units": f"mm per {resolution} s",
+                        "description": "Generated large landslide (normalized by catchment area)"}),
 
                 # sediment hillslope storage
                 "hillslope_storage": (("time", "iteration"), np.zeros([num_data, num_iteration]),
-                                      {"units": "mm ??", "description": "Sediment stored in hillslope"}),
+                                      {"units": f"mm per {resolution} s",
+                                       "description": "Sediment stored in hillslope (normalized by catchment area)"}),
 
                 # sediment channel storage
                 "channel_storage": (("time", "iteration"), np.zeros([num_data, num_iteration]),
-                                    {"units": "mm", "description": "Sediment stored in channel"}),
+                                    {"units": f"mm per {resolution} s",
+                                     "description": "Sediment stored in channel (normalized by catchment area)"}),
 
                 # sediment catchment output
                 "sed_transport_real": (("time", "iteration"), np.zeros([num_data, num_iteration]),
-                                         {"units": "mm", "description": "Actual sediment transfered out catchment"}),
+                                       {"units": f"mm per {resolution} s",
+                                        "description": "Actual sediment transfered out catchment (normalized by catchment area)"}),
 
                 # sediment catchment output
                 "sed_transport_theory": (("time", "iteration"), np.zeros([num_data, num_iteration]),
-                                       {"units": "mm", "description": "Theoretical sediment transfered out catchment"}),
+                                         {"units": f"mm per {resolution} s", "description":
+                                             "Theoretical sediment transfered out catchment (normalized by catchment area)"}),
 
                 # sediment catchment output
                 "sed_limited": (("time", "iteration"), np.zeros([num_data, num_iteration]),
-                                         {"units": "0(False)_1(True)",
-                                          "description": "Status of sediment limited in channel storage"}),
+                                {"units": "0(False)_1(True)",
+                                 "description": "Status of sediment limited in channel storage (normalized by catchment area)"}),
             },
             attrs={
                 "resolution": resolution,
@@ -292,10 +309,10 @@ class SedCas():
                                                          soil_albedo=self.cfg.snow_albedo_n.value[HRU_id]
                                                          )
 
-            modelled_SWE, delta_depth, snow_acc, snow_melt, albedo = s_w_e
+            modelled_SWE, snow_delta_depth, snow_acc, snow_melt, albedo = s_w_e
             # update the hydro_output
             self.hydro_container["modelled_SWE"].loc[:, HRU_id] = modelled_SWE
-            self.hydro_container["delta_depth"].loc[:, HRU_id] = delta_depth
+            self.hydro_container["snow_delta_depth"].loc[:, HRU_id] = snow_delta_depth
             self.hydro_container["snow_acc"].loc[:, HRU_id] = snow_acc
             self.hydro_container["snow_melt"].loc[:, HRU_id] = snow_melt
             self.hydro_container["albedo"].loc[:, HRU_id] = albedo
@@ -373,7 +390,7 @@ class SedCas():
 
         # shape by [time, landslides magnitude[mm]]
         large_ls = SedCas_s_model.generate_large_ls(ls_trigger=self.cfg.ls_trigger_m.value,
-                                                    temperature=temperature, # need pd series for resample
+                                                    temperature=temperature,  # need pd series for resample
                                                     prec=prec,
                                                     snow=snow,  # need pd series for resample
                                                     theta_sd=self.cfg.ls_trigger_SWE.value,
@@ -413,7 +430,6 @@ class SedCas():
 
         # desired_freq unit by minutes
         desired_freq = self.climate_forcing.attrs['resolution'] / 60  # divide 60 -> convert second to minute
-        print(self.cfg.initial_hs_storage.value, self.cfg.initial_ch_storage.value)
         sed_run = SedCas_t_model.trans_model(large_ls=large_ls.copy(),
                                              small_ls=small_ls.copy(),
                                              Qs=self.hydro_output["Qs"].values.copy(),
@@ -454,7 +470,6 @@ class SedCas():
         sed_container["sed_transport_theory"][:, iteration] = sed_transport_theory
         # sediments limited status
         sed_container["sed_limited"][:, iteration] = sed_limited
-        print(np.max(sed_transport_real), np.min(sed_transport_real), max(sed_transport_real), min(sed_transport_real))
         # </editor-folder>
 
         return sed_run
@@ -479,7 +494,6 @@ class SedCas():
         # calculate the stastic values
         self.sed_output = self.post_process_quantiles(xr_dataset=self.sed_container)
 
-
     # for results post-process
     def post_process_quantiles(self, xr_dataset, quants=(1, 50, 99)):
 
@@ -500,32 +514,7 @@ class SedCas():
                 for qi, qname in zip(q_values, q_names):
                     new_xr[f"{var}_{qname}"] = q_da.sel(quantile=qi)
 
+                # add standard deviation
+                new_xr[f"{var}_std"] = xr_dataset[var].std(dim="iteration", ddof=1)
+
         return new_xr
-
-    def post_process_visualize(self, list_of_tuples=None):
-        """
-        list_of_tuples: list of tuples
-            [(df, x_col, y_col), ...]
-        """
-        from functions.toolkit.plotly_visualize import plotly_multi_time_series
-        from functions.toolkit.plotly_visualize import plotly_multi_time_series_with_shade
-
-        if list_of_tuples is None:
-            temp = self.hydro.copy()
-            temp = temp.reset_index()
-            temp = temp.rename(columns={"D": "UTC+0DateTime"})
-
-            list_of_tuples = [(temp, "UTC+0DateTime", "Pr"), (temp, "UTC+0DateTime", "Q")]
-
-            temp = self.sedout.copy()
-            temp = temp.reset_index()
-            temp = temp.rename(columns={"D": "UTC+0DateTime"})
-
-            list_of_tuples.append([temp, "UTC+0DateTime", "Qstl"])
-        else:
-            list_of_tuples = list_of_tuples
-
-        plotly_multi_time_series(list_of_tuples,
-                                 width=2000,
-                                 height_per_panel=300,
-                                 shared_title=None)

@@ -25,6 +25,7 @@ sys.path.append(str(project_root))
 
 # import the custom functions
 from functions.SedCas_re.SedCas_re import SedCas
+from functions.SedCas_re.physical_unit_converter import unit_converter
 from functions.toolkit.confidence_level_test import statistical_testing
 from functions.toolkit.plotly_visualize import plotly_multi_time_series_xr
 from functions.toolkit.plotly_visualize import plotly_multi_time_series_shade_xr
@@ -42,17 +43,17 @@ model.load_climate_input(data_type=data_type)
 model.run_hydro()
 
 # # (4) run the sediment model
-model.run_stochastic_simulations(seed=0, num_iteration=10)
+model.run_stochastic_simulations(seed=0, num_iteration=100)
 
 
 # # # (5) visualize
 time_coord = "time_str"
 t1, t2 = "2005-01-01T00:00:00", "2018-01-01T00:00:00"
-mask = (model.climate_forcing.time_str >= t1) & (model.climate_forcing.time_str < t2)
-climate_forcing_2017 = model.climate_forcing.isel(time=mask)
-
+sss
 
 # climate forcing
+mask = (model.climate_forcing.time_str >= t1) & (model.climate_forcing.time_str < t2)
+climate_forcing_2017 = model.climate_forcing.isel(time=mask)
 list_of_col_names = [(time_coord, "precipitation"), (time_coord, "temperature"), (time_coord, "sun_radiation")]
 fig = plotly_multi_time_series_xr(xr_dataset=climate_forcing_2017, list_of_col_names=list_of_col_names)
 fig.show()
@@ -63,7 +64,7 @@ mask = (model.hydro_output.time_str >= t1) & (model.hydro_output.time_str < t2)
 hydro_output_2017 = model.hydro_output.isel(time=mask)
 
 # SWE
-list_of_col_names = [(time_coord, "modelled_SWE"), (time_coord, "delta_depth"),
+list_of_col_names = [(time_coord, "modelled_SWE"), (time_coord, "snow_delta_depth"),
                      (time_coord, "snow_acc"), (time_coord, "snow_melt")]
 fig = plotly_multi_time_series_xr(xr_dataset=hydro_output_2017, list_of_col_names=list_of_col_names)
 fig.show()
@@ -76,9 +77,26 @@ fig.show()
 
 
 # Q
+# new_unit = f"m^3 per {hydro_output_2017.attrs['resolution']} {hydro_output_2017.attrs['resolution_unit'][0]}"
+# hydro_output_2017_physical = hydro_output_2017.copy()
+# list_of_col_names = []
+# for vars in ["Q", "Qs", "Qss"]:
+#     data = unit_converter(input=hydro_output_2017_physical[vars],
+#                           catchment_area=model.cfg.c_area.value,
+#                           method="area-aggregated")
+#
+#     hydro_output_2017_physical[vars] = data
+#     hydro_output_2017_physical[vars].attrs["units"] = new_unit
+#     list_of_col_names.append((time_coord, vars))
+#
+# list_of_col_names = [(time_coord, "discharge"), (time_coord, "discharge_surface"), (time_coord, "discharge_sub_surface")]
+# fig = plotly_multi_time_series_xr(xr_dataset=hydro_output_2017_physical, list_of_col_names=list_of_col_names)
+# fig.show()
+
 list_of_col_names = [(time_coord, "Q"), (time_coord, "Qs"), (time_coord, "Qss")]
 fig = plotly_multi_time_series_xr(xr_dataset=hydro_output_2017, list_of_col_names=list_of_col_names)
 fig.show()
+
 
 
 
@@ -101,7 +119,7 @@ sed_output_2017 = model.sed_output.isel(time=mask)
 list_of_col_names = [(time_coord, "hillslope_storage_Q50"),
                      (time_coord, "channel_storage_Q50"),
                      (time_coord, "sed_transport_real_Q50"),
-                     (time_coord, "sed_transport_theory_Q50")]
+                     (time_coord, "sed_transport_real_std")]
 fig = plotly_multi_time_series_xr(xr_dataset=sed_output_2017,
                                   list_of_col_names=list_of_col_names)
 fig.show()
