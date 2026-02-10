@@ -5,10 +5,13 @@
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
+import numpy as np
 import pandas as pd
 
 # <editor-fold desc="add the sys.path to search for custom modules">
 from pathlib import Path
+
+from obspy import UTCDateTime
 
 current_dir = Path(__file__).resolve().parent
 # using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
@@ -22,7 +25,10 @@ sys.path.append(str(project_root))
 
 # import the custom functions
 from functions.SedCas_re.SedCas_re import SedCas
+from functions.SedCas_re.physical_unit_converter import unit_converter
+from functions.toolkit.confidence_level_test import statistical_testing
 from functions.toolkit.plotly_visualize import plotly_multi_time_series_xr
+from functions.toolkit.plotly_visualize import plotly_multi_time_series_shade_xr
 
 # initial the SedCas model
 model_params = "SedCas_input_params_10min.yaml"
@@ -37,21 +43,8 @@ model.load_climate_input(data_type=data_type)
 model.run_hydro()
 
 # # (4) run the sediment model
-model.run_stochastic_simulations(seed=0, num_iteration=100)
-
-# loss
-from functions.SedCas_re.physical_unit_converter import unit_converter
-from functions.SedCas_re.loss_func import likehood_loss
-file_name = "debris_flow_volume_2004_2022.txt"
-y_obs = pd.read_csv(f"{project_root}/data/event_catalog/{file_name}", skiprows=6, header=0)
-sed_transport_real = model.sed_container["sed_transport_real"].copy()
-# conver mm to m^3
-y_pred = unit_converter(input=sed_transport_real, catchment_area=model.cfg.c_area.value, method="area-aggregated")
-total_loss = likehood_loss(y_obs, y_pred)
-
-
-ssss
-
+model.run_stochastic_simulations(seed=0, num_iteration=10)
+sss
 
 # # # (5) visualize
 time_coord = "time_str"

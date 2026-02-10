@@ -244,6 +244,15 @@ model_config:
       description: Landslide triggering mechanism
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
+  # Tpr
+  ls_trigger_r:
+    name: ls_trigger_rainfall
+    value: 7.9
+    attrs:
+      unit: mm / <time_resolution>>
+      description: Rainfall threshold for landslide triggered by precipitation
+      calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
+
   # Tsd
   ls_trigger_SWE:
     name: ls_trigger_SWE
