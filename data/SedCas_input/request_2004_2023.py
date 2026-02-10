@@ -40,7 +40,7 @@ def request_1h_data(time_resolution="Hourly"):
     df.drop(columns=['timestamp'], inplace=True)
 
     # the data should be always start with 00:00:00 and end at 23:00:00
-    time1 = "2005-01-01T00:00:00"
+    time1 = "2004-02-01T00:00:00" # 10 minutes data start at 2004-02-01T00:00:00
     time2 = "2023-01-01T00:00:00"
 
     date = np.array(df.iloc[:, 1])

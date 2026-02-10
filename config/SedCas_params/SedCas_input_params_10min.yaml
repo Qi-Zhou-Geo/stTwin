@@ -262,16 +262,6 @@ model_config:
       description: Temperature threshold for landslide triggered by freezing
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
-  # Tpr
-  ls_trigger_r:
-    name: ls_trigger_rainfall
-    value: 7.9
-    attrs:
-      unit: mm / <time_resolution>>
-      description: Rainfall threshold for landslide triggered by precipitation
-      calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
-
-
   # ls_xmin
   ls_min_v:
     name: ls_min_v
@@ -312,7 +302,7 @@ model_config:
 
   initial_hs_storage:
     name: initial_hs_storage
-    value: 119
+    value: 119.36
     attrs:
       unit: mm
       description: Initlal hillslope storage, area-normalized sediment thickness

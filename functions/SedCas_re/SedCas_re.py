@@ -94,10 +94,10 @@ class SedCas():
         elif data_type in ["1-hour", "10-minutes"]:
 
             if data_type == "1-hour":
-                climate_frocing_input = "climate_2005_2023_h.txt"
+                climate_frocing_input = "climate_2004_2023_h.txt"
                 resolution = 3600  # unit is second
             elif data_type == "10-minutes":
-                climate_frocing_input = "climate_2005_2023_t.txt"
+                climate_frocing_input = "climate_2004_2023_t.txt"
                 resolution = 600  # unit is second
             else:
                 raise ValueError("data_type must be '1-hour' or '10-minutes'")
