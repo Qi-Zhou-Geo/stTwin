@@ -41,7 +41,7 @@ sys.path.append(str(project_root))
 # import the custom functions
 from functions.toolkit.log_infor import log_print
 
-from functions.SedCas_re.model_config import ModelConfig
+from functions.SedCas_re.model_config import ModelConfig, ConfigItem
 from functions.SedCas_re import hydro_model as SedCas_h_model
 from functions.SedCas_re import sediment_model as SedCas_s_model
 from functions.SedCas_re import transport_model as SedCas_t_model
@@ -70,6 +70,45 @@ class SedCas():
         # self.cfg.print_config_params(check_params="in_prec") # for "in_prec" param
 
         self.climate_forcing = None
+
+    def _params_post_processing(self):
+
+        # post-processing to get another two more model params
+        # normalizing hillslope sediment storage by catchment area considering packing density
+        self.cfg.hillslope_storage_cap.value = (
+                self.cfg.hillslope_storage_cap.value *
+                (self.cfg.rho_sediment.value / self.cfg.rho_bedrock.value) / self.cfg.c_area.value * 1e-3
+        )
+
+        # smallest possible sediment amount in debirs flow
+        # NOTE: this is only a constraint for the model,
+        # the smallest modelled debris flow volume is given by q_df and max_s_c
+        self.cfg.min_df_v.value = self.cfg.min_df_v.value * self.cfg.max_s_c.value / self.cfg.c_area.value * 1e-3
+
+        # add new params
+        bl_params = SedCas_t_model.define_bedload_params(Qdf=self.cfg.Qdf.value,
+                                                         min_df_v=self.cfg.min_df_v.value,
+                                                         max_s_c=self.cfg.max_s_c.value,
+                                                         bedload_param_b=self.cfg.bedload_param_b.value)
+        Qbl, bedload_param_a = bl_params
+        self.cfg.Qbl = ConfigItem(
+            name="Qbl",
+            value=Qbl,
+            attrs={'unit': 'mm / <time_resolution>',
+                   'description': 'Discharge threshold for triggering bedload,'
+                                  'if Qs > Qbf, bedload could be generated',
+                   'calibrate': 'Yes, follow https://doi.org/10.1029/2020JF005739'}
+        )
+
+        self.cfg.bedload_param_a = ConfigItem(
+            name="bedload_param_a",
+            value=bedload_param_a,
+            attrs={'unit': 'None',
+                   'description': 'Shape parameter for bedload transport,'
+                                  'bedload_scaling_param_a will be calculated based on bedload_scaling_param_b',
+                   'calibrate': 'Yes, follow https://doi.org/10.1029/2020JF005739'}
+
+        )
 
     # for model input
     def load_climate_input(self, data_type):
@@ -422,12 +461,6 @@ class SedCas():
         # </editor-fold>
 
         # <editor-fold desc="mix water and sediments">
-        bl_params = SedCas_t_model.define_bedload_params(Qdf=self.cfg.Qdf.value,
-                                                         min_df_v=self.cfg.min_df_v.value,
-                                                         max_s_c=self.cfg.max_s_c.value,
-                                                         bedload_param_b=self.cfg.bedload_param_b.value)
-        Qbl, bedload_param_a = bl_params
-
         # desired_freq unit by minutes
         desired_freq = self.climate_forcing.attrs['resolution'] / 60  # divide 60 -> convert second to minute
         sed_run = SedCas_t_model.trans_model(large_ls=large_ls.copy(),
@@ -446,11 +479,11 @@ class SedCas():
                                              ls_alpha_v=self.cfg.ls_alpha_v.value,
                                              c_area=self.cfg.c_area.value,
 
-                                             bedload_param_a=bedload_param_a,
+                                             bedload_param_a=self.cfg.bedload_param_a.value,
                                              bedload_param_b=self.cfg.bedload_param_b.value,
                                              max_s2w=self.cfg.max_s2w.value,
 
-                                             Qbl=Qbl,
+                                             Qbl=self.cfg.Qbl.value,
                                              Qdf=self.cfg.Qdf.value
                                              )
         ls_remobilize, hillslope_storage, channel_storage, sed_transport_real, sed_transport_theory, sed_limited = sed_run

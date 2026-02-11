@@ -52,15 +52,6 @@ class ModelConfig:
             for key, section in data[p].items():
                 setattr(self, key, ConfigItem(**section))
 
-        # post-processing to get another two more model params
-        # normalizing hillslope sediment storage by catchment area considering packing density
-        self.hillslope_storage_cap.value = self.hillslope_storage_cap.value * (self.rho_sediment.value / self.rho_bedrock.value) / self.c_area.value * 1e-3
-
-        # smallest possible sediment amount in debirs flow
-        # NOTE: this is only a constraint for the model,
-        # the smallest modelled debris flow volume is given by q_df and max_s_c
-        self.min_df_v.value = self.min_df_v.value * self.max_s_c.value / self.c_area.value * 1e-3
-
 
     def print_config_params(self, check_params="All"):
 
