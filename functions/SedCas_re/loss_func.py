@@ -121,7 +121,12 @@ def likehood_loss(y_obs, y_pred, default_loss=1e10):
                 mu, sigma = get_mu_sigma(y_pred, start_time, end_time)
                 loss = loss_func(volume_obs, mu, sigma)
             except RuntimeError:
-                loss = max(default_loss, np.nanmean(event_level_loss))
+
+                if len(event_level_loss) == 0:
+                    # in case this situation occurs in the first event
+                    loss = default_loss
+                else:
+                    loss = max(default_loss, np.nanmean(event_level_loss))
 
             event_level_loss.append(loss)
             print(event_id, volume_obs, start_time, end_time, loss)

@@ -508,7 +508,7 @@ class SedCas():
         return sed_run
 
     # for combine model together
-    def run_stochastic_simulations(self, seed=0, num_iteration=None):
+    def run_stochastic_simulations(self, seed=0, num_iteration=None, progress_bars=True):
 
         # sediment module with stochastic landslide magnitudes
         if num_iteration is None:
@@ -518,14 +518,20 @@ class SedCas():
             self.cfg.num_iteration.value = int(num_iteration)
 
         self.sed_container = self._create_sed_dataset(num_iteration=num_iteration)
-        for iteration in tqdm(range(num_iteration),
-                              desc="running sediment model by stochastic simulations",
-                              file=sys.stdout):
+
+        # set iterator
+        iterator = range(num_iteration)
+        if progress_bars is True:
+            iterator = tqdm(iterator,
+                            desc="running sediment model by stochastic simulations",
+                            file=sys.stdout)
+        # loop
+        for iteration in iterator:
             sed_run = self.run_sediment(seed_i=seed, iteration=iteration, sed_container=self.sed_container)
             seed = seed + 1
 
         # calculate the stastic values
-        self.sed_output1 = self.post_process_quantiles(xr_dataset=self.sed_container)
+        self.sed_output = self.post_process_quantiles(xr_dataset=self.sed_container)
 
 
     # for results post-process

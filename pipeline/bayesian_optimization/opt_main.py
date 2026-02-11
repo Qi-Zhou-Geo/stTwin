@@ -4,11 +4,19 @@
 # __modification time__ = 2025-09-24
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
 
 import optuna
 import numpy as np
 import pandas as pd
+from obspy import UTCDateTime
 
+import matplotlib.pyplot as plt
 
 # <editor-fold desc="add the sys.path to search for custom modules">
 from pathlib import Path
@@ -29,6 +37,36 @@ from functions.toolkit.plotly_visualize import plotly_multi_time_series_xr
 
 from functions.SedCas_re.physical_unit_converter import unit_converter
 from functions.SedCas_re.loss_func import likehood_loss
+
+def sedcas_plot(params):
+
+    y_pred, sed_output = sedcas_model(params["model_params"], params["data_type"],
+
+                                      params["min_df_v"],
+                                      params["w_storage_cap0"],
+                                      params["w_storage_cap1"],
+                                      params["w_storage_cap2"],
+                                      params["w_residence_time0"],
+                                      params["w_residence_time1"],
+                                      params["w_residence_time2"],
+                                      params["Qdf"],
+
+                                      params["project_root"])
+
+
+    time_coord = "time_str"
+    t1, t2 = "2004-02-01T00:00:00", "2023-01-01T00:00:00"
+    mask = (sed_output.time_str >= t1) & (sed_output.time_str < t2)
+    sed_output_2017 = sed_output.isel(time=mask)
+
+
+    list_of_col_names = [(time_coord, "hillslope_storage_Q50"),
+                         (time_coord, "channel_storage_Q50"),
+                         (time_coord, "sed_transport_real_Q50")]
+    fig = plotly_multi_time_series_xr(xr_dataset=sed_output_2017,
+                                      list_of_col_names=list_of_col_names)
+    fig.write_html(f"{current_dir}/resolution_{params['data_type']}_{t1[:4]}_{t2[:4]}_sediments_optimal.html")
+    plt.close(fig)
 
 
 def sedcas_model(model_params, data_type,
@@ -55,6 +93,9 @@ def sedcas_model(model_params, data_type,
 
     model.cfg.Qdf.value = Qdf
 
+    # make it as critial value
+    # model.cfg.initial_hs_storage.value = model.cfg.hillslope_storage_cap.value
+
     # you must update the params then post-processing
     model._params_post_processing()
 
@@ -65,7 +106,7 @@ def sedcas_model(model_params, data_type,
     model.run_hydro()
 
     # (4) run the sediment model
-    model.run_stochastic_simulations(seed=0, num_iteration=100)
+    model.run_stochastic_simulations(seed=0, num_iteration=100, progress_bars=False)
 
     # (5) select the sediments array
     sed_transport_real = model.sed_container["sed_transport_real"].copy()
@@ -73,7 +114,7 @@ def sedcas_model(model_params, data_type,
     y_pred = unit_converter(input=sed_transport_real, catchment_area=model.cfg.c_area.value,
                             method="area-aggregated")
 
-    return y_pred
+    return y_pred, model.sed_output
 
 
 def objective(trial, y_obs,
@@ -99,14 +140,14 @@ def objective(trial, y_obs,
     Qdf = trial.suggest_float("Qdf", 0.1, 5)  # debris flow
 
     # (2) pass the prams + data to the model and return model predicted
-    y_pred = sedcas_model(model_params, data_type,
+    y_pred, sed_output = sedcas_model(model_params, data_type,
 
-                          min_df_v,
-                          w_storage_cap0, w_storage_cap1, w_storage_cap2,
-                          w_residence_time0, w_residence_time1, w_residence_time2,
-                          Qdf,
+                                      min_df_v,
+                                      w_storage_cap0, w_storage_cap1, w_storage_cap2,
+                                      w_residence_time0, w_residence_time1, w_residence_time2,
+                                      Qdf,
 
-                          project_root)
+                                      project_root)
 
     # (3) calculate the loss
     total_loss = likehood_loss(y_obs, y_pred)
@@ -124,6 +165,7 @@ def main(project_root, num_trials, num_worker):
     data_type = "10-minutes"
 
     storage = "sqlite:///sedcas_calibration.db"
+
     # prepare the Bayesian Optimization
     study = optuna.create_study(
         direction="minimize",
@@ -136,18 +178,38 @@ def main(project_root, num_trials, num_worker):
                    n_trials=num_trials, n_jobs=num_worker)
 
     # best parameters found
+    params = {
+        "model_params": model_params,
+        "data_type": data_type,
+        "project_root": project_root,
+    }
+
+    print("Best parameters found:\n")
     for param_name, param_value in study.best_params.items():
         print(f"{param_name} = {param_value:.4f}")
+        params[param_name] = param_value  # <-- correct
+
     print(f"min loss = {study.best_value:.4f}")
 
+    # plot it
+    sedcas_plot(params)
+
+
 if __name__ == "__main__":
+    import argparse
+
+    print(f"Start: {UTCDateTime.now().isoformat()}")
+
     # sinfo -n node[501-514] -N --Format="Nodelist,CPUsState,AllocMem,Memory,GresUsed,Gres"
     parser = argparse.ArgumentParser(description='input parameters')
+    parser.add_argument("--num_trials", default=10, type=int)
     parser.add_argument("--num_worker", default=1, type=int)
     args = parser.parse_args()
 
     # run it
     project_root = current_dir.parent.parent
-    n_trials = 500
+    num_trials = args.num_trials
     num_worker = args.num_worker
-    main(project_root, n_trials, num_worker)
+    main(project_root, num_trials, num_worker)
+
+    print(f"End: {UTCDateTime.now().isoformat()}")
