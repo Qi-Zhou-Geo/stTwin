@@ -17,9 +17,12 @@ mkdir -p logs
 source /home/qizhou/miniforge3/bin/activate
 conda activate stTwin
 
+# delete the existing file
+rm sedcas_calibration.db
+
 # Print the current combination
 echo "Starting Optuna worker on $SLURM_PROCID"
 
-num_trials=8
+num_trials=4
 num_worker=4
 srun python opt_main.py --num_trials "$num_trials" --num_worker "$num_worker"

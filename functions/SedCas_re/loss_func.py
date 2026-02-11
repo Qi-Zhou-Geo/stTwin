@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-
 def get_mu_sigma(y_pred, start_time, end_time):
     '''
     Calculate the mean and standard deviation of a given event.
@@ -108,6 +107,7 @@ def likehood_loss(y_obs, y_pred, default_loss=1e10):
     event_level_loss = []
     y_obs = np.array(y_obs)
 
+    details_loss = []
     for event_id in range(len(y_obs)):
 
         volume_obs = y_obs[event_id, 2]
@@ -129,9 +129,13 @@ def likehood_loss(y_obs, y_pred, default_loss=1e10):
                     loss = max(default_loss, np.nanmean(event_level_loss))
 
             event_level_loss.append(loss)
-            print(event_id, volume_obs, start_time, end_time, loss)
+
+            # save the details
+            record = [default_loss, event_id, volume_obs, start_time, end_time, f"{loss:.1f}"]
+            record = ", ".join(map(str, record))
+            details_loss.append(record)
 
     total_loss = np.nansum(event_level_loss)
 
-    return total_loss
+    return total_loss, details_loss
 

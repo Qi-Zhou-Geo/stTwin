@@ -38,6 +38,9 @@ from functions.toolkit.plotly_visualize import plotly_multi_time_series_xr
 from functions.SedCas_re.physical_unit_converter import unit_converter
 from functions.SedCas_re.loss_func import likehood_loss
 
+from functions.toolkit.archive_data import dump_as_row
+
+
 def sedcas_plot(params):
 
     y_pred, sed_output = sedcas_model(params["model_params"], params["data_type"],
@@ -66,7 +69,6 @@ def sedcas_plot(params):
     fig = plotly_multi_time_series_xr(xr_dataset=sed_output_2017,
                                       list_of_col_names=list_of_col_names)
     fig.write_html(f"{current_dir}/resolution_{params['data_type']}_{t1[:4]}_{t2[:4]}_sediments_optimal.html")
-    plt.close(fig)
 
 
 def sedcas_model(model_params, data_type,
@@ -93,11 +95,11 @@ def sedcas_model(model_params, data_type,
 
     model.cfg.Qdf.value = Qdf
 
-    # make it as critial value
-    # model.cfg.initial_hs_storage.value = model.cfg.hillslope_storage_cap.value
-
     # you must update the params then post-processing
     model._params_post_processing()
+    # make it as critial value
+    model.cfg.initial_hs_storage.value = model.cfg.hillslope_storage_cap.value * 0.999
+
 
     # (2) load the climate forcing data
     model.load_climate_input(data_type=data_type)
@@ -150,7 +152,15 @@ def objective(trial, y_obs,
                                       project_root)
 
     # (3) calculate the loss
-    total_loss = likehood_loss(y_obs, y_pred)
+    total_loss, details_loss = likehood_loss(y_obs, y_pred)
+
+    # (4) dump the details loss
+    output_dir = Path(__file__).resolve().parent
+    num = str(trial.number).zfill(3)
+    output_name = f"details_loss_{num}"
+    variable_str = ", ".join(map(str, details_loss))
+    dump_as_row(output_dir, output_name, variable_str)
+    print(f"{UTCDateTime.now().isoformat()} Done trial: {num}")
 
     return total_loss
 
@@ -164,7 +174,8 @@ def main(project_root, num_trials, num_worker):
     model_params = "SedCas_input_params_10min.yaml"
     data_type = "10-minutes"
 
-    storage = "sqlite:///sedcas_calibration.db"
+    db_path = Path(os.getenv("TMPDIR", ".")) / "sedcas_calibration.db"
+    storage = f"sqlite:///{db_path}"
 
     # prepare the Bayesian Optimization
     study = optuna.create_study(
@@ -198,8 +209,6 @@ def main(project_root, num_trials, num_worker):
 if __name__ == "__main__":
     import argparse
 
-    print(f"Start: {UTCDateTime.now().isoformat()}")
-
     # sinfo -n node[501-514] -N --Format="Nodelist,CPUsState,AllocMem,Memory,GresUsed,Gres"
     parser = argparse.ArgumentParser(description='input parameters')
     parser.add_argument("--num_trials", default=10, type=int)
@@ -210,6 +219,9 @@ if __name__ == "__main__":
     project_root = current_dir.parent.parent
     num_trials = args.num_trials
     num_worker = args.num_worker
+    print(f"Start: {UTCDateTime.now().isoformat()}, \n"
+          f"num_trials={num_trials}, num_worker={num_worker}")
+
     main(project_root, num_trials, num_worker)
 
     print(f"End: {UTCDateTime.now().isoformat()}")

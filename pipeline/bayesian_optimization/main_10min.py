@@ -6,7 +6,7 @@
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
 import pandas as pd
-
+from obspy import UTCDateTime
 # <editor-fold desc="add the sys.path to search for custom modules">
 from pathlib import Path
 
@@ -24,22 +24,24 @@ sys.path.append(str(project_root))
 from functions.SedCas_re.SedCas_re import SedCas
 from functions.toolkit.plotly_visualize import plotly_multi_time_series_xr
 
+print(f"Start: {UTCDateTime.now().isoformat()}")
 # initial the SedCas model
 model_params = "SedCas_input_params_10min.yaml"
 model = SedCas(project_root=project_root,
                model_input_params=f"{project_root}/config/SedCas_params/{model_params}")
+print(f"Load model {UTCDateTime.now().isoformat()}")
 model._params_post_processing()
-
+print(f"Process params: {UTCDateTime.now().isoformat()}")
 # (2) load the climate forcing data
 data_type = "10-minutes"
 model.load_climate_input(data_type=data_type)
-
+print(f"Load climate: {UTCDateTime.now().isoformat()}")
 # (3) run the hydro model
 model.run_hydro()
-
+print(f"Hydro: {UTCDateTime.now().isoformat()}")
 # # (4) run the sediment model
-model.run_stochastic_simulations(seed=0, num_iteration=10)
-
+model.run_stochastic_simulations(seed=0, num_iteration=100)
+print(f"Sed: {UTCDateTime.now().isoformat()}")
 # loss
 from functions.SedCas_re.physical_unit_converter import unit_converter
 from functions.SedCas_re.loss_func import likehood_loss
@@ -48,8 +50,8 @@ y_obs = pd.read_csv(f"{project_root}/data/event_catalog/{file_name}", skiprows=6
 sed_transport_real = model.sed_container["sed_transport_real"].copy()
 # conver mm to m^3
 y_pred = unit_converter(input=sed_transport_real, catchment_area=model.cfg.c_area.value, method="area-aggregated")
-total_loss = likehood_loss(y_obs, y_pred)
-
+total_loss, details_loss = likehood_loss(y_obs, y_pred)
+print(f"Loss: {UTCDateTime.now().isoformat()}")
 
 ssss
 
