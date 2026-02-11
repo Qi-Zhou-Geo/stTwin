@@ -28,6 +28,7 @@ from functions.toolkit.plotly_visualize import plotly_multi_time_series_xr
 model_params = "SedCas_input_params_10min.yaml"
 model = SedCas(project_root=project_root,
                model_input_params=f"{project_root}/config/SedCas_params/{model_params}")
+model._params_post_processing()
 
 # (2) load the climate forcing data
 data_type = "10-minutes"
@@ -37,7 +38,7 @@ model.load_climate_input(data_type=data_type)
 model.run_hydro()
 
 # # (4) run the sediment model
-model.run_stochastic_simulations(seed=0, num_iteration=100)
+model.run_stochastic_simulations(seed=0, num_iteration=10)
 
 # loss
 from functions.SedCas_re.physical_unit_converter import unit_converter

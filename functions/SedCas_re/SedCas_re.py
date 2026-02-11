@@ -525,12 +525,12 @@ class SedCas():
             seed = seed + 1
 
         # calculate the stastic values
-        self.sed_output = self.post_process_quantiles(xr_dataset=self.sed_container)
+        self.sed_output1 = self.post_process_quantiles(xr_dataset=self.sed_container)
+
 
     # for results post-process
     def post_process_quantiles(self, xr_dataset, quants=(1, 50, 99)):
 
-        q_values = [q / 100 for q in quants]
         q_names = [f"Q{q}" for q in quants]
 
         # new dataset to store quantile results
@@ -541,13 +541,33 @@ class SedCas():
             # only compute for variables that have 'iteration' dimension
             if "iteration" in xr_dataset[var].dims:
 
-                q_da = xr_dataset[var].quantile(q_values, dim="iteration")
+                da = xr_dataset[var]
+                data = da.values
+                iter_axis = da.dims.index("iteration")
+                attrs = da.attrs.copy()
 
-                # add each quantile as new variable
-                for qi, qname in zip(q_values, q_names):
-                    new_xr[f"{var}_{qname}"] = q_da.sel(quantile=qi)
+                # use percentile instead of xarray.quantile, faster
+                q_np = np.percentile(data, quants, axis=iter_axis)
+                std_np = np.std(data, axis=iter_axis, ddof=1)
+
+                # dimensions without iteration
+                new_dims = tuple(d for d in da.dims if d != "iteration")
+
+                # add quantiles
+                for i, qname in enumerate(q_names):
+                    new_var = xr.DataArray(q_np[i],
+                                           dims=new_dims,
+                                           coords={d: da.coords[d] for d in new_dims},
+                                           attrs=attrs.copy()
+                                           )
+                    new_xr[f"{var}_{qname}"] = new_var
 
                 # add standard deviation
-                new_xr[f"{var}_std"] = xr_dataset[var].std(dim="iteration", ddof=1)
+                new_std = xr.DataArray(std_np,
+                                       dims=new_dims,
+                                       coords={d: da.coords[d] for d in new_dims},
+                                       attrs=attrs.copy()
+                                       )
+                new_xr[f"{var}_std"] = new_std
 
         return new_xr
