@@ -139,7 +139,7 @@ def objective(trial, params_trial):
 
     # Minimum potential landslide volume, unit by m^3
     ls_min_v = trial.suggest_float("ls_min_v", 27, 1e3, log=True) # min ls volume from 3*3*3 m to 10*10*10 m
-    ls_alpha_v = trial.suggest_float("ls_alpha_v", 1.1, 3) # bigger value -> large landslides become much rarer
+    ls_alpha_v = trial.suggest_float("ls_alpha_v", 1.5, 3) # bigger value -> large landslides become much rarer
     ls_max_v = trial.suggest_float("ls_max_v", 2e3, 5e6, log=True) # max ls volume from 20*20*20 m to 5*100*100*100 m
 
     # Sediments deposition rate from hillslope to channel, no physical unit
