@@ -9,6 +9,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import xarray as xr
+from obspy import UTCDateTime
 
 def get_mu_sigma(y_pred, start_time, end_time):
     '''
@@ -47,8 +48,8 @@ def get_mu_sigma(y_pred, start_time, end_time):
     mu = np.mean(log_agg)
     sigma = np.std(log_agg, ddof=1) # ddof=1 -> unbiased sample estimator
 
-    if sigma < 1e-20:
-        print(f"Ensemble sigma is nearly zero (sigma={sigma}).")
+    # if sigma < 1e-20:
+    #     print(f"Warning! Ensemble sigma is nearly zero (sigma={sigma}).")
 
     return mu, sigma
 
@@ -80,7 +81,7 @@ def loss_func(volume_obs, mu, sigma, sigma0=1e-3):
 
     return loss
 
-def likehood_loss(y_obs, y_pred, default_loss=1e10):
+def likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10):
     """
     Compute the likelihood-based loss aggregated over all debris-flow events.
 
@@ -96,6 +97,9 @@ def likehood_loss(y_obs, y_pred, default_loss=1e10):
             The dataset contains the variable "sed_transport_real"` with dimensions
             [time_step, iteration], representing stochastic realizations of sediment transport (m^3).
 
+        buffer_time (float or int): Time (in hours) added before and after the
+            event start and end times to account for potential inaccuracies in the labeled timestamps.
+
         default_loss (float): if the event faliure, e.g., aggregate_sed <= 0,
             default loss value is 1e-10 or np.nanmean(event_level_loss)
 
@@ -106,6 +110,12 @@ def likehood_loss(y_obs, y_pred, default_loss=1e10):
 
     event_level_loss = []
     y_obs = np.array(y_obs)
+
+    if buffer_time is not None:
+        # extend the event duration
+        for event_id in range(len(y_obs)):
+            y_obs[event_id, 0] = (UTCDateTime(y_obs[event_id, 0]) - buffer_time * 3600).strftime("%Y-%m-%dT%H:%M:%S")
+            y_obs[event_id, 1] = (UTCDateTime(y_obs[event_id, 1]) + buffer_time * 3600).strftime("%Y-%m-%dT%H:%M:%S")
 
     details_loss = []
     for event_id in range(len(y_obs)):

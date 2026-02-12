@@ -325,8 +325,6 @@ model_config:
       description: Initlal channel storage, area-normalized sediment thickness
       calibrate: No
 
-
-  # qdf
   Qdf:
     name: discharge_df
     value: 0.6 # 10 minutes -> 0.4 = 2.4 / 6, 1 hour -> 2.4
