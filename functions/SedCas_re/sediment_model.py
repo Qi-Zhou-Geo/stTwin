@@ -218,7 +218,7 @@ def generate_large_ls(ls_trigger,
                       ls_min_v, ls_alpha_v, cutoff,
                       area=1e6,
                       seed=0,
-                      max_attempts=1000):
+                      max_attempts=5000):
     '''
     Generation of large landslides by thermal trigger (procedure 1 in Bennett et al., 2014).
     Parameters taken from Bennett et al. (2012/13) are not altered.

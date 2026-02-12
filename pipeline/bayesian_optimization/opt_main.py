@@ -138,9 +138,9 @@ def objective(trial, params_trial):
     w_residence_time2 = trial.suggest_float("w_residence_time2", 1, 2016, log=True)  # forest bottom, from 1h to 14 days
 
     # Minimum potential landslide volume, unit by m^3
-    # ls_min_v = trial.suggest_float("ls_min_v", 27, 1e3, log=True) # min ls volume from 3*3*3 m to 10*10*10 m
+    ls_min_v = trial.suggest_float("ls_min_v", 27, 1e3, log=True) # min ls volume from 3*3*3 m to 10*10*10 m
     ls_alpha_v = trial.suggest_float("ls_alpha_v", 1.1, 3) # bigger value -> large landslides become much rarer
-    # ls_max_v = trial.suggest_float("ls_max_v", 2e3, 5e6, log=True) # max ls volume from 20*20*20 m to 5*100*100*100 m
+    ls_max_v = trial.suggest_float("ls_max_v", 2e3, 5e6, log=True) # max ls volume from 20*20*20 m to 5*100*100*100 m
 
     # Sediments deposition rate from hillslope to channel, no physical unit
     h2s_r = trial.suggest_float("h2s_r", 0, 1)
@@ -172,9 +172,9 @@ def objective(trial, params_trial):
     model.cfg.w_residence_time.value[0] = [w_residence_time0]
     model.cfg.w_residence_time.value[1] = [w_residence_time1, w_residence_time2]
 
-    # model.cfg.ls_min_v.value = ls_min_v
+    model.cfg.ls_min_v.value = ls_min_v
     model.cfg.ls_alpha_v.value = ls_alpha_v
-    # model.cfg.ls_max_v.value = ls_max_v
+    model.cfg.ls_max_v.value = ls_max_v
 
     model.cfg.h2s_r.value = h2s_r
 
@@ -279,9 +279,9 @@ def sedcas_plot(params_trial):
     model.cfg.w_residence_time.value[0] = [w_residence_time0]
     model.cfg.w_residence_time.value[1] = [w_residence_time1, w_residence_time2]
 
-    # model.cfg.ls_min_v.value = ls_min_v
+    model.cfg.ls_min_v.value = ls_min_v
     model.cfg.ls_alpha_v.value = ls_alpha_v
-    # model.cfg.ls_max_v.value = ls_max_v
+    model.cfg.ls_max_v.value = ls_max_v
 
     model.cfg.h2s_r.value = h2s_r
 
