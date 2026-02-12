@@ -139,8 +139,8 @@ def objective(trial, params_trial):
 
     # Minimum potential landslide volume, unit by m^3
     ls_min_v = trial.suggest_float("ls_min_v", 27, 1e3, log=True) # min ls volume from 3*3*3 m to 10*10*10 m
-    ls_alpha_v = trial.suggest_float("ls_alpha_v", 1.5, 3) # bigger value -> large landslides become much rarer
-    ls_max_v = trial.suggest_float("ls_max_v", 2e3, 5e6, log=True) # max ls volume from 20*20*20 m to 5*100*100*100 m
+    ls_alpha_v = trial.suggest_float("ls_alpha_v", 1.6, 3) # 1.5 will failure, bigger value -> large landslides become much rarer
+    # ls_max_v = trial.suggest_float("ls_max_v", 2e3, 5e6, log=True) # max ls volume from 20*20*20 m to 5*100*100*100 m
 
     # Sediments deposition rate from hillslope to channel, no physical unit
     h2s_r = trial.suggest_float("h2s_r", 0, 1)
@@ -174,7 +174,7 @@ def objective(trial, params_trial):
 
     model.cfg.ls_min_v.value = ls_min_v
     model.cfg.ls_alpha_v.value = ls_alpha_v
-    model.cfg.ls_max_v.value = ls_max_v
+    # model.cfg.ls_max_v.value = ls_max_v
 
     model.cfg.h2s_r.value = h2s_r
 
@@ -197,11 +197,9 @@ def objective(trial, params_trial):
                             catchment_area=model.cfg.c_area.value,
                             method="area-aggregated")
 
-
     # (5) elevate the loss
-    y_obs = params_trial["y_obs"].copy() # field observed debris flow events and volume
+    y_obs = params_trial["y_obs"].copy()  # field observed debris flow events and volume
     total_loss, details_loss = likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10)
-
 
     # (6) dump the details loss
     output_dir = f"{project_root}/pipeline/bayesian_optimization/details"
@@ -269,26 +267,28 @@ def sedcas_plot(params_trial):
     model.climate_forcing = params_trial["climate_forcing"]
 
     # <editor-fold desc="update the model params">
-    model.cfg.min_df_v.value = min_df_v
+    model.cfg.min_df_v.value = params_trial["min_df_v"]
 
-    model.cfg.hillslope_storage_cap.value = hillslope_storage_cap
+    model.cfg.hillslope_storage_cap.value = params_trial["hillslope_storage_cap"]
 
-    model.cfg.w_storage_cap.value[0] = [w_storage_cap0]
-    model.cfg.w_storage_cap.value[1] = [w_storage_cap1, w_storage_cap2]
+    model.cfg.w_storage_cap.value[0] = [params_trial["w_storage_cap0"]]
+    model.cfg.w_storage_cap.value[1] = [params_trial["w_storage_cap1"],
+                                        params_trial["w_storage_cap2"]]
 
-    model.cfg.w_residence_time.value[0] = [w_residence_time0]
-    model.cfg.w_residence_time.value[1] = [w_residence_time1, w_residence_time2]
+    model.cfg.w_residence_time.value[0] = [params_trial["w_residence_time0"]]
+    model.cfg.w_residence_time.value[1] = [params_trial["w_residence_time1"],
+                                           params_trial["w_residence_time2"]]
 
-    model.cfg.ls_min_v.value = ls_min_v
-    model.cfg.ls_alpha_v.value = ls_alpha_v
-    model.cfg.ls_max_v.value = ls_max_v
+    model.cfg.ls_min_v.value = params_trial["ls_min_v"]
+    model.cfg.ls_alpha_v.value = params_trial["ls_alpha_v"]
+    # model.cfg.ls_max_v.value = ls_max_v
 
-    model.cfg.h2s_r.value = h2s_r
+    model.cfg.h2s_r.value = params_trial["h2s_r"]
 
-    model.cfg.Qdf.value = Qdf
+    model.cfg.Qdf.value = params_trial["Qdf"]
 
-    model.cfg.max_s2w.value = max_s2w
-    model.cfg.max_s_c.value = max_s_c
+    model.cfg.max_s2w.value = params_trial["max_s2w"]
+    model.cfg.max_s_c.value = params_trial["max_s_c"]
 
     # you must update the params then post-processing
     model._params_post_processing()

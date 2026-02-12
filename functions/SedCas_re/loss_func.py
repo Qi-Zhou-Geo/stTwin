@@ -132,6 +132,7 @@ def likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10):
                 loss = loss_func(volume_obs, mu, sigma)
             except RuntimeError:
 
+                mu, sigma = np.nan, np.nan
                 if len(event_level_loss) == 0:
                     # in case this situation occurs in the first event
                     loss = default_loss
@@ -141,7 +142,7 @@ def likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10):
             event_level_loss.append(loss)
 
             # save the details
-            record = [default_loss, event_id, volume_obs, start_time, end_time, f"{loss:.1f}"]
+            record = [default_loss, event_id, volume_obs, start_time, end_time, f"{loss:.1f}", mu, sigma]
             record = ", ".join(map(str, record))
             details_loss.append(record)
 

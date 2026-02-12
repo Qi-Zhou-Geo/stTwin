@@ -40,22 +40,22 @@ model.run_hydro()
 
 # # (4) run the sediment model
 model.run_stochastic_simulations(seed=0, num_iteration=4)
-
-time_coord = "time_str"
-t1, t2 = "2004-02-01T00:00:00", "2023-01-01T00:00:00"
-
-mask = (model.sed_output.time_str >= t1) & (model.sed_output.time_str < t2)
-sed_output_2017 = model.sed_output.isel(time=mask)
-
-
-list_of_col_names = [(time_coord, "hillslope_storage_Q50"),
-                     (time_coord, "channel_storage_Q50"),
-                     (time_coord, "sed_transport_real_Q50")]
-fig = plotly_multi_time_series_xr(xr_dataset=sed_output_2017,
-                                  list_of_col_names=list_of_col_names)
-fig.write_html(f"{current_dir}/resolution_{data_type}_{t1[:4]}_{t2[:4]}_sediments.html")
-fig.show()
-sssssss
+#
+# time_coord = "time_str"
+# t1, t2 = "2004-02-01T00:00:00", "2023-01-01T00:00:00"
+#
+# mask = (model.sed_output.time_str >= t1) & (model.sed_output.time_str < t2)
+# sed_output_2017 = model.sed_output.isel(time=mask)
+#
+#
+# list_of_col_names = [(time_coord, "hillslope_storage_Q50"),
+#                      (time_coord, "channel_storage_Q50"),
+#                      (time_coord, "sed_transport_real_Q50")]
+# fig = plotly_multi_time_series_xr(xr_dataset=sed_output_2017,
+#                                   list_of_col_names=list_of_col_names)
+# fig.write_html(f"{current_dir}/resolution_{data_type}_{t1[:4]}_{t2[:4]}_sediments.html")
+# fig.show()
+# sssssss
 
 
 
