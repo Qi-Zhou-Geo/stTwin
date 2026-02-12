@@ -461,6 +461,9 @@ def trans_model(large_ls, small_ls, Qs, modelled_SWE,
     num_data = len(Qs)  # length of time series
     ls_remobilize = np.zeros(num_data) # when the slope can not hold the new coming ls, landslides remobilize
     hillslope_storage = np.zeros(num_data)  # hillslope_storage
+    # the change in hillslope_storage is small.
+    # without this adjustment, the plot range becomes too wide and may cause plotting issues.
+    hillslope_storage[0] = hillslope_storage_cap
     channel_storage = np.zeros(num_data)  # channel_storage
     sed_transport_real = np.zeros(num_data)  # catchment sediment output
     sed_transport_theory = np.zeros(num_data)  # catchment sediment output in theory
