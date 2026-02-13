@@ -17,7 +17,10 @@ from optuna.storages.journal import JournalFileBackend
 
 import numpy as np
 import pandas as pd
+
+import zarr
 import xarray as xr
+
 from obspy import UTCDateTime
 
 
@@ -131,6 +134,10 @@ def sedcas_plot(params_trial):
                                       list_of_col_names=list_of_col_names)
     fig.write_html(f"{output_dir}/resolution_{params_trial['data_type']}_{t1[:4]}_{t2[:4]}_sediments.html")
     # </editor-fold>
+
+    model.hydro_output.to_zarr("hydro_output.zarr", mode="w")
+    model.sed_output.to_zarr("sed_output.zarr", mode="w")
+    model.sed_container.to_zarr("sed_container.zarr", mode="w")
 
 def write_results(project_root, trial_number, total_loss, details_loss):
 
