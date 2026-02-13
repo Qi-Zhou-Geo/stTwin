@@ -43,221 +43,6 @@ from functions.SedCas_re.loss_func import likehood_loss
 
 from functions.toolkit.archive_data import dump_as_row
 
-
-def load_climate_input4model(data_type):
-
-    data_source = "MeteoSwiss"
-    station = "Montana (MVE)"
-    time_now = UTCDateTime().isoformat()
-
-    if data_type == "default":
-        # use the default data from SedCas model
-        data = pd.read_csv(f"{self.model_input_dir}/climate.met", sep='\t')
-
-        time_float = [UTCDateTime(i).timestamp for i in data.iloc[:, 0]]
-        time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 0]]
-
-        # Extract variables
-        precipitation = data.Pr.values
-        temperature = data.Ta.values
-        sun_radiation = data.Rsw.values
-
-        resolution = 3600  # unit is second
-    elif data_type in ["1-hour", "10-minutes"]:
-
-        if data_type == "1-hour":
-            climate_frocing_input = "climate_2004_2023_h.txt"
-            resolution = 3600  # unit is second
-        elif data_type == "10-minutes":
-            climate_frocing_input = "climate_2004_2023_t.txt"
-            resolution = 600  # unit is second
-        else:
-            raise ValueError("data_type must be '1-hour' or '10-minutes'")
-
-        data = pd.read_csv(f"{project_root}/data/SedCas_input/{climate_frocing_input}", header=0)
-
-        time_float = [UTCDateTime(i).timestamp for i in data.iloc[:, 1]]
-        time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 1]]
-
-        # Extract variables
-        precipitation = data.iloc[:, 2].values
-        temperature = data.iloc[:, 3].values
-        sun_radiation = data.iloc[:, 4].values
-
-    elif data_type == "sediment":
-        pass
-
-    climate_forcing = xr.Dataset(
-        coords={
-            "time": ("time", np.array(time_float)),  # numeric UTC+0 time
-            "time_str": ("time", np.array(time_str)),  # string UTC+0 time
-        },
-        data_vars={
-            "precipitation": ("time", precipitation,
-                              {"units": f"mm per {resolution} s", "description": "Total precipitation"}),
-
-            "temperature": ("time", temperature,
-                            {"units": f"°C per {resolution} s", "description": "Air temperature"}),
-
-            "sun_radiation": ("time", sun_radiation,
-                              {"units": "W/m^2", "description": "Incoming solar radiation"})
-        },
-        attrs={
-            "data_source": data_source,
-            "station": station,
-            "resolution": resolution,
-            "resolution_unit": f"seconds",
-            "create_time": time_now
-        }
-    )
-
-    return climate_forcing
-
-def objective(trial, params_trial):
-
-    # <editor-fold desc="(1) set thg params need to be calibrated">
-    # Minium debris-flow volume, unit by m^3
-    min_df_v = trial.suggest_float("min_df_v", 1e2, 5e3, log=True)
-
-    # Hillslope sediment storage capacity, unit by m^3,
-    # this will be converted to area-normalized value (mm),
-    # please check the func: _params_post_processing
-    default_hillslope_storage_cap = 750000.0
-    hillslope_storage_cap = trial.suggest_float("hillslope_storage_cap",
-                                                default_hillslope_storage_cap*0.1,
-                                                default_hillslope_storage_cap*10, log=True)
-
-    # Water storage capacities of HRUs, unit by mm for normalized area
-    w_storage_cap0 = trial.suggest_float("w_storage_cap0", 0.1, 10, log=True)  # bedrock
-    w_storage_cap1 = trial.suggest_float("w_storage_cap1", 10, 100, log=True)  # forest top
-    w_storage_cap2 = trial.suggest_float("w_storage_cap2", 10, 100, log=True)  # forest bottom
-
-    # Mean residence time in saturated condition, unit by time step (10 minutes here)
-    w_residence_time0 = trial.suggest_float("w_residence_time0", 1, 288, log=True)  # bedrock, from 10 minutes to 2 days
-    w_residence_time1 = trial.suggest_float("w_residence_time1", 6, 1008, log=True)  # forest top, from 1h to 7 days
-    w_residence_time2 = trial.suggest_float("w_residence_time2", 1, 2016, log=True)  # forest bottom, from 1h to 14 days
-
-    # Minimum potential landslide volume, unit by m^3
-    ls_min_v = trial.suggest_float("ls_min_v", 27, 1e3, log=True) # min ls volume from 3*3*3 m to 10*10*10 m
-    ls_alpha_v = trial.suggest_float("ls_alpha_v", 1.6, 3) # 1.5 will failure, bigger value -> large landslides become much rarer
-    # ls_max_v = trial.suggest_float("ls_max_v", 2e3, 5e6, log=True) # max ls volume from 20*20*20 m to 5*100*100*100 m
-
-    # Sediments deposition rate from hillslope to channel, no physical unit
-    h2s_r = trial.suggest_float("h2s_r", 0, 1)
-
-    # Discharge threshold for triggering debris flows, mm (area-normalzied unit) / <time_resolution>
-    Qdf = trial.suggest_float("Qdf", 0.1, 10, log=True)  # debris flow
-
-    # Max volumetric sediment to water ratio, no physical unit
-    max_s2w = trial.suggest_float("max_s2w", 0.01, 0.99, log=True)
-    # Max possible sediment concentration for bedload, no physical unit
-    max_s_c = trial.suggest_float("max_s_c", 0.01, 0.99, log=True)
-    # </editor-fold>
-
-    # (2) load model
-    project_root = params_trial["project_root"]
-    model = SedCas(project_root=project_root,
-                   model_input_params=f"{project_root}/config/SedCas_params/{params_trial['model_params']}")
-    # rather do: model.load_climate_input(data_type=data_type)
-    model.climate_forcing = params_trial["climate_forcing"].copy()
-
-    # <editor-fold desc="(3) update the model params">
-    model.cfg.min_df_v.value = min_df_v
-
-    model.cfg.hillslope_storage_cap.value = hillslope_storage_cap
-
-    model.cfg.w_storage_cap.value[0] = [w_storage_cap0]
-    model.cfg.w_storage_cap.value[1] = [w_storage_cap1, w_storage_cap2]
-
-    model.cfg.w_residence_time.value[0] = [w_residence_time0]
-    model.cfg.w_residence_time.value[1] = [w_residence_time1, w_residence_time2]
-
-    model.cfg.ls_min_v.value = ls_min_v
-    model.cfg.ls_alpha_v.value = ls_alpha_v
-    # model.cfg.ls_max_v.value = ls_max_v
-
-    model.cfg.h2s_r.value = h2s_r
-
-    model.cfg.Qdf.value = Qdf
-
-    model.cfg.max_s2w.value = max_s2w
-    model.cfg.max_s_c.value = max_s_c
-
-    # you must update the params then post-processing
-    model._params_post_processing()
-    # make it as critial value
-    model.cfg.initial_hs_storage.value = model.cfg.hillslope_storage_cap.value
-    # </editor-fold>
-
-    # (4) run the model
-    model.run_hydro()
-    model.run_stochastic_simulations(seed=0, num_iteration=100, progress_bars=False)
-    sed_transport_real = model.sed_container["sed_transport_real"].copy()
-    y_pred = unit_converter(input=sed_transport_real,
-                            catchment_area=model.cfg.c_area.value,
-                            method="area-aggregated")
-
-    # (5) elevate the loss
-    y_obs = params_trial["y_obs"].copy()  # field observed debris flow events and volume
-    total_loss, details_loss = likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10)
-
-    # (6) dump the details loss
-    output_dir = f"{project_root}/pipeline/bayesian_optimization/details"
-    os.makedirs(output_dir, exist_ok=True)
-    output_name = f"details_loss"
-    trial_number = trial.number
-    details_loss = [UTCDateTime.now().isoformat(), trial_number] + details_loss # extend the list
-    variable_str = "\n".join(map(str, details_loss))
-    dump_as_row(output_dir, output_name, variable_str)
-
-    print(f"{UTCDateTime.now().isoformat()}\n"
-          f"Process (ID={os.getpid()}) done trial (number={trial_number}).\n"
-          f"Total_loss={total_loss}")
-
-    return total_loss
-
-def run_optimization(num_trials):
-
-    # all input params are stored here and will be updated later
-    params_trial = {"project_root": current_dir.parent.parent,
-                    "df_volume_file_name": "debris_flow_volume_2004_2022.txt",
-                    "data_type": "10-minutes",
-                    "model_params":"SedCas_input_params_10min.yaml"}
-
-    # load the same observed df volume and climate forcing
-    y_obs = pd.read_csv(f"{params_trial['project_root']}"
-                        f"/data/event_catalog/{params_trial['df_volume_file_name']}",
-                        skiprows=6, header=0)
-    climate_forcing = load_climate_input4model(data_type=params_trial["data_type"])
-    params_trial["y_obs"] = y_obs
-    params_trial["climate_forcing"] = climate_forcing
-
-
-    # perpare optuna
-    storage_file = f"{current_dir}/sedcas_journal.log"
-    storage = JournalStorage(JournalFileBackend(file_path=storage_file))
-
-    # prepare the Bayesian Optimization
-    study = optuna.create_study(
-        storage=storage,
-        sampler=optuna.samplers.TPESampler(seed=42 + os.getpid()), # unique for each process
-        study_name="sedcas_calibration",
-        direction="minimize",
-        load_if_exists=True # Useful for multi-process or multi-node optimization.
-    )
-    objective_with_data = partial(objective, params_trial=params_trial)
-    study.optimize(objective_with_data, n_trials=num_trials)
-
-    # best parameters found
-    print("Best parameters found:\n")
-    for param_name, param_value in study.best_params.items():
-        print(f"{param_name} = {param_value:.4f}")
-        params_trial[param_name] = param_value
-    print(f"min loss = {study.best_value:.4f}")
-
-    # plot the best fiting
-    sedcas_plot(params_trial)
-
 def sedcas_plot(params_trial):
 
     project_root = params_trial["project_root"]
@@ -346,6 +131,248 @@ def sedcas_plot(params_trial):
                                       list_of_col_names=list_of_col_names)
     fig.write_html(f"{output_dir}/resolution_{params_trial['data_type']}_{t1[:4]}_{t2[:4]}_sediments.html")
     # </editor-fold>
+
+def write_results(project_root, trial_number, total_loss, details_loss):
+
+    output_dir = f"{project_root}/pipeline/bayesian_optimization/details"
+    os.makedirs(output_dir, exist_ok=True)
+    output_name = f"details_loss"
+    details_loss = [f"{UTCDateTime.now().isoformat()}_trial_number_{trial_number}"] + details_loss # extend the list
+    variable_str = "\n".join(map(str, details_loss))
+    dump_as_row(output_dir, output_name, variable_str)
+
+    print(f"{UTCDateTime.now().isoformat()}\n"
+          f"Process (ID={os.getpid()}) done trial (number={trial_number}).\n"
+          f"Total_loss={total_loss}")
+
+def load_climate_input4model(data_type):
+
+    data_source = "MeteoSwiss"
+    station = "Montana (MVE)"
+    time_now = UTCDateTime().isoformat()
+
+    if data_type == "default":
+        # use the default data from SedCas model
+        data = pd.read_csv(f"{self.model_input_dir}/climate.met", sep='\t')
+
+        time_float = [UTCDateTime(i).timestamp for i in data.iloc[:, 0]]
+        time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 0]]
+
+        # Extract variables
+        precipitation = data.Pr.values
+        temperature = data.Ta.values
+        sun_radiation = data.Rsw.values
+
+        resolution = 3600  # unit is second
+    elif data_type in ["1-hour", "10-minutes"]:
+
+        if data_type == "1-hour":
+            climate_frocing_input = "climate_2004_2023_h.txt"
+            resolution = 3600  # unit is second
+        elif data_type == "10-minutes":
+            climate_frocing_input = "climate_2004_2023_t.txt"
+            resolution = 600  # unit is second
+        else:
+            raise ValueError("data_type must be '1-hour' or '10-minutes'")
+
+        data = pd.read_csv(f"{project_root}/data/SedCas_input/{climate_frocing_input}", header=0)
+
+        time_float = [UTCDateTime(i).timestamp for i in data.iloc[:, 1]]
+        time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 1]]
+
+        # Extract variables
+        precipitation = data.iloc[:, 2].values
+        temperature = data.iloc[:, 3].values
+        sun_radiation = data.iloc[:, 4].values
+
+    elif data_type == "sediment":
+        pass
+
+    climate_forcing = xr.Dataset(
+        coords={
+            "time": ("time", np.array(time_float)),  # numeric UTC+0 time
+            "time_str": ("time", np.array(time_str)),  # string UTC+0 time
+        },
+        data_vars={
+            "precipitation": ("time", precipitation,
+                              {"units": f"mm per {resolution} s", "description": "Total precipitation"}),
+
+            "temperature": ("time", temperature,
+                            {"units": f"°C per {resolution} s", "description": "Air temperature"}),
+
+            "sun_radiation": ("time", sun_radiation,
+                              {"units": "W/m^2", "description": "Incoming solar radiation"})
+        },
+        attrs={
+            "data_source": data_source,
+            "station": station,
+            "resolution": resolution,
+            "resolution_unit": f"seconds",
+            "create_time": time_now
+        }
+    )
+
+    return climate_forcing
+
+def objective(trial, params_trial):
+
+    trial_number = trial.number
+
+    # <editor-fold desc="(1) set thg params need to be calibrated">
+    # Minium debris-flow volume, unit by m^3
+    min_df_v = trial.suggest_float("min_df_v", 1e2, 5e3, log=True)
+
+    # Hillslope sediment storage capacity, unit by m^3,
+    # this will be converted to area-normalized value (mm),
+    # please check the func: _params_post_processing
+    default_hillslope_storage_cap = 750000.0
+    hillslope_storage_cap = trial.suggest_float("hillslope_storage_cap",
+                                                default_hillslope_storage_cap*0.1,
+                                                default_hillslope_storage_cap*10, log=True)
+
+    # Water storage capacities of HRUs, unit by mm for normalized area
+    w_storage_cap0 = trial.suggest_float("w_storage_cap0", 0.1, 10, log=True)  # bedrock
+    w_storage_cap1 = trial.suggest_float("w_storage_cap1", 10, 100, log=True)  # forest top
+    w_storage_cap2 = trial.suggest_float("w_storage_cap2", 10, 100, log=True)  # forest bottom
+
+    # Mean residence time in saturated condition, unit by time step (10 minutes here)
+    w_residence_time0 = trial.suggest_float("w_residence_time0", 1, 288, log=True)  # bedrock, from 10 minutes to 2 days
+    w_residence_time1 = trial.suggest_float("w_residence_time1", 6, 1008, log=True)  # forest top, from 1h to 7 days
+    w_residence_time2 = trial.suggest_float("w_residence_time2", 1, 2016, log=True)  # forest bottom, from 1h to 14 days
+
+    # Minimum potential landslide volume, unit by m^3
+    ls_min_v = trial.suggest_float("ls_min_v", 27, 1e3, log=True) # min ls volume from 3*3*3 m to 10*10*10 m
+    ls_alpha_v = trial.suggest_float("ls_alpha_v", 1.6, 3) # 1.5 will failure, bigger value -> large landslides become much rarer
+    # ls_max_v = trial.suggest_float("ls_max_v", 2e3, 5e6, log=True) # max ls volume from 20*20*20 m to 5*100*100*100 m
+
+    # Sediments deposition rate from hillslope to channel, no physical unit
+    h2s_r = trial.suggest_float("h2s_r", 0, 1)
+
+    # Discharge threshold for triggering debris flows, mm (area-normalzied unit) / <time_resolution>
+    Qdf = trial.suggest_float("Qdf", 0.1, 10, log=True)  # debris flow
+
+    # Max volumetric sediment to water ratio, no physical unit
+    max_s2w = trial.suggest_float("max_s2w", 0.01, 0.99, log=True)
+    # Max possible sediment concentration for bedload, no physical unit
+    max_s_c = trial.suggest_float("max_s_c", 0.01, 0.99, log=True)
+    # </editor-fold>
+
+    # (2) load model
+    project_root = params_trial["project_root"]
+    model = SedCas(project_root=project_root,
+                   model_input_params=f"{project_root}/config/SedCas_params/{params_trial['model_params']}")
+    # rather do: model.load_climate_input(data_type=data_type)
+    model.climate_forcing = params_trial["climate_forcing"].copy()
+
+    # <editor-fold desc="(3) update the model params">
+    model.cfg.min_df_v.value = min_df_v
+
+    model.cfg.hillslope_storage_cap.value = hillslope_storage_cap
+
+    model.cfg.w_storage_cap.value[0] = [w_storage_cap0]
+    model.cfg.w_storage_cap.value[1] = [w_storage_cap1, w_storage_cap2]
+
+    model.cfg.w_residence_time.value[0] = [w_residence_time0]
+    model.cfg.w_residence_time.value[1] = [w_residence_time1, w_residence_time2]
+
+    model.cfg.ls_min_v.value = ls_min_v
+    model.cfg.ls_alpha_v.value = ls_alpha_v
+    # model.cfg.ls_max_v.value = ls_max_v
+
+    model.cfg.h2s_r.value = h2s_r
+
+    model.cfg.Qdf.value = Qdf
+
+    model.cfg.max_s2w.value = max_s2w
+    model.cfg.max_s_c.value = max_s_c
+
+    # you must update the params then post-processing
+    model._params_post_processing()
+    # make it as critial value
+    model.cfg.initial_hs_storage.value = model.cfg.hillslope_storage_cap.value
+    # </editor-fold>
+
+    # (4) run the model
+    model.run_hydro()
+    try:
+        model.run_stochastic_simulations(seed=0, num_iteration=100, progress_bars=False)
+        sed_transport_real = model.sed_container["sed_transport_real"].copy()
+        y_pred = unit_converter(input=sed_transport_real,
+                                catchment_area=model.cfg.c_area.value,
+                                method="area-aggregated")
+
+        # (5) elevate the loss
+        y_obs = params_trial["y_obs"].copy()  # field observed debris flow events and volume
+        total_loss, details_loss = likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10)
+
+    except RuntimeError as e:
+        print(f"RuntimeError for trial_number={trial_number}: {e}")
+        total_loss = 1e20
+        # (5) manuslly add a huge loss
+        if "Failed to sample landslide magnitudes below cutoff." in str(e):
+            # Note QZ:
+            # This failure corresponds to a physically invalid parameter regime.
+            # We intentionally assign a large manual loss (1e20) so Bayesian optimization
+            # can learn and avoid this region of parameter space.
+            details_loss = ["HeavyTailInvalid", ls_alpha_v, ls_min_v, model.cfg.ls_max_v.value]
+        else:
+            details_loss = ["Unknown", ls_alpha_v, ls_min_v, model.cfg.ls_max_v.value]
+
+        #Note:
+        # (a) when the failure is parameter-dependent and physically meaningful,
+        # please use a manual penalty (returning a large loss)
+
+        # (b) When the failure is purely numerical and or otherwise uninformative for the optimizer,
+        # please use optuna.TrialPruned(...)
+
+    # (6) dump the details loss
+    write_results(project_root, trial_number, total_loss, details_loss)
+
+
+    return total_loss
+
+def run_optimization(num_trials):
+
+    # all input params are stored here and will be updated later
+    params_trial = {"project_root": current_dir.parent.parent,
+                    "df_volume_file_name": "debris_flow_volume_2004_2022.txt",
+                    "data_type": "10-minutes",
+                    "model_params":"SedCas_input_params_10min.yaml"}
+
+    # load the same observed df volume and climate forcing
+    y_obs = pd.read_csv(f"{params_trial['project_root']}"
+                        f"/data/event_catalog/{params_trial['df_volume_file_name']}",
+                        skiprows=6, header=0)
+    climate_forcing = load_climate_input4model(data_type=params_trial["data_type"])
+    params_trial["y_obs"] = y_obs
+    params_trial["climate_forcing"] = climate_forcing
+
+
+    # perpare optuna
+    storage_file = f"{current_dir}/sedcas_journal.log"
+    storage = JournalStorage(JournalFileBackend(file_path=storage_file))
+
+    # prepare the Bayesian Optimization
+    study = optuna.create_study(
+        storage=storage,
+        sampler=optuna.samplers.TPESampler(seed=42 + os.getpid()), # unique for each process
+        study_name="sedcas_calibration",
+        direction="minimize",
+        load_if_exists=True # Useful for multi-process or multi-node optimization.
+    )
+    objective_with_data = partial(objective, params_trial=params_trial)
+    study.optimize(objective_with_data, n_trials=num_trials)
+
+    # best parameters found
+    print("Best parameters found:\n")
+    for param_name, param_value in study.best_params.items():
+        print(f"{param_name} = {param_value:.4f}")
+        params_trial[param_name] = param_value
+    print(f"min loss = {study.best_value:.4f}")
+
+    # plot the best fiting
+    sedcas_plot(params_trial)
+
 
 if __name__ == "__main__":
 

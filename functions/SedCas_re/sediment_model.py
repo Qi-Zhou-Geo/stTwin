@@ -279,7 +279,8 @@ def generate_large_ls(ls_trigger,
             break
         seed = seed + 1e4
     else:
-        print(ls_alpha_v, ls_min_v, cutoff, num_ls)
+        print(f"Failed to sample landslide magnitudes below cutoff.\n"
+              f"{ls_alpha_v, ls_min_v, cutoff, num_ls}")
         raise RuntimeError("Failed to sample landslide magnitudes below cutoff")
 
     # output

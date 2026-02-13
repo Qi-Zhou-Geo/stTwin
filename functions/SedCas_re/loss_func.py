@@ -33,7 +33,7 @@ def get_mu_sigma(y_pred, start_time, end_time):
     aggregate_sed = np.sum(sed_output, axis=0)
 
     if np.any(np.isnan(aggregate_sed)):
-        # this make sure np.log(aggregate_sed) work
+        # this make sure np.log10(aggregate_sed) work
         raise ValueError("NaN encountered in aggregated sediment volume.")
 
     if np.any(aggregate_sed <= 0):
@@ -42,7 +42,8 @@ def get_mu_sigma(y_pred, start_time, end_time):
             "non-positive aggregated sediment volume."
         )
 
-    log_agg = np.log(aggregate_sed) # transform ensemble to log-space with base e
+    mean_aggregate_sed = np.mean(aggregate_sed)
+    log_agg = np.log10(aggregate_sed) # transform ensemble to log-space with base e
 
     # statistics in log-space
     mu = np.mean(log_agg)
@@ -51,7 +52,7 @@ def get_mu_sigma(y_pred, start_time, end_time):
     # if sigma < 1e-20:
     #     print(f"Warning! Ensemble sigma is nearly zero (sigma={sigma}).")
 
-    return mu, sigma
+    return mu, sigma, mean_aggregate_sed
 
 def loss_func(volume_obs, mu, sigma, sigma0=1e-3):
     '''
@@ -77,7 +78,7 @@ def loss_func(volume_obs, mu, sigma, sigma0=1e-3):
     # This represents irreducible uncertainty
     # and avoids overconfident penalties in the negative log-likelihood.
     sigma_eff = np.sqrt(sigma ** 2 + sigma0 ** 2) #
-    loss = ((np.log(volume_obs) - mu) / sigma_eff)**2 + np.log(sigma_eff**2)
+    loss = ((np.log10(volume_obs) - mu) / sigma_eff)**2 + np.log10(sigma_eff**2)
 
     return loss
 
@@ -112,10 +113,11 @@ def likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10):
     y_obs = np.array(y_obs)
 
     if buffer_time is not None:
+        delta_t = buffer_time * 3600
         # extend the event duration
         for event_id in range(len(y_obs)):
-            y_obs[event_id, 0] = (UTCDateTime(y_obs[event_id, 0]) - buffer_time * 3600).strftime("%Y-%m-%dT%H:%M:%S")
-            y_obs[event_id, 1] = (UTCDateTime(y_obs[event_id, 1]) + buffer_time * 3600).strftime("%Y-%m-%dT%H:%M:%S")
+            y_obs[event_id, 0] = (UTCDateTime(y_obs[event_id, 0]) - delta_t).strftime("%Y-%m-%dT%H:%M:%S")
+            y_obs[event_id, 1] = (UTCDateTime(y_obs[event_id, 1]) + delta_t).strftime("%Y-%m-%dT%H:%M:%S")
 
     details_loss = []
     for event_id in range(len(y_obs)):
@@ -128,11 +130,11 @@ def likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10):
             start_time, end_time = y_obs[event_id, 0], y_obs[event_id, 1]
 
             try:
-                mu, sigma = get_mu_sigma(y_pred, start_time, end_time)
+                mu, sigma, mean_aggregate_sed = get_mu_sigma(y_pred, start_time, end_time)
                 loss = loss_func(volume_obs, mu, sigma)
             except RuntimeError:
 
-                mu, sigma = np.nan, np.nan
+                mu, sigma, mean_aggregate_sed = np.nan, np.nan, np.nan
                 if len(event_level_loss) == 0:
                     # in case this situation occurs in the first event
                     loss = default_loss
@@ -142,7 +144,8 @@ def likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10):
             event_level_loss.append(loss)
 
             # save the details
-            record = [default_loss, event_id, volume_obs, start_time, end_time, f"{loss:.1f}", mu, sigma]
+            record = [default_loss, event_id, volume_obs, start_time, end_time,
+                      f"{loss:.1f}", mu, sigma, mean_aggregate_sed]
             record = ", ".join(map(str, record))
             details_loss.append(record)
 
