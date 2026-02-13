@@ -11,6 +11,7 @@ import pandas as pd
 # <editor-fold desc="add the sys.path to search for custom modules">
 from pathlib import Path
 
+from numpy.core.records import record
 from obspy import UTCDateTime
 
 current_dir = Path(__file__).resolve().parent
@@ -30,6 +31,13 @@ from functions.toolkit.confidence_level_test import statistical_testing
 from functions.toolkit.plotly_visualize import plotly_multi_time_series_xr
 from functions.toolkit.plotly_visualize import plotly_multi_time_series_shade_xr
 
+# loss
+from functions.SedCas_re.physical_unit_converter import unit_converter
+from functions.SedCas_re.loss_func import likehood_loss
+
+from functions.toolkit.round_timestamp import round_time
+from functions.toolkit.archive_data import dump_as_row
+
 # initial the SedCas model
 model_params = "SedCas_input_params_1h.yaml"
 model = SedCas(project_root=project_root,
@@ -37,7 +45,7 @@ model = SedCas(project_root=project_root,
 model._params_post_processing()
 
 # (2) load the climate forcing data
-data_type = "default" # "1-hour" #
+data_type = "1-hour" # "default" #
 model.load_climate_input(data_type=data_type)
 
 # (3) run the hydro model
@@ -46,17 +54,47 @@ model.run_hydro()
 # # (4) run the sediment model
 model.run_stochastic_simulations(seed=0, num_iteration=100)
 
-ssss
-# loss
-from functions.SedCas_re.physical_unit_converter import unit_converter
-from functions.SedCas_re.loss_func import likehood_loss
-file_name = "debris_flow_volume_2004_2022.txt"
-y_obs = pd.read_csv(f"{project_root}/data/event_catalog/{file_name}", skiprows=6, header=0)
+
+# calculate the loss
 sed_transport_real = model.sed_container["sed_transport_real"].copy()
 # conver mm to m^3
 y_pred = unit_converter(input=sed_transport_real, catchment_area=model.cfg.c_area.value, method="area-aggregated")
-total_loss = likehood_loss(y_obs, y_pred)
+
+
+# prepare the obsvered DF volume for loss
+file_name = "debris_flow_volume_2004_2022.txt"
+y_obs = pd.read_csv(f"{project_root}/data/event_catalog/{file_name}", skiprows=6, header=0)
+
+# check the event level predicted volume
+t_s, t_e = [], []
+record_l = []
+for event_id in range(len(y_obs)):
+    t1 = round_time(y_obs.iloc[event_id, 0])
+    t_s.append(t1)
+
+    t2 = round_time(y_obs.iloc[event_id, 1])
+    t_e.append(t2)
+
+    mask = (model.sed_output.time_str >= t1) & (model.sed_output.time_str < t2)
+    sed_output_2017 = model.sed_output.isel(time=mask)
+    sed_output_2017 = unit_converter(input=sed_output_2017["sed_transport_real_Q50"].values,
+                                     catchment_area=model.cfg.c_area.value,
+                                     method="area-aggregated")
+    volume_obs = y_obs.iloc[event_id, 2]
+    volume_pre = np.sum(sed_output_2017)
+    record = [event_id, t1, t2, volume_obs, sed_output_2017, f"{volume_pre: .1f}", f"{volume_obs/volume_pre: .1f}"]
+    print(record)
+    record = ", ".join(map(str, record))
+    record_l.append(record)
+
+y_obs["Event start (UTC+0)"] = t_s
+y_obs["Event end (UTC+0)"] = t_e
+record_l = "\n".join(record_l)
+dump_as_row(output_dir=current_dir, output_name="default_results2", variable_str=record_l)
+
+total_loss, details_loss = likehood_loss(y_obs, y_pred)
 ssss
+
 
 
 

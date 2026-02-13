@@ -112,7 +112,9 @@ def likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10):
     event_level_loss = []
     y_obs = np.array(y_obs)
 
-    if buffer_time is not None:
+    if buffer_time is None:
+        pass
+    else:
         delta_t = buffer_time * 3600
         # extend the event duration
         for event_id in range(len(y_obs)):
