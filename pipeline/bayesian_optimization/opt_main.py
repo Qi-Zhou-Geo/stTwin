@@ -69,7 +69,7 @@ def sedcas_plot(params_trial):
 
     model.cfg.ls_min_v.value = params_trial["ls_min_v"]
     model.cfg.ls_alpha_v.value = params_trial["ls_alpha_v"]
-    # model.cfg.ls_max_v.value = ls_max_v
+    model.cfg.ls_max_v.value = params_trial["ls_max_v"]
 
     model.cfg.h2s_r.value = params_trial["h2s_r"]
 
@@ -248,9 +248,10 @@ def objective(trial, params_trial):
     w_residence_time2 = trial.suggest_float("w_residence_time2", 1, 2016, log=True)  # forest bottom, from 1h to 14 days
 
     # Minimum potential landslide volume, unit by m^3
-    ls_min_v = trial.suggest_float("ls_min_v", 27, 1e3, log=True) # min ls volume from 3*3*3 m to 10*10*10 m
-    ls_alpha_v = trial.suggest_float("ls_alpha_v", 1.6, 3) # 1.5 will failure, bigger value -> large landslides become much rarer
-    # ls_max_v = trial.suggest_float("ls_max_v", 2e3, 5e6, log=True) # max ls volume from 20*20*20 m to 5*100*100*100 m
+    ls_min_v = trial.suggest_float("ls_min_v", 10, 1e3, log=True) # min ls volume from 10 m^3 to 10*10*10 m^3
+    ls_alpha_v = trial.suggest_float("ls_alpha_v", 1.1, 3) # 1.5 will failure, bigger value -> large landslides become much rarer
+    # the 2013 lsndslides is 1e4 m^3, https://doi.org/10.1038/s43247-023-00851-0
+    ls_max_v = trial.suggest_float("ls_max_v", 5e3, 1e5, log=True) # max ls volume from 5e3 m^3 to 1e4 m^3
 
     # Sediments deposition rate from hillslope to channel, no physical unit
     h2s_r = trial.suggest_float("h2s_r", 0, 1)
@@ -284,7 +285,7 @@ def objective(trial, params_trial):
 
     model.cfg.ls_min_v.value = ls_min_v
     model.cfg.ls_alpha_v.value = ls_alpha_v
-    # model.cfg.ls_max_v.value = ls_max_v
+    model.cfg.ls_max_v.value = ls_max_v
 
     model.cfg.h2s_r.value = h2s_r
 
