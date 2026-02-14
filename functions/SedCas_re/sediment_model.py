@@ -14,6 +14,23 @@ import random
 import pandas as pd
 import numpy as np
 
+def truncated_powerlaw_sampler(num_ls, ls_min_v, ls_max_v, ls_alpha_v, seed=None):
+
+    if ls_alpha_v <= 1:
+        raise ValueError(f"Power-law exponent alpha {ls_alpha_v} must be > 1.")
+
+    rng = np.random.default_rng(seed)
+
+    # Small u → many small landslides, Large u → rare large landslides
+    random_pro = rng.random(num_ls)
+
+    v_min_a = ls_min_v ** (1.0 - ls_alpha_v)
+    v_max_a = ls_max_v ** (1.0 - ls_alpha_v)
+
+    ls_volume = (random_pro * (v_max_a - v_min_a) + v_min_a) ** (1.0 / (1.0 - ls_alpha_v))
+
+    return ls_volume
+
 
 # random landslides from heavy-tailed distribution
 def randht(n, *varargin, seed='none'):
@@ -274,7 +291,8 @@ def generate_large_ls(ls_trigger,
     # iteration is needed in order to avoid unreasonable large volumes, greater than "cutoff"
     for attempt in range(max_attempts):
         # mags is a list
-        mags = randht(num_ls, 'xmin', ls_min_v, 'powerlaw', ls_alpha_v, seed=seed)
+        # mags = randht(num_ls, 'xmin', ls_min_v, 'powerlaw', ls_alpha_v, seed=seed)
+        mags = truncated_powerlaw_sampler(num_ls, ls_min_v, cutoff, ls_alpha_v, seed=seed)
         if max(mags) < cutoff:
             break
         seed = seed + 1e4

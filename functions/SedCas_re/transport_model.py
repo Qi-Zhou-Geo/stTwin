@@ -28,7 +28,7 @@ sys.path.append(str(project_root))
 
 
 # import the custom functions
-from functions.SedCas.sediment_model import randht
+from functions.SedCas_re.sediment_model import randht, truncated_powerlaw_sampler
 
 
 def define_debris_flow(Qs, sed_transport, min_df_v, max_s_c):
@@ -96,7 +96,7 @@ def define_debris_flow(Qs, sed_transport, min_df_v, max_s_c):
 def sediment_transport_model(ls, h2s_r, Qs, modelled_SWE,
                              initial_hs_storage, initial_ch_storage,
                              hillslope_storage_cap,
-                             ls_min_v, ls_alpha_v, c_area,
+                             ls_min_v, ls_alpha_v, ls_max_v, c_area,
                              bedload_param_a, bedload_param_b, max_s2w,
                              Qbl, Qdf):
 
@@ -178,12 +178,18 @@ def sediment_transport_model(ls, h2s_r, Qs, modelled_SWE,
         # * 2 does not contain any physical meaning,
         # it just makes the condition is True
         ls_remobilize = hillslope_storage_cap * 2
+        num_ls = 1
+        seed = 0
         while ls_remobilize >= hillslope_storage_cap:
-            ls_remobilize = randht(1, 'xmin', ls_min_v, 'powerlaw', ls_alpha_v)[0]
+            # ls_remobilize = randht(1, 'xmin', ls_min_v, 'powerlaw', ls_alpha_v)[0]
+
+            # return as a signle value
+            ls_remobilize = truncated_powerlaw_sampler(num_ls, ls_min_v, ls_max_v, ls_alpha_v, seed=seed)[0]
 
             ls_remobilize = ls_remobilize / (c_area * 1e6)  # return area-normalized landslide thickness, unit: m
             ls_remobilize = ls_remobilize * 1e3  # convert m to mm
 
+            seed = seed + 1
         # update the storage
         hillslope_storage = hillslope_storage - ls_remobilize
         assert hillslope_storage >= 0, f"Warning! hillslope_storage={hillslope_storage} is negative."
@@ -375,7 +381,7 @@ def trans_model(large_ls, small_ls, Qs, modelled_SWE,
                 h2s_r,
                 initial_hs_storage, initial_ch_storage,
                 hillslope_storage_cap,
-                ls_min_v, ls_alpha_v, c_area,
+                ls_min_v, ls_alpha_v, ls_max_v, c_area,
                 bedload_param_a, bedload_param_b, max_s2w,
                 Qbl, Qdf
                 ):
@@ -479,7 +485,7 @@ def trans_model(large_ls, small_ls, Qs, modelled_SWE,
         temp = sediment_transport_model(current_ls, h2s_r, current_Qs, current_modelled_SWE,
                                         current_hs_storage, current_ch_storage,
                                         hillslope_storage_cap,
-                                        ls_min_v, ls_alpha_v, c_area,
+                                        ls_min_v, ls_alpha_v, ls_max_v, c_area,
                                         bedload_param_a, bedload_param_b, max_s2w,
                                         Qbl, Qdf)
 

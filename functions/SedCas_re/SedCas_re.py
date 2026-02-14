@@ -477,6 +477,7 @@ class SedCas():
 
                                              ls_min_v=self.cfg.ls_min_v.value,
                                              ls_alpha_v=self.cfg.ls_alpha_v.value,
+                                             ls_max_v=self.cfg.ls_max_v.value,
                                              c_area=self.cfg.c_area.value,
 
                                              bedload_param_a=self.cfg.bedload_param_a.value,
