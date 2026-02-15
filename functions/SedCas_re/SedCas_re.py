@@ -48,7 +48,6 @@ from functions.SedCas_re import transport_model as SedCas_t_model
 
 from functions.download_MeteoSwiss.fetch_data import fetch_data4SedCas
 
-
 class SedCas():
 
     def __init__(self, project_root, model_input_params="default"):
@@ -489,6 +488,14 @@ class SedCas():
                                              )
         ls_remobilize, hillslope_storage, channel_storage, sed_transport_real, sed_transport_theory, sed_limited = sed_run
 
+        t0 = self.climate_forcing.time.values[0]
+        t1 = self.climate_forcing.time.values[-1]
+        num_year = round((t1 - t0) / (365 * 24 * 3600))
+        SedCas_t_model.check_ls_erosion(ls=ls_remobilize,
+                                        catchment_area=self.cfg.c_area.value,
+                                        num_year=num_year,
+                                        ls_unit="mm",
+                                        ref_erosion_rate=0.39, ref_std=0.03)
         # </editor-fold>
 
         # <editor-fold desc="add the params to sed_container">

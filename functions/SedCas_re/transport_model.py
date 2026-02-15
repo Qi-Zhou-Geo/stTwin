@@ -29,7 +29,30 @@ sys.path.append(str(project_root))
 
 # import the custom functions
 from functions.SedCas_re.sediment_model import randht, truncated_powerlaw_sampler
+from functions.SedCas_re.physical_unit_converter import unit_converter
 
+
+def check_ls_erosion(ls, catchment_area, num_year, ls_unit, ref_erosion_rate=0.39, ref_std=0.03):
+    # ref_erosion_rate unit by m per year from https://doi.org/10.1002/esp.3263
+
+    if ls_unit in ["mm"]:
+        # "area-weighted"
+        ls = unit_converter(input=ls, catchment_area=catchment_area, method="area-aggregated")
+    elif ls_unit in ["m^3", "m**3"]:
+        pass
+    else:
+        print(f"Unknown ls_unit {ls_unit}.")
+
+    # return mean_erosion_rate with unit by m/year
+    mean_erosion_rate = np.sum(ls) / (catchment_area * 1e6 * num_year) # catchment_area * 1e6: km^2 -> m^2)
+
+    if ref_erosion_rate - ref_std <= mean_erosion_rate <= ref_erosion_rate + ref_std:
+        pass
+        # print(f"All good!\n"
+        #       f"{mean_erosion_rate} m/year, or {mean_erosion_rate * 1e3} mm/year")
+    else:
+        print(f"\nWarning!\n"
+              f"mean_erosion_rate: {mean_erosion_rate} m/year, or {mean_erosion_rate * 1e3} mm/year")
 
 def define_debris_flow(Qs, sed_transport, min_df_v, max_s_c):
     """

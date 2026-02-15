@@ -31,7 +31,6 @@ def truncated_powerlaw_sampler(num_ls, ls_min_v, ls_max_v, ls_alpha_v, seed=None
 
     return ls_volume
 
-
 # random landslides from heavy-tailed distribution
 def randht(n, *varargin, seed='none'):
     '''
@@ -39,25 +38,25 @@ def randht(n, *varargin, seed='none'):
     Options are power law, log-normal, stretched exponential, power law with cutoff, and exponential.
     Can specify lower cutoff, if desired.
     ---------------------
-    
+
     Input
     -----
     n : generate n observations
     *args:
-        xmin : 
+        xmin :
         Type : type of distribution as string
             - PL : pwerlaw, reqires ls_alpha_v
             - PC : cutoff, requires ls_alpha_v and Lambda (?)
             - EX : exponential, requires Lambda
             - LN : log-normal, requires mu and sigma
             - ST : stretched, requires Lambda and beta
-            
+
     seed : initialize random number generator; for reproducibility; by default it is 'none', which means new randomness each time, else set a number.
-    
+
     Output
     ------
-    x : 
-    
+    x :
+
     Details
     -------
     original source : http://www.santafe.edu/~aaronc/powerlaws/
