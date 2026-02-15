@@ -55,9 +55,9 @@ def sedcas_plot(params_trial):
     model.climate_forcing = params_trial["climate_forcing"]
 
     # <editor-fold desc="update the model params">
-    model.cfg.min_df_v.value = params_trial["min_df_v"]
+    # model.cfg.min_df_v.value = params_trial["min_df_v"]
 
-    model.cfg.hillslope_storage_cap.value = params_trial["hillslope_storage_cap"]
+    # model.cfg.hillslope_storage_cap.value = params_trial["hillslope_storage_cap"]
 
     model.cfg.w_storage_cap.value[0] = [params_trial["w_storage_cap0"]]
     model.cfg.w_storage_cap.value[1] = [params_trial["w_storage_cap1"],
@@ -67,16 +67,16 @@ def sedcas_plot(params_trial):
     model.cfg.w_residence_time.value[1] = [params_trial["w_residence_time1"],
                                            params_trial["w_residence_time2"]]
 
-    model.cfg.ls_min_v.value = params_trial["ls_min_v"]
+    # model.cfg.ls_min_v.value = params_trial["ls_min_v"]
     model.cfg.ls_alpha_v.value = params_trial["ls_alpha_v"]
-    model.cfg.ls_max_v.value = params_trial["ls_max_v"]
+    # model.cfg.ls_max_v.value = params_trial["ls_max_v"]
 
     model.cfg.h2s_r.value = params_trial["h2s_r"]
 
     model.cfg.Qdf.value = params_trial["Qdf"]
 
     model.cfg.max_s2w.value = params_trial["max_s2w"]
-    model.cfg.max_s_c.value = params_trial["max_s_c"]
+    # model.cfg.max_s_c.value = params_trial["max_s_c"]
 
     # you must update the params then post-processing
     model._params_post_processing()
@@ -126,6 +126,14 @@ def sedcas_plot(params_trial):
     mask = (model.sed_output.time_str >= t1) & (model.sed_output.time_str < t2)
     sed_output_2017 = model.sed_output.isel(time=mask)
 
+    # landslides
+    list_of_col_names = [(time_coord, "ls_Q1"),
+                         (time_coord, "ls_Q50"),
+                         (time_coord, "ls_Q99")]
+    fig = plotly_multi_time_series_xr(xr_dataset=sed_output_2017,
+                                      list_of_col_names=list_of_col_names)
+    fig.write_html(f"{output_dir}/resolution_{params_trial['data_type']}_{t1[:4]}_{t2[:4]}_ls.html")
+
     # sed
     list_of_col_names = [(time_coord, "hillslope_storage_Q50"),
                          (time_coord, "channel_storage_Q50"),
@@ -135,9 +143,9 @@ def sedcas_plot(params_trial):
     fig.write_html(f"{output_dir}/resolution_{params_trial['data_type']}_{t1[:4]}_{t2[:4]}_sediments.html")
     # </editor-fold>
 
-    model.hydro_output.to_zarr("hydro_output.zarr", mode="w")
-    model.sed_output.to_zarr("sed_output.zarr", mode="w")
-    model.sed_container.to_zarr("sed_container.zarr", mode="w")
+    model.hydro_output.to_zarr("hydro_output.zarr", mode="a", consolidated=False)
+    model.sed_output.to_zarr("sed_output.zarr", mode="a", consolidated=False)
+    model.sed_container.to_zarr("sed_container.zarr", mode="a", consolidated=False)
 
 def write_results(project_root, trial_number, total_loss, details_loss):
 
@@ -227,15 +235,16 @@ def objective(trial, params_trial):
 
     # <editor-fold desc="(1) set thg params need to be calibrated">
     # Minium debris-flow volume, unit by m^3
-    min_df_v = trial.suggest_float("min_df_v", 1e2, 5e3, log=True)
+    # min_df_v = trial.suggest_float("min_df_v", 1e2, 5e3, log=True)
 
     # Hillslope sediment storage capacity, unit by m^3,
     # this will be converted to area-normalized value (mm),
     # please check the func: _params_post_processing
-    default_hillslope_storage_cap = 750000.0
-    hillslope_storage_cap = trial.suggest_float("hillslope_storage_cap",
-                                                default_hillslope_storage_cap*0.1,
-                                                default_hillslope_storage_cap*10, log=True)
+
+    # default_hillslope_storage_cap = 750000.0
+    # hillslope_storage_cap = trial.suggest_float("hillslope_storage_cap",
+    #                                             default_hillslope_storage_cap*0.1,
+    #                                             default_hillslope_storage_cap*10, log=True)
 
     # Water storage capacities of HRUs, unit by mm for normalized area
     w_storage_cap0 = trial.suggest_float("w_storage_cap0", 0.1, 10, log=True)  # bedrock
@@ -248,21 +257,21 @@ def objective(trial, params_trial):
     w_residence_time2 = trial.suggest_float("w_residence_time2", 1, 2016, log=True)  # forest bottom, from 1h to 14 days
 
     # Minimum potential landslide volume, unit by m^3
-    ls_min_v = trial.suggest_float("ls_min_v", 10, 1e3, log=True) # min ls volume from 10 m^3 to 10*10*10 m^3
+    # ls_min_v = trial.suggest_float("ls_min_v", 10, 1e3, log=True) # min ls volume from 10 m^3 to 10*10*10 m^3
     ls_alpha_v = trial.suggest_float("ls_alpha_v", 1.1, 3) # 1.5 will failure, bigger value -> large landslides become much rarer
     # the 2013 lsndslides is 1e4 m^3, https://doi.org/10.1038/s43247-023-00851-0
-    ls_max_v = trial.suggest_float("ls_max_v", 5e3, 1e5, log=True) # max ls volume from 5e3 m^3 to 1e4 m^3
+    # ls_max_v = trial.suggest_float("ls_max_v", 2e3, 2e4, log=True) # max ls volume from 5e3 m^3 to 1e4 m^3
 
     # Sediments deposition rate from hillslope to channel, no physical unit
     h2s_r = trial.suggest_float("h2s_r", 0, 1)
 
     # Discharge threshold for triggering debris flows, mm (area-normalzied unit) / <time_resolution>
-    Qdf = trial.suggest_float("Qdf", 0.1, 10, log=True)  # debris flow
+    Qdf = trial.suggest_float("Qdf", 0.05, 10, log=True)  # debris flow
 
     # Max volumetric sediment to water ratio, no physical unit
     max_s2w = trial.suggest_float("max_s2w", 0.01, 0.99, log=True)
     # Max possible sediment concentration for bedload, no physical unit
-    max_s_c = trial.suggest_float("max_s_c", 0.01, 0.99, log=True)
+    # max_s_c = trial.suggest_float("max_s_c", 0.01, 0.99, log=True)
     # </editor-fold>
 
     # (2) load model
@@ -273,9 +282,9 @@ def objective(trial, params_trial):
     model.climate_forcing = params_trial["climate_forcing"].copy()
 
     # <editor-fold desc="(3) update the model params">
-    model.cfg.min_df_v.value = min_df_v
+    # model.cfg.min_df_v.value = min_df_v
 
-    model.cfg.hillslope_storage_cap.value = hillslope_storage_cap
+    # model.cfg.hillslope_storage_cap.value = hillslope_storage_cap
 
     model.cfg.w_storage_cap.value[0] = [w_storage_cap0]
     model.cfg.w_storage_cap.value[1] = [w_storage_cap1, w_storage_cap2]
@@ -283,16 +292,16 @@ def objective(trial, params_trial):
     model.cfg.w_residence_time.value[0] = [w_residence_time0]
     model.cfg.w_residence_time.value[1] = [w_residence_time1, w_residence_time2]
 
-    model.cfg.ls_min_v.value = ls_min_v
+    # model.cfg.ls_min_v.value = ls_min_v
     model.cfg.ls_alpha_v.value = ls_alpha_v
-    model.cfg.ls_max_v.value = ls_max_v
+    # model.cfg.ls_max_v.value = ls_max_v
 
     model.cfg.h2s_r.value = h2s_r
 
     model.cfg.Qdf.value = Qdf
 
     model.cfg.max_s2w.value = max_s2w
-    model.cfg.max_s_c.value = max_s_c
+    # model.cfg.max_s_c.value = max_s_c
 
     # you must update the params then post-processing
     model._params_post_processing()

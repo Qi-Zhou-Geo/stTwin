@@ -33,6 +33,7 @@ plt.rcParams.update({'font.size': 7,
 
 df1 = pd.read_csv(f'{current_dir}/default_results.txt', header=None) # "1h Default"
 df2 = pd.read_csv(f'{current_dir}/default_results2.txt', header=None) # "1h from 2004"
+df3 = pd.read_csv(f'{current_dir}/default_results_BO.txt', header=None) # "1h from 2004"
 
 fill_nan = 1e4
 ratio1 = pd.to_numeric(df1.iloc[:63, -1], errors="coerce") \
@@ -40,6 +41,10 @@ ratio1 = pd.to_numeric(df1.iloc[:63, -1], errors="coerce") \
          .to_numpy()
 
 ratio2 = pd.to_numeric(df2.iloc[:63, -1], errors="coerce") \
+         .replace([np.inf, -np.inf, np.nan], fill_nan) \
+         .to_numpy()
+
+ratio3 = pd.to_numeric(df3.iloc[:63, -1], errors="coerce") \
          .replace([np.inf, -np.inf, np.nan], fill_nan) \
          .to_numpy()
 

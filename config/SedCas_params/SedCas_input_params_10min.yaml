@@ -292,7 +292,7 @@ model_config:
   # ls_cutoff
   ls_max_v:
     name: ls_max_v
-    value: 50000 # 3000000
+    value: 1000000 # 3000000
     attrs:
       unit: m^3
       description: Maximum potential landslide volume
@@ -336,7 +336,7 @@ model_config:
   # smax
   max_s2w:
     name: max_s2w
-    value: 0.8
+    value: 0.57
     attrs:
       unit: None
       description: Max volumetric sediment to water ratio
