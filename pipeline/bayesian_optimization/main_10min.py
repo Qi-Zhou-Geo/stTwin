@@ -25,7 +25,7 @@ from functions.SedCas_re.SedCas_re import SedCas
 from functions.toolkit.plotly_visualize import plotly_multi_time_series_xr
 
 # initial the SedCas model
-model_params = "SedCas_input_params_10min.yaml"
+model_params = "SedCas_input_params_10min_bo.yaml"
 model = SedCas(project_root=project_root,
                model_input_params=f"{project_root}/config/SedCas_params/{model_params}")
 model._params_post_processing()
