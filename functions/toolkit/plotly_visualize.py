@@ -7,10 +7,11 @@
 # Please do not distribute this functions without the author's permission
 
 import os
+import tempfile
+import webbrowser
+
 import pandas as pd
 import numpy as np
-
-from datetime import datetime, timezone
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -21,17 +22,17 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.io as pio
 
+from obspy import UTCDateTime
+
 # <editor-fold desc="add the sys.path to search for custom modules">
 from pathlib import Path
-
 current_dir = Path(__file__).resolve().parent
+
 # using ".parent" on a "pathlib.Path" object_typeect moves one level up the directory hierarchy
 project_root = current_dir.parent.parent
 import sys
 
 sys.path.append(str(project_root))
-
-
 # </editor-fold>
 
 # import the custom functions
@@ -83,7 +84,8 @@ def plotly_multi_time_series(list_of_tuples,
 
 
 
-def plotly_multi_time_series_xr(xr_dataset, list_of_col_names, shared_title=None):
+def plotly_multi_time_series_xr(xr_dataset, list_of_col_names, shared_title=None,
+                                search_time=None, window_hours=24):
     """
     list: list_of_col_names
         [(x1_col_name, y1_col_name),
@@ -131,19 +133,66 @@ def plotly_multi_time_series_xr(xr_dataset, list_of_col_names, shared_title=None
             gridcolor="rgba(128,128,128,0.5)", griddash="dash"
         )
 
+
+    # ── x-axis style + range-selector buttons ─────────────────────────────────
+    rangeselector = dict(buttons=[
+        dict(count=1, label="1d", step="day", stepmode="backward"),
+        dict(count=7, label="1w", step="day", stepmode="backward"),
+        dict(count=1, label="1m", step="month", stepmode="backward"),
+        dict(count=6, label="6m", step="month", stepmode="backward"),
+        dict(count=1, label="1y", step="year", stepmode="backward"),
+        dict(step="all", label="All"),
+    ])
+
     fig.update_xaxes(
         tickformat="%Y-%m-%dT%H:%M:%S", hoverformat="%Y-%m-%dT%H:%M:%S",
-        showgrid=True, gridcolor="rgba(128,128,128,0.5)", griddash="dash"
+        showgrid=True, gridcolor="rgba(128,128,128,0.5)", griddash="dash",
+        rangeselector=rangeselector,
     )
-
     fig.update_xaxes(title_text="Time [UTC+0]", row=n, col=1)
 
+    # Zoom to search_time if provided
+    if search_time is not None:
+
+        t_center = UTCDateTime(search_time)
+        t_start = t_center - window_hours * 3600
+        t_end = t_center + window_hours * 3600
+
+        # Add vertical line at search_time
+        fig.add_shape(
+            type="line",
+            xref="x", yref="paper",
+            x0=t_center.isoformat(), x1=t_center.isoformat(),
+            y0=0, y1=1,
+            line=dict(color="red", width=2, dash="dash"),
+        )
+
+        # Zoom to window
+        fig.update_xaxes(range=[t_start.isoformat(), t_end.isoformat()])
 
     fig.update_layout(
         autosize=True,
         showlegend=False, plot_bgcolor="white", paper_bgcolor="white",
         title=dict(text=shared_title, x=0.5, xanchor="center")
     )
+
+
+    # ── inject search-box snippet into HTML ───────────────────────────────────
+    html_str = fig.to_html(include_plotlyjs="cdn", full_html=True)
+
+    # load the template
+    with open(f"{project_root}/functions/toolkit/plotly_search_box.html", "r", encoding="utf-8") as f:
+        search_box_html = f.read()
+
+    html_str = html_str.replace("</body>", search_box_html + "\n</body>")
+
+    # ── open HTML ────────────────────────────────────────────────────────────
+    # Save to a temp file and then open in browser
+    tmp = tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w", encoding="utf-8")
+    tmp.write(html_str)
+    tmp.close()
+    webbrowser.open(f"file://{tmp.name}")
+
 
     return fig
 

@@ -34,23 +34,24 @@ def get_mu_sigma(y_pred, start_time, end_time):
 
     if np.any(np.isnan(aggregate_sed)):
         # this make sure np.log10(aggregate_sed) work
-        raise ValueError("NaN encountered in aggregated sediment volume.")
+        raise RuntimeError("NaN encountered in aggregated sediment volume.")
 
-    if np.any(aggregate_sed <= 0):
+    mean_aggregate_sed = np.mean(aggregate_sed)  # non-log10 based
+
+    if np.all(aggregate_sed == 0):
         raise RuntimeError(
             f"Model failed for event [{start_time}, {end_time}]: "
             "non-positive aggregated sediment volume."
         )
+    else:
+        # replace the aggregate_sed as mean predicted volume
+        aggregate_sed[aggregate_sed==0] = mean_aggregate_sed
 
-    mean_aggregate_sed = np.mean(aggregate_sed) # non-log10 based
     log_agg = np.log10(aggregate_sed) # transform ensemble to log10-space with base e
 
     # statistics in log-space
     mu = np.mean(log_agg)
     sigma = np.std(log_agg, ddof=1) # ddof=1 -> unbiased sample estimator
-
-    # if sigma < 1e-20:
-    #     print(f"Warning! Ensemble sigma is nearly zero (sigma={sigma}).")
 
     return mu, sigma, mean_aggregate_sed
 
@@ -108,7 +109,6 @@ def likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10):
         total_loss (float): Total negative log-likelihood summed over all events with available observed volumes.
     """
 
-
     y_obs = np.array(y_obs)
     if buffer_time is None:
         pass
@@ -120,13 +120,17 @@ def likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10):
             y_obs[event_id, 1] = (UTCDateTime(y_obs[event_id, 1]) + delta_t).strftime("%Y-%m-%dT%H:%M:%S")
 
     event_level_loss = []
-    details_loss = []
-    for event_id in range(len(y_obs)):
+    details_loss = ["event_index, observed_volume [m^3], start_time, end_time, loss, "
+                    "mu (log10 space), sigma (log10 space), mean_aggregate_sed [m^3], predicted_gap"]
 
+    num_no_obs = 0
+    num_failured_pred = 0
+    for event_id in range(len(y_obs)):
         volume_obs = y_obs[event_id, 2]
+
         if np.isnan(volume_obs): # is True
             # no observed volume, only with event document
-            pass
+            num_no_obs = num_no_obs + 1
         else:
             start_time, end_time = y_obs[event_id, 0], y_obs[event_id, 1]
 
@@ -134,8 +138,12 @@ def likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10):
                 # return log10 based mu, sigma
                 mu, sigma, mean_aggregate_sed = get_mu_sigma(y_pred, start_time, end_time)
                 loss = loss_func(volume_obs, mu, sigma)
+                predicted_gap = mean_aggregate_sed / volume_obs
             except RuntimeError:
-                mu, sigma, mean_aggregate_sed = -1, -1, -1
+                num_failured_pred = num_failured_pred + 1
+
+                mu, sigma, mean_aggregate_sed = np.nan, np.nan, np.nan
+                predicted_gap = np.nan
                 if event_id == 0:
                     # in case this situation occurs in the first event
                     loss = default_loss
@@ -145,12 +153,13 @@ def likehood_loss(y_obs, y_pred, buffer_time=3, default_loss=1e10):
             event_level_loss.append(loss)
 
             # save the details
-            record = [default_loss, event_id, volume_obs, start_time, end_time,
-                      f"{loss:.1f}", mu, sigma, mean_aggregate_sed]
+            record = [event_id, volume_obs, start_time, end_time,
+                      f"{loss:.1f}", f"{mu:.3f}", f"{sigma:.3f}",
+                      f"{mean_aggregate_sed:.1f}", f"{predicted_gap:.1f}"]
             record = ", ".join(map(str, record))
             details_loss.append(record)
 
     total_loss = np.sum(event_level_loss)
 
-    return total_loss, details_loss
+    return total_loss, details_loss, num_failured_pred
 
