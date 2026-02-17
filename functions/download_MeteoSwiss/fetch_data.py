@@ -129,12 +129,15 @@ def fetch_data4SedCas(station="mve", time_resolution="10 minutes", time_period="
         df: pandas data frame, row by time, column by "meta_data"
     '''
 
-    time_resolution_mapping = {"10 minutes":"t", "Hourly":"h"}
+    time_resolution_mapping = {"10 minutes":"t",
+                               "Hourly":"h"}
     # never change this
-    time_period_mapping = {"Today":"now", "Current year":"recent",
-                           "2000-2009":"historical_2000-2009",
-                           "2010-2019":"historical_2010-2019",
-                           "2020-2029":"historical_2020-2029"}
+    time_period_mapping = {"Today": "now",
+                           "Current year": "recent",
+                           "1990-1999": "historical_1990-1999",
+                           "2000-2009": "historical_2000-2009",
+                           "2010-2019": "historical_2010-2019",
+                           "2020-2029": "historical_2020-2029"}
 
     # t_now denotes the latest 10 minutes resolution data since midnight UT+0 2025-03-27T00:00:00
     # t_recent denotes the latest 10 minutes resolution data since this year UT+0 2025-01-01T00:00:00
