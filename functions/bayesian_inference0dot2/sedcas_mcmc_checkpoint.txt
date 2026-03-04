@@ -1,0 +1,510 @@
+2026-03-02T21:29:22.945113
+Done Main sampling phase 0.
+Mean acceptance fraction: 0.163
+Min: 0.000, Max: 0.440
+Total iterations: 25
+Max Log-Prob: -276.31
+7.252, 58.683, 46.818, 68.798, 459.651, 409.522, 1.491, 0.345, 0.261, 21.222, 4.718
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-02T22:10:19.062736
+Done Main sampling phase 1.
+Mean acceptance fraction: 0.167
+Min: 0.000, Max: 0.400
+Total iterations: 30
+Max Log-Prob: -276.31
+6.112, 58.791, 46.334, 66.752, 463.949, 391.609, 1.468, 0.354, 0.265, 21.427, 4.740
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-02T22:51:17.380212
+Done Main sampling phase 2.
+Mean acceptance fraction: 0.170
+Min: 0.000, Max: 0.400
+Total iterations: 35
+Max Log-Prob: -276.25
+5.408, 59.762, 45.667, 66.771, 451.242, 395.730, 1.454, 0.362, 0.268, 21.334, 4.520
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-02T23:32:30.557378
+Done Main sampling phase 3.
+Mean acceptance fraction: 0.174
+Min: 0.000, Max: 0.375
+Total iterations: 40
+Max Log-Prob: -276.25
+4.828, 59.303, 45.551, 66.804, 446.945, 365.099, 1.441, 0.371, 0.266, 21.995, 4.501
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T00:13:33.731237
+Done Main sampling phase 4.
+Mean acceptance fraction: 0.182
+Min: 0.000, Max: 0.356
+Total iterations: 45
+Max Log-Prob: -276.25
+3.956, 57.747, 41.784, 69.944, 456.909, 344.088, 1.394, 0.392, 0.266, 22.730, 4.104
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T00:54:56.065144
+Done Main sampling phase 5.
+Mean acceptance fraction: 0.188
+Min: 0.000, Max: 0.360
+Total iterations: 50
+Max Log-Prob: -276.08
+3.507, 57.468, 41.394, 72.860, 440.656, 347.550, 1.382, 0.399, 0.261, 23.267, 3.923
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T01:36:10.016702
+Done Main sampling phase 6.
+Mean acceptance fraction: 0.198
+Min: 0.000, Max: 0.400
+Total iterations: 55
+Max Log-Prob: -276.08
+3.086, 56.412, 39.831, 76.905, 446.735, 321.022, 1.362, 0.414, 0.265, 24.157, 3.771
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T02:17:37.721447
+Done Main sampling phase 7.
+Mean acceptance fraction: 0.206
+Min: 0.000, Max: 0.433
+Total iterations: 60
+Max Log-Prob: -276.08
+2.691, 56.023, 39.452, 77.029, 449.868, 324.373, 1.352, 0.415, 0.260, 24.068, 3.645
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T02:59:10.035784
+Done Main sampling phase 8.
+Mean acceptance fraction: 0.212
+Min: 0.000, Max: 0.415
+Total iterations: 65
+Max Log-Prob: -276.08
+2.579, 54.047, 40.567, 79.021, 446.540, 319.631, 1.347, 0.422, 0.256, 24.483, 3.499
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T03:40:38.739517
+Done Main sampling phase 9.
+Mean acceptance fraction: 0.212
+Min: 0.000, Max: 0.386
+Total iterations: 70
+Max Log-Prob: -276.08
+2.458, 53.161, 40.701, 82.941, 421.215, 331.987, 1.346, 0.426, 0.255, 24.941, 3.336
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T04:22:02.652953
+Done Main sampling phase 10.
+Mean acceptance fraction: 0.210
+Min: 0.000, Max: 0.373
+Total iterations: 75
+Max Log-Prob: -276.08
+2.394, 53.284, 39.940, 83.418, 424.860, 337.905, 1.341, 0.430, 0.256, 25.019, 3.455
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T05:03:34.767332
+Done Main sampling phase 11.
+Mean acceptance fraction: 0.211
+Min: 0.000, Max: 0.362
+Total iterations: 80
+Max Log-Prob: -276.08
+2.033, 54.330, 39.754, 83.761, 423.841, 329.282, 1.322, 0.438, 0.258, 25.486, 3.306
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T05:45:01.809606
+Done Main sampling phase 12.
+Mean acceptance fraction: 0.213
+Min: 0.000, Max: 0.341
+Total iterations: 85
+Max Log-Prob: -276.08
+1.972, 54.333, 40.289, 85.583, 412.780, 349.127, 1.315, 0.449, 0.264, 25.701, 3.267
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T06:26:14.566432
+Done Main sampling phase 13.
+Mean acceptance fraction: 0.213
+Min: 0.000, Max: 0.344
+Total iterations: 90
+Max Log-Prob: -276.08
+1.908, 54.160, 40.861, 86.328, 392.833, 352.257, 1.319, 0.449, 0.263, 25.854, 3.346
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T07:07:30.279325
+Done Main sampling phase 14.
+Mean acceptance fraction: 0.212
+Min: 0.000, Max: 0.358
+Total iterations: 95
+Max Log-Prob: -276.08
+1.851, 53.945, 40.845, 89.677, 391.736, 372.356, 1.312, 0.444, 0.264, 25.945, 3.150
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T07:48:41.787675
+Done Main sampling phase 15.
+Mean acceptance fraction: 0.208
+Min: 0.000, Max: 0.350
+Total iterations: 100
+Max Log-Prob: -276.08
+1.848, 53.496, 40.564, 91.418, 391.963, 370.269, 1.308, 0.447, 0.269, 26.141, 3.021
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T08:29:55.566808
+Done Main sampling phase 16.
+Mean acceptance fraction: 0.204
+Min: 0.000, Max: 0.343
+Total iterations: 105
+Max Log-Prob: -276.08
+1.833, 53.592, 40.777, 94.716, 383.050, 384.265, 1.302, 0.452, 0.269, 26.105, 2.957
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T09:12:12.041458
+Done Main sampling phase 17.
+Mean acceptance fraction: 0.203
+Min: 0.000, Max: 0.345
+Total iterations: 110
+Max Log-Prob: -276.08
+1.832, 54.202, 40.707, 95.093, 386.850, 386.613, 1.299, 0.455, 0.270, 25.935, 2.958
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T09:53:32.551603
+Done Main sampling phase 18.
+Mean acceptance fraction: 0.200
+Min: 0.000, Max: 0.330
+Total iterations: 115
+Max Log-Prob: -276.08
+1.806, 53.993, 40.811, 93.774, 387.453, 383.315, 1.297, 0.457, 0.267, 25.955, 3.024
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T10:34:40.206031
+Done Main sampling phase 19.
+Mean acceptance fraction: 0.197
+Min: 0.000, Max: 0.317
+Total iterations: 120
+Max Log-Prob: -276.08
+1.798, 54.316, 40.730, 94.214, 389.033, 378.313, 1.298, 0.459, 0.270, 26.008, 2.943
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T11:15:47.166625
+Done Main sampling phase 20.
+Mean acceptance fraction: 0.194
+Min: 0.000, Max: 0.312
+Total iterations: 125
+Max Log-Prob: -276.08
+1.795, 54.114, 41.203, 95.435, 385.284, 387.569, 1.295, 0.467, 0.272, 26.093, 2.989
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T11:56:41.395158
+Done Main sampling phase 21.
+Mean acceptance fraction: 0.191
+Min: 0.000, Max: 0.308
+Total iterations: 130
+Max Log-Prob: -276.08
+1.792, 54.701, 41.324, 96.773, 385.762, 402.281, 1.297, 0.469, 0.271, 25.989, 2.955
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T12:37:53.448489
+Done Main sampling phase 22.
+Mean acceptance fraction: 0.189
+Min: 0.000, Max: 0.304
+Total iterations: 135
+Max Log-Prob: -276.08
+1.785, 53.562, 42.378, 98.735, 371.104, 412.715, 1.300, 0.474, 0.271, 26.195, 2.946
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T13:19:35.830824
+Done Main sampling phase 23.
+Mean acceptance fraction: 0.187
+Min: 0.000, Max: 0.300
+Total iterations: 140
+Max Log-Prob: -276.08
+1.779, 53.611, 42.139, 98.359, 372.456, 414.631, 1.300, 0.472, 0.273, 26.018, 2.966
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T14:00:47.044335
+Done Main sampling phase 24.
+Mean acceptance fraction: 0.185
+Min: 0.000, Max: 0.297
+Total iterations: 145
+Max Log-Prob: -276.08
+1.769, 53.758, 42.781, 99.792, 371.226, 421.975, 1.300, 0.476, 0.271, 25.928, 2.976
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T14:41:56.566319
+Done Main sampling phase 25.
+Mean acceptance fraction: 0.182
+Min: 0.000, Max: 0.287
+Total iterations: 150
+Max Log-Prob: -276.08
+1.760, 53.394, 43.205, 99.295, 369.663, 423.311, 1.300, 0.476, 0.269, 25.756, 2.997
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T15:23:06.463560
+Done Main sampling phase 26.
+Mean acceptance fraction: 0.181
+Min: 0.000, Max: 0.284
+Total iterations: 155
+Max Log-Prob: -276.04
+1.749, 53.611, 43.445, 101.034, 370.931, 424.943, 1.297, 0.476, 0.268, 25.820, 2.990
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T16:04:03.396296
+Done Main sampling phase 27.
+Mean acceptance fraction: 0.180
+Min: 0.000, Max: 0.275
+Total iterations: 160
+Max Log-Prob: -276.04
+1.743, 53.516, 43.779, 101.833, 368.328, 431.873, 1.296, 0.481, 0.271, 25.812, 2.939
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T16:45:29.481932
+Done Main sampling phase 28.
+Mean acceptance fraction: 0.178
+Min: 0.000, Max: 0.267
+Total iterations: 165
+Max Log-Prob: -276.04
+1.745, 53.916, 43.422, 101.032, 380.774, 413.090, 1.296, 0.483, 0.271, 26.067, 2.897
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T17:26:37.969733
+Done Main sampling phase 29.
+Mean acceptance fraction: 0.178
+Min: 0.000, Max: 0.265
+Total iterations: 170
+Max Log-Prob: -276.04
+1.736, 54.294, 43.715, 103.905, 375.165, 432.616, 1.295, 0.480, 0.272, 26.232, 2.819
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T18:07:41.853231
+Done Main sampling phase 30.
+Mean acceptance fraction: 0.177
+Min: 0.000, Max: 0.257
+Total iterations: 175
+Max Log-Prob: -276.04
+1.735, 54.304, 43.572, 103.736, 379.238, 431.103, 1.296, 0.479, 0.271, 26.267, 2.811
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T18:50:59.589630
+Done Main sampling phase 31.
+Mean acceptance fraction: 0.176
+Min: 0.000, Max: 0.267
+Total iterations: 180
+Max Log-Prob: -276.04
+1.734, 53.872, 43.615, 104.393, 377.479, 441.376, 1.294, 0.482, 0.272, 26.100, 2.759
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T19:35:10.036225
+Done Main sampling phase 32.
+Mean acceptance fraction: 0.175
+Min: 0.000, Max: 0.265
+Total iterations: 185
+Max Log-Prob: -276.04
+1.516, 54.643, 44.028, 103.440, 373.479, 442.081, 1.293, 0.480, 0.272, 26.325, 2.738
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T20:18:18.618896
+Done Main sampling phase 33.
+Mean acceptance fraction: 0.175
+Min: 0.000, Max: 0.268
+Total iterations: 190
+Max Log-Prob: -276.04
+1.464, 55.370, 43.555, 102.778, 369.593, 448.767, 1.294, 0.480, 0.273, 26.386, 2.793
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T21:01:38.519486
+Done Main sampling phase 34.
+Mean acceptance fraction: 0.176
+Min: 0.000, Max: 0.277
+Total iterations: 195
+Max Log-Prob: -276.04
+1.238, 55.583, 44.057, 101.134, 377.442, 462.334, 1.288, 0.485, 0.271, 25.827, 2.891
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T21:45:59.142823
+Done Main sampling phase 35.
+Mean acceptance fraction: 0.174
+Min: 0.000, Max: 0.270
+Total iterations: 200
+Max Log-Prob: -276.04
+1.086, 55.862, 44.487, 103.589, 365.232, 481.886, 1.292, 0.482, 0.273, 25.933, 2.764
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T22:29:08.370487
+Done Main sampling phase 36.
+Mean acceptance fraction: 0.174
+Min: 0.000, Max: 0.268
+Total iterations: 205
+Max Log-Prob: -276.04
+1.038, 55.757, 43.592, 105.610, 376.198, 499.807, 1.286, 0.487, 0.271, 26.018, 2.777
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T23:12:32.967166
+Done Main sampling phase 37.
+Mean acceptance fraction: 0.174
+Min: 0.000, Max: 0.271
+Total iterations: 210
+Max Log-Prob: -276.02
+1.044, 54.761, 43.869, 106.703, 378.570, 513.747, 1.284, 0.492, 0.270, 25.871, 2.860
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-03T23:55:52.605741
+Done Main sampling phase 38.
+Mean acceptance fraction: 0.173
+Min: 0.000, Max: 0.274
+Total iterations: 215
+Max Log-Prob: -276.02
+1.016, 56.058, 44.339, 105.168, 379.848, 502.138, 1.285, 0.493, 0.274, 25.745, 2.845
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-04T00:39:02.029879
+Done Main sampling phase 39.
+Mean acceptance fraction: 0.174
+Min: 0.000, Max: 0.273
+Total iterations: 220
+Max Log-Prob: -276.02
+1.008, 56.316, 44.752, 106.330, 372.862, 507.267, 1.286, 0.497, 0.277, 25.865, 2.847
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-04T01:21:47.899379
+Done Main sampling phase 40.
+Mean acceptance fraction: 0.173
+Min: 0.000, Max: 0.267
+Total iterations: 225
+Max Log-Prob: -276.02
+0.984, 57.132, 44.962, 108.676, 373.981, 529.273, 1.286, 0.496, 0.280, 25.915, 2.709
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-04T02:05:03.626018
+Done Main sampling phase 41.
+Mean acceptance fraction: 0.172
+Min: 0.000, Max: 0.274
+Total iterations: 230
+Max Log-Prob: -276.02
+0.982, 57.409, 44.130, 108.397, 375.598, 519.395, 1.286, 0.497, 0.277, 25.823, 2.716
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-04T02:47:55.508543
+Done Main sampling phase 42.
+Mean acceptance fraction: 0.172
+Min: 0.000, Max: 0.268
+Total iterations: 235
+Max Log-Prob: -276.02
+0.981, 57.812, 43.816, 107.407, 378.923, 518.205, 1.290, 0.493, 0.275, 25.523, 2.693
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-04T03:30:16.396223
+Done Main sampling phase 43.
+Mean acceptance fraction: 0.171
+Min: 0.000, Max: 0.267
+Total iterations: 240
+Max Log-Prob: -276.02
+0.982, 56.671, 44.417, 110.278, 367.178, 529.178, 1.289, 0.507, 0.278, 25.882, 2.762
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-04T04:11:18.466584
+Done Main sampling phase 44.
+Mean acceptance fraction: 0.171
+Min: 0.000, Max: 0.265
+Total iterations: 245
+Max Log-Prob: -276.02
+0.982, 56.650, 44.905, 109.965, 371.665, 530.288, 1.288, 0.512, 0.280, 26.106, 2.813
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-04T04:52:44.457878
+Done Main sampling phase 45.
+Mean acceptance fraction: 0.171
+Min: 0.000, Max: 0.272
+Total iterations: 250
+Max Log-Prob: -276.02
+0.978, 55.874, 44.589, 109.900, 365.240, 525.358, 1.287, 0.514, 0.280, 26.297, 2.866
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-04T05:33:43.372301
+Done Main sampling phase 46.
+Mean acceptance fraction: 0.171
+Min: 0.000, Max: 0.267
+Total iterations: 255
+Max Log-Prob: -276.02
+0.971, 55.912, 44.378, 111.088, 362.252, 546.982, 1.286, 0.522, 0.280, 26.241, 2.925
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-04T06:14:53.644100
+Done Main sampling phase 47.
+Mean acceptance fraction: 0.171
+Min: 0.000, Max: 0.269
+Total iterations: 260
+Max Log-Prob: -276.02
+0.976, 56.706, 45.064, 108.864, 370.134, 531.964, 1.283, 0.525, 0.281, 26.021, 2.908
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-04T06:56:01.638839
+Done Main sampling phase 48.
+Mean acceptance fraction: 0.171
+Min: 0.000, Max: 0.268
+Total iterations: 265
+Max Log-Prob: -276.02
+0.976, 56.826, 45.586, 111.364, 360.650, 549.889, 1.280, 0.528, 0.287, 26.047, 2.951
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-04T07:37:16.437247
+Done Main sampling phase 49.
+Mean acceptance fraction: 0.171
+Min: 0.000, Max: 0.267
+Total iterations: 270
+Max Log-Prob: -276.02
+0.977, 56.070, 45.293, 115.815, 362.140, 575.869, 1.283, 0.525, 0.290, 25.958, 2.752
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
+2026-03-04T08:18:34.017154
+Done Main sampling phase 50.
+Mean acceptance fraction: 0.170
+Min: 0.000, Max: 0.262
+Total iterations: 275
+Max Log-Prob: -276.02
+0.984, 56.680, 45.337, 117.809, 362.858, 589.078, 1.286, 0.528, 0.293, 25.818, 2.707
+Autocorrelation time (mean): nan ± nan
+Mean Effective Sample Size: nan
+
