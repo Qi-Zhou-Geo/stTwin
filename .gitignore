@@ -37,6 +37,8 @@ functions/SPI/archive/spi_params_spi_1.npz
 data/liveshow_cache
 data/seismic_temp
 
+config/SedCas-main/1h/sed_container_2004_2018.nc
+
 # 
 func/bayesian_inference/parallel_results
 func/bayesian_inference/500step2026-03-17-backup
@@ -48,3 +50,4 @@ pipeline/re-calibrate/2004_2017_t_sed_container_2017_10min-new.html
 
 pipeline/real_pred/static/channel_storage_Q50.npz
 pipeline/real_pred/static/sed_transport_real_Q50.npz
+

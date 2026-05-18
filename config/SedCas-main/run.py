@@ -60,5 +60,6 @@ t1, t2 = "2004-03-01T00:00:00", "2018-01-01T00:00:00"
 mask = (sed_container.time_str >= t1) & (sed_container.time_str < t2)
 sed_container = sed_container.isel(time=mask)
 current_dir = os.getcwd()
+os.makedirs(f"{current_dir}/1h", exist_ok=True)
 sed_container.to_netcdf(f"{current_dir}/1h/sed_container_{t1[:4]}_{t2[:4]}.nc")
 
