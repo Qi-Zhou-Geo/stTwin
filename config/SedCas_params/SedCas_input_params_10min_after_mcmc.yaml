@@ -10,6 +10,12 @@
 
 
 # Model input params
+ReadMe:
+  Last Updated: '2026-05-18T12:06:39.450474'
+  Author: QZ
+  inherited_parameters: initial_w_storage, w_storage_cap, w_residence_time, 
+    initial_hs_storage, initial_ch_storage
+  inherited_from_time: '2022-12-31T23:50:00'
 model_input:
   num_iteration:
     name: num_iteration
@@ -25,8 +31,8 @@ model_config:
   HRUs:
     name: hru
     value:
-      - bedrock
-      - forest
+    - bedrock
+    - forest
     attrs:
       unit: None
       description: Hydrological response units (HRU)
@@ -54,7 +60,8 @@ model_config:
     value: 3
     attrs:
       unit: None
-      description: Number of reservoirs in HRU, 1 in bedrock HRU (id=0), 2 in forest HRU (top id=1, bottom id=2)
+      description: Number of reservoirs in HRU, 1 in bedrock HRU (id=0), 2 in 
+        forest HRU (top id=1, bottom id=2)
       calibrate: No
 
   # the original name is: Ele
@@ -90,7 +97,7 @@ model_config:
     value: 2000.0
     attrs:
       unit: kg/m^3
-      description: Density of debris flows
+      description: Bulk density of debris flows
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
   # rho_b
@@ -120,12 +127,20 @@ model_config:
       description: Hillslope sediment storage capacity
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
+  channel_storage_cap:
+    name: channel_storage_cap
+    value: 11.046847643424627
+    attrs:
+      unit: mm
+      description: Channel sediment storage capacity, area normaloizd
+      calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
+
   # (2) Hydrological params
   initial_w_storage:
     name: initial_w_storage
     value:
-      - [4] # for the bedrock
-      - [72, 27] # for the forest
+    - [0.0] # for the bedrock
+    - [0.0, 19.911376547071953] # for the forest
     attrs:
       unit: mm
       description: initial water storage in each reservoir
@@ -135,8 +150,8 @@ model_config:
   w_storage_cap:
     name: water_storage_cap
     value:
-      - [4] # for the bedrock
-      - [72, 27] # for the forest
+    - [0.1224035799056485] # for the bedrock
+    - [97.98688267475728, 20.04700940260416] # for the forest
     attrs:
       unit: mm
       description: Water storage capacities of HRUs
@@ -146,8 +161,8 @@ model_config:
   w_residence_time:
     name: water_residence_time
     value:
-      - [23] # for the bedrock
-      - [94, 235] # for the forest
+    - [83.04756753431087] # for the bedrock
+    - [450.001803961051, 129.86039038151557] # for the forest
     attrs:
       unit: h or minutes
       description: Mean residence time in saturated condition
@@ -179,7 +194,8 @@ model_config:
     value: 0.08
     attrs:
       unit: mm °C⁻¹ <time_resolution>⁻¹
-      description: Snow melt rate (melt per °C above threshold (e.g., 0.08) per <time_resolution>)
+      description: Snow melt rate (melt per °C above threshold (e.g., 0.08) per 
+        <time_resolution>)
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
   # the original name is: Asnow
@@ -187,8 +203,8 @@ model_config:
   snow_albedo_y:
     name: with_snow_albedo
     value:
-      - 0.65 # for bedrock
-      - 0.40 # for forest
+    - 0.65   # for bedrock
+    - 0.40   # for forest
     attrs:
       unit: None
       description: Albedo for HRUs when covered with snow
@@ -199,8 +215,8 @@ model_config:
   snow_albedo_n:
     name: without_snow_albedo
     value:
-      - 0.25 # for bedrock
-      - 0.15 # for forest
+    - 0.25   # for bedrock
+    - 0.15   # for forest
     attrs:
       unit: None
       description: Albedo for HRUs when NOT covered with snow
@@ -244,13 +260,23 @@ model_config:
       description: Landslide triggering mechanism
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
+  # Tpr
+  ls_trigger_r:
+    name: ls_trigger_rainfall
+    value: 7.9
+    attrs:
+      unit: mm / <time_resolution>>
+      description: Rainfall threshold for landslide triggered by precipitation
+      calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
+
   # Tsd
   ls_trigger_SWE:
     name: ls_trigger_SWE
     value: 20
     attrs:
       unit: mm
-      description: SWE threshold for landslide triggered by SWE (snow water equivalent)
+      description: SWE threshold for landslide triggered by SWE (snow water 
+        equivalent)
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
   # Tfreeze
@@ -262,20 +288,10 @@ model_config:
       description: Temperature threshold for landslide triggered by freezing
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
-  # Tpr
-  ls_trigger_r:
-    name: ls_trigger_rainfall
-    value: 7.9
-    attrs:
-      unit: mm / <time_resolution>>
-      description: Rainfall threshold for landslide triggered by precipitation
-      calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
-
-
   # ls_xmin
   ls_min_v:
     name: ls_min_v
-    value: 233
+    value: 2
     attrs:
       unit: m^3
       description: Minimum potential landslide volume
@@ -284,7 +300,7 @@ model_config:
   # ls_alpha:
   ls_alpha_v:
     name: ls_alpha_v
-    value: 1.69
+    value: 1.1751256208349334
     attrs:
       unit: None
       description: Power-law exponent for generating landslide
@@ -293,10 +309,11 @@ model_config:
   # ls_cutoff
   ls_max_v:
     name: ls_max_v
-    value: 3000000
+    value: 1000000 # 3000000
     attrs:
       unit: m^3
-      description: Maximum potential landslide volume
+      description: Maximum potential landslide volume, the 2013 lsndslides is 
+        1e4 m^3, https://doi.org/10.1038/s43247-023-00851-0
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
 
@@ -312,7 +329,7 @@ model_config:
 
   initial_hs_storage:
     name: initial_hs_storage
-    value: 119
+    value: 119.41539721911161
     attrs:
       unit: mm
       description: Initlal hillslope storage, area-normalized sediment thickness
@@ -320,26 +337,43 @@ model_config:
 
   initial_ch_storage:
     name: initial_ch_storage
-    value: 0
+    value: 86.36492882422847
     attrs:
       unit: mm
       description: Initlal channel storage, area-normalized sediment thickness
       calibrate: No
 
-
-  # qdf
   Qdf:
     name: discharge_df
-    value: 2.40 # 10 minutes -> 0.4 = 2.4 / 6, 1 hour -> 2.4
+    value: 0.11148382705758551 # 10 minutes -> 0.4 = 2.4 / 6, 1 hour -> 2.4
     attrs:
       unit: mm / <time_resolution>
-      description: Discharge threshold for triggering debris flows, if Qs > Qdf, DF could be generated
+      description: Discharge threshold for triggering debris flows, if Qs > Qdf,
+        DF could be generated
+      calibrate: Yes
+
+  entrainment:
+    name: sediemnts_entrainment
+    value: true
+    attrs:
+      unit: None
+      description: Control the debris flow transport model, please check the 
+        func in transport_model.py
+      calibrate: No
+
+  erosion_k:
+    name: erosion efficiency
+    value: 0.7491804559332149
+    attrs:
+      unit: None
+      description: Control the efficient of debris flow erosion with channel 
+        storage
       calibrate: Yes
 
   # smax
   max_s2w:
     name: max_s2w
-    value: 0.57
+    value: 0.11736021448848924
     attrs:
       unit: None
       description: Max volumetric sediment to water ratio
@@ -361,7 +395,8 @@ model_config:
     value: 1.5
     attrs:
       unit: None
-      description: Shape parameter for bedload transport, bedload_scaling_param_a will be calculated based on b
+      description: Shape parameter for bedload transport, 
+        bedload_scaling_param_a will be calculated based on b
       calibrate: Yes, follow https://doi.org/10.1029/2020JF005739
 
 

@@ -39,7 +39,7 @@ sys.path.append(str(project_root))
 # endregion
 
 # import the custom functions
-from func.SedCas.opt_main import load_climate_input4model, run1time_sedcas
+from func.bayesian_opt.opt_main import load_climate_input4model, run1time_sedcas
 from func.SedCas.SedCas import SedCas
 from func.toolkit.physical_unit_converter import unit_converter
 from func.toolkit.loss_func import calculate_pred_ratio, clean_obs_pre
@@ -56,8 +56,8 @@ def load_config(project_dir, output_dir, data_type="10-minutes"):
                     "model_params":"SedCas_input_params_10min_QZ.yaml",
                     "updated_params":"SedCas_input_params_10min_after_mcmc.yaml"}
 
-    os.makedirs(f'{params_trial["output_dir"]}', exist_ok=True)
-    print(f'output_dir: {params_trial["output_dir"]} \n')
+    os.makedirs(f'{project_root}/{params_trial["output_dir"]}', exist_ok=True)
+    print(f'output_dir: {project_root}/{params_trial["output_dir"]} \n')
 
     # load the same observed df volume and climate forcing
     y_obs = pd.read_csv(f"{params_trial['project_root']}"

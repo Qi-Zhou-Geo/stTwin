@@ -9,6 +9,7 @@ import os
 import argparse
 
 #region ### add the sys.path to search for custom modules ###
+import sys
 from pathlib import Path
 
 current_file = Path(__file__).resolve()
@@ -16,19 +17,17 @@ current_dir = current_file.parent
 # using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
 project_root = current_dir.parent.parent
 
-import sys
-
 sys.path.append(str(project_root))
 # endregion
 
 
 # import the custom functions
-from func.post_bayesian_inference.thin_posterior import sample_posterior
-from func.post_bayesian_inference.thin_posterior import maximum_likelihood_theta
+from func.SedCas_pred.thin_posterior import sample_posterior
+from func.SedCas_pred.thin_posterior import maximum_likelihood_theta
 
 # import from the current path
-from func.post_bayesian_inference.run_model_with_theta import run_sedcas_once
-from func.post_bayesian_inference.run_model_with_theta import load_config, save_last_status
+from func.SedCas_pred.run_model_with_theta import run_sedcas_once
+from func.SedCas_pred.run_model_with_theta import load_config, save_last_status
 
 def main(params_trial, theta):
 
@@ -52,7 +51,7 @@ def main(params_trial, theta):
     return model
 
 if __name__ == "__main__":
-    # <editor-fold desc="receive the arguments">
+    # region <receive the arguments>
     parser = argparse.ArgumentParser(description='input parameters')
     parser.add_argument("--project_root", type=str)
     parser.add_argument("--output_dir", type=str)

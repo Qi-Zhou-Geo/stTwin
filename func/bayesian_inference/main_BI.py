@@ -37,7 +37,7 @@ sys.path.append(str(project_root))
 
 
 # import the custom functions
-from func.SedCas.opt_main import load_climate_input4model, run1time_sedcas
+from func.bayesian_opt.opt_main import load_climate_input4model, run1time_sedcas
 
 from func.SedCas.SedCas import SedCas
 

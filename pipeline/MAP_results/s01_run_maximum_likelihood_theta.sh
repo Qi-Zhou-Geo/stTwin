@@ -19,7 +19,7 @@ conda activate stTwin
 
 model_version="v0dot4"
 project_root="/home/qizhou/3paper/stTwin"
-output_dir="$(pwd)/${model_version}" # under the project path
+output_dir="${project_root}/pipeline/MAP_results/${model_version}" # under the project path
 posterior_h5_dir="${project_root}/func/bayesian_inference/sedcas_mcmc_results.h5"
 burn_in_step=100
 
