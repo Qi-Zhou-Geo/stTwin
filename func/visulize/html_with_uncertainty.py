@@ -21,13 +21,13 @@ import plotly.io as pio
 from obspy import UTCDateTime
 
 #region ### add the sys.path to search for custom modules ###
+import sys
 from pathlib import Path
+
 current_file = Path(__file__).resolve()
 current_dir = current_file.parent
-
-# using ".parent" on a "pathlib.Path" object_typeect moves one level up the directory hierarchy
+# using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
 project_root = current_dir.parent.parent
-import sys
 
 sys.path.append(str(project_root))
 # endregion
@@ -189,7 +189,7 @@ def main(model_version, output_dir):
 
 
 if __name__ == "__main__":
-    model_version = "bayesian_inference0dot4"
-    output_dir = f"{project_root}/pipeline/real_pred/{model_version}"
+    model_version = "v0dot4"
+    output_dir = f"{project_root}/pipeline/real_monitor/{model_version}_plots"
 
     main(model_version, output_dir)

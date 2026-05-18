@@ -20,14 +20,13 @@ from matplotlib.ticker import MultipleLocator
 from obspy import UTCDateTime
 
 #region ### add the sys.path to search for custom modules ###
+import sys
 from pathlib import Path
 
 current_file = Path(__file__).resolve()
 current_dir = current_file.parent
 # using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
 project_root = current_dir.parent.parent
-
-import sys
 
 sys.path.append(str(project_root))
 # endregion
@@ -49,7 +48,7 @@ plt.rcParams.update({'font.size': 7,
                      'axes.formatter.use_mathtext': True})
 
 
-def load_data(key_type, key, model_version="bayesian_inference0dot4", num_draw=100):
+def load_data(key_type, key, model_version="v0dot4", num_draw=100):
     if key_type in ["hydro"]:
         nc_file = "hydro_output.nc"
     elif key_type in ["sed"]:
@@ -62,7 +61,7 @@ def load_data(key_type, key, model_version="bayesian_inference0dot4", num_draw=1
 
         theta_idx = str(theta_idx).zfill(3)
 
-        output = xr.load_dataset(f"{project_root}/pipeline/real_pred/"
+        output = xr.load_dataset(f"{project_root}/pipeline/real_monitor/"
                                  f"{model_version}/theta_{theta_idx}/{nc_file}")
 
         if time_str is None:
@@ -150,10 +149,10 @@ def plot_results(output_dir, select_t1=None, select_t2=None):
     plt.close(fig=fig)
 
 def main():
-    model_version = "bayesian_inference0dot4"
+    model_version = "v0dot4"
     select_t1, select_t2 = "2023-04-28T22:00:00", "2023-04-29T01:00:00"
     # select_t1, select_t2 = "2023-06-21T07:00:00", "2023-06-21T11:00:00"
-    output_dir = f"{project_root}/pipeline/real_pred/{model_version}"
+    output_dir = f"{project_root}/pipeline/real_monitor/{model_version}_plots"
     plot_results(output_dir, select_t1, select_t2)
 
 if __name__ == "__main__":
