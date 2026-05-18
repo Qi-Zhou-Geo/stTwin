@@ -1,0 +1,167 @@
+<!-- ===================== PLOTLY TIME SEARCH BOX =====================
+     Inject this snippet before </body> in any Plotly HTML export.
+     Depends on Plotly.js already being loaded on the page.
+     ================================================================= -->
+
+<div id="search-container" style="
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    background: white;
+    border: 2px solid #636efa;
+    border-radius: 8px;
+    padding: 8px 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+">
+    <span style="color:#636efa; font-weight:bold;">🔍 Go to:</span>
+
+    <input
+        id="time-search-input"
+        type="text"
+        placeholder="e.g. 2014-07-12T12:00:00"
+        style="
+            width: 200px;
+            padding: 5px 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 13px;
+            outline: none;
+        "
+    />
+
+    <select id="window-select" style="
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 13px;
+    ">
+        <option value="1">±1h</option>
+        <option value="6">±6h</option>
+        <option value="12">±12h</option>
+        <option value="24" selected>±24h</option>
+        <option value="48">±48h</option>
+        <option value="168">±1w</option>
+    </select>
+
+    <button id="go-btn" style="
+        padding: 5px 14px;
+        background: #636efa;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: bold;
+    ">Go</button>
+
+    <button id="reset-btn" style="
+        padding: 5px 10px;
+        background: #ef553b;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 13px;
+    ">Reset</button>
+
+    <span id="search-msg" style="color: red; font-size: 12px;"></span>
+</div>
+
+<script>
+// ---- Helper: get the Plotly div ----
+function getPlotDiv() {
+    return document.querySelector('.plotly-graph-div');
+}
+
+// ---- Main zoom function ----
+function zoomToTime() {
+    var input      = document.getElementById('time-search-input').value.trim();
+    var msgBox     = document.getElementById('search-msg');
+    var windowHrs  = parseFloat(document.getElementById('window-select').value);
+    var plotDiv    = getPlotDiv();
+
+    if (!input) {
+        msgBox.textContent = "⚠️ Please enter a time.";
+        return;
+    }
+
+    // Parse input time (handles both "2014-07-12T12:00:00" and "2014-07-12 12:00:00")
+    var normalized = input.replace(' ', 'T');
+    var t_center   = new Date(normalized);
+
+    if (isNaN(t_center.getTime())) {
+        msgBox.textContent = "❌ Invalid format. Use YYYY-MM-DDTHH:MM:SS";
+        return;
+    }
+
+    msgBox.textContent = "";  // clear any previous error
+
+    // Calculate window boundaries
+    var ms      = windowHrs * 3600 * 1000;
+    var t_start = new Date(t_center.getTime() - ms).toISOString();
+    var t_end   = new Date(t_center.getTime() + ms).toISOString();
+
+    // Update x-axis range for ALL subplots (shared x-axes)
+    var layout = plotDiv.layout;
+    var update = {};
+    Object.keys(layout).forEach(function(key) {
+        if (key === 'xaxis' || key.match(/^xaxis[0-9]+$/)) {
+            update[key + '.range'] = [t_start, t_end];
+        }
+    });
+    Plotly.relayout(plotDiv, update);
+
+    // Remove old search line, add new red dashed vertical line
+    var shapes = (layout.shapes || []).filter(function(s) {
+        return s.name !== 'search_line';
+    });
+    shapes.push({
+        name  : 'search_line',
+        type  : 'line',
+        xref  : 'x',
+        yref  : 'paper',
+        x0    : t_center.toISOString(),
+        x1    : t_center.toISOString(),
+        y0    : 0,
+        y1    : 1,
+        line  : { color: 'red', width: 2, dash: 'dash' }
+    });
+    Plotly.relayout(plotDiv, { shapes: shapes });
+}
+
+// ---- Reset: restore full time range ----
+function resetZoom() {
+    var plotDiv = getPlotDiv();
+    var layout  = plotDiv.layout;
+    var update  = {};
+
+    Object.keys(layout).forEach(function(key) {
+        if (key === 'xaxis' || key.match(/^xaxis[0-9]+$/)) {
+            update[key + '.autorange'] = true;
+        }
+    });
+
+    Plotly.relayout(plotDiv, Object.assign(update, { shapes: [] }));
+    document.getElementById('search-msg').textContent = "";
+    document.getElementById('time-search-input').value = "";
+}
+
+// ---- Event listeners ----
+window.addEventListener('load', function() {
+    document.getElementById('go-btn').addEventListener('click', zoomToTime);
+    document.getElementById('reset-btn').addEventListener('click', resetZoom);
+
+    // Press Enter to trigger search
+    document.getElementById('time-search-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') zoomToTime();
+    });
+});
+</script>
+<!-- ===================== END SEARCH BOX ===================== -->

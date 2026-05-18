@@ -1,0 +1,182 @@
+parameter_shortname,parameter_description_en,parameter_group_en,parameter_granularity,parameter_decimals,parameter_datatype,parameter_unit
+prestas0,Atmospheric pressure at barometric altitude (QFE); current value,Pressure,T,1,Float,hPa
+tnd00nm0,Frost days (minimum lower than 0 degrees C); monthly total,Temperature,M,0,Integer,No
+tnd00ny0,Frost days (minimum lower than 0 degrees C); annual total,Temperature,Y,0,Integer,No
+rre150z0,Precipitation; ten minutes total,Precipitation,T,1,Float,mm
+sre000z0,Sunshine duration; ten minutes total,Sunshine,T,0,Integer,min
+gre000z0,Global radiation; ten minutes mean,Radiation,T,0,Integer,W/m²
+ure200s0,Relative air humidity 2 m above ground; current value,Humidity,T,1,Float,%
+fkl010z1,Gust peak (one second); maximum in m/s,Wind,T,1,Float,m/s
+tso005s0,Soil temperature at 5 cm depth; current value,Soil temperature,T,1,Float,°C
+tso010s0,Soil temperature at 10 cm depth; current value,Soil temperature,T,1,Float,°C
+tso020s0,Soil temperature at 20 cm depth; current value,Soil temperature,T,1,Float,°C
+ods000z0,Diffuse radiation; ten minutes mean,Radiation,T,0,Integer,W/m²
+oli000z0,Longwave incoming radiation; ten minutes mean,Radiation,T,0,Integer,W/m²
+tde200s0,Dew point 2 m above ground; current value,Humidity,T,1,Float,°C
+fve010z0,Wind speed vectoriel; ten minutes mean in m/s,Wind,T,1,Float,m/s
+fkl010z0,Wind speed scalar; ten minutes mean in m/s,Wind,T,1,Float,m/s
+dkl010z0,Wind direction; ten minutes mean,Wind,T,0,Integer,°
+prestad0,Atmospheric pressure at barometric altitude (QFE); daily mean,Pressure,D,1,Float,hPa
+tnd00xm0,Ice days (maximum lower than 0 degrees C); monthly total,Temperature,M,0,Integer,No
+tnd00xy0,Ice days (maximum lower than 0 degrees C); annual total,Temperature,Y,0,Integer,No
+tnd20nm0,Tropical nights; monthly total,Temperature,M,0,Integer,No
+tnd20ny0,Tropical nights; annual total,Temperature,Y,0,Integer,No
+tnd25xm0,Summer days (maximum 25 degrees C or higher); monthly total,Temperature,M,0,Integer,No
+tnd25xy0,Summer days (maximum 25 degrees C or higher); annual total,Temperature,Y,0,Integer,No
+tnd30xm0,Heat days (maximum 30 degrees C or higher); monthly total,Temperature,M,0,Integer,No
+sre000d0,Sunshine duration; daily total,Sunshine,D,0,Integer,min
+sremaxdv,Sunshine duration; in relation to absolute daily total,Sunshine,D,0,Integer,%
+gre000d0,Global radiation; daily mean,Radiation,D,0,Integer,W/m²
+ure200d0,Relative air humidity 2 m above ground; daily mean,Humidity,D,1,Float,%
+fkl010d0,Wind speed scalar; daily mean in m/s,Wind,D,1,Float,m/s
+fkl010d1,Gust peak (one second); daily maximum in m/s,Wind,D,1,Float,m/s
+rre150d0,Precipitation; daily total 6 UTC - 6 UTC following day,Precipitation,D,1,Float,mm
+rka150d0,Precipitation; daily total 0 UTC - 0 UTC,Precipitation,D,1,Float,mm
+tso005d0,Soil temperature at 5 cm depth; daily mean,Soil temperature,D,1,Float,°C
+tso010d0,Soil temperature at 10 cm depth; daily mean,Soil temperature,D,1,Float,°C
+tso020d0,Soil temperature at 20 cm depth; daily mean,Soil temperature,D,1,Float,°C
+tnd30xy0,Heat days (maximum 30 degrees C or higher); annual total,Temperature,Y,0,Integer,No
+tnd35xm0,Very hot days; number of days in a month with daily maximum temperature >= 35 degree C,Temperature,M,0,Integer,No
+tnd35xy0,Very hot days; number of days in a year with daily maximum temperature >= 35 degree C,Temperature,Y,0,Integer,No
+tre005d0,Air temperature at 5 cm above grass; daily mean,Temperature,D,1,Float,°C
+tre005dn,Air temperature at 5 cm above grass; daily minimum,Temperature,D,1,Float,°C
+ure200h0,Relative air humidity 2 m above ground; hourly mean,Humidity,H,1,Float,%
+rre150h0,Precipitation; hourly total,Precipitation,H,1,Float,mm
+gre000h0,Global radiation; hourly mean,Radiation,H,0,Integer,W/m²
+fkl010h1,Gust peak (one second); hourly maximum in m/s,Wind,H,1,Float,m/s
+sre000h0,Sunshine duration; hourly total,Sunshine,H,0,Integer,min
+dkl010h0,Wind direction; hourly mean,Wind,H,0,Integer,°
+fkl010h0,Wind speed scalar; hourly mean in m/s,Wind,H,1,Float,m/s
+tre005dx,Air temperature at 5 cm above grass; daily maximum,Temperature,D,1,Float,°C
+tre005h0,Air temperature at 5 cm above grass; hourly mean,Temperature,H,1,Float,°C
+tre005hn,Air temperature at 5 cm above grass; hourly minimum,Temperature,H,1,Float,°C
+prestam0,Atmospheric pressure at barometric altitude (QFE); monthly mean,Pressure,M,1,Float,hPa
+rre150m0,Precipitation; monthly total,Precipitation,M,1,Float,mm
+sre000m0,Sunshine duration; monthly total,Sunshine,M,0,Integer,min
+prestah0,Atmospheric pressure at barometric altitude (QFE); hourly mean,Pressure,H,1,Float,hPa
+pp0qffh0,Atmospheric pressure reduced to sea level (QFF); hourly mean,Pressure,H,1,Float,hPa
+pva200h0,Vapour pressure 2 m above ground; hourly mean,Humidity,H,1,Float,hPa
+pp0qffm0,Atmospheric pressure reduced to sea level (QFF); monthly mean,Pressure,M,1,Float,hPa
+tre005m0,Air temperature at 5 cm above grass; monthly mean,Temperature,M,1,Float,°C
+tre005mn,Air temperature at 5 cm above grass; absolute monthly minimum,Temperature,M,1,Float,°C
+tre005mx,Air temperature at 5 cm above grass; absolute monthly maximum,Temperature,M,1,Float,°C
+sremaxmv,Sunshine duration; relation of the monthly total to the possible maximum,Sunshine,M,0,Integer,%
+gre000m0,Global radiation; monthly mean,Radiation,M,0,Integer,W/m²
+ure200m0,Relative air humidity 2 m above ground; monthly mean,Humidity,M,1,Float,%
+pva200m0,Vapour pressure 2 m above ground; monthly mean,Humidity,M,1,Float,hPa
+fkl010m0,Wind speed scalar; monthly mean in m/s,Wind,M,1,Float,m/s
+fkl010m1,Gust peak (one second); monthly maximum in m/s,Wind,M,1,Float,m/s
+tso005m0,Soil temperature at 5 cm depth; monthly mean,Soil temperature,M,1,Float,°C
+tso010m0,Soil temperature at 10 cm depth; monthly mean,Soil temperature,M,1,Float,°C
+tso020m0,Soil temperature at 20 cm depth; monthly mean,Soil temperature,M,1,Float,°C
+tre005s0,Air temperature at 5 cm above grass; current value,Temperature,T,1,Float,°C
+prestay0,Atmospheric pressure at barometric altitude (QFE); annual mean,Pressure,Y,1,Float,hPa
+pp0qffy0,Atmospheric pressure reduced to sea level (QFF); annual mean,Pressure,Y,1,Float,hPa
+tre005y0,Air temperature at 5 cm above grass; annual mean,Temperature,Y,1,Float,°C
+tre005yn,Air temperature at 5 cm above grass; absolute annual minimum,Temperature,Y,1,Float,°C
+tre005yx,Air temperature at 5 cm above grass; absolute annual maximum,Temperature,Y,1,Float,°C
+tre200d0,Air temperature 2 m above ground; daily mean,Temperature,D,1,Float,°C
+tre200dn,Air temperature 2 m above ground; daily minimum,Temperature,D,1,Float,°C
+tre200dx,Air temperature 2 m above ground; daily maximum,Temperature,D,1,Float,°C
+sre000y0,Sunshine duration; annual total,Sunshine,Y,0,Integer,min
+sremaxyv,Sunshine duration; relation of the annual total to the possible maximum,Sunshine,Y,0,Integer,%
+gre000y0,Global radiation; annual mean,Radiation,Y,0,Integer,W/m²
+ure200y0,Relative air humidity 2 m above ground; annual mean,Humidity,Y,1,Float,%
+pva200y0,Vapour pressure 2 m above ground; annual mean,Humidity,Y,1,Float,hPa
+fkl010y0,Wind speed scalar; annual mean in m/s,Wind,Y,1,Float,m/s
+fkl010y1,Gust peak (one second); annual maximum in m/s,Wind,Y,1,Float,m/s
+rre150y0,Precipitation; annual total,Precipitation,Y,1,Float,mm
+tso005y0,Soil temperature at 5 cm depth; annual mean,Soil temperature,Y,1,Float,°C
+tso010y0,Soil temperature at 10 cm depth; annual mean,Soil temperature,Y,1,Float,°C
+tso020y0,Soil temperature at 20 cm depth; annual mean,Soil temperature,Y,1,Float,°C
+tre200h0,Air temperature 2 m above ground; hourly mean,Temperature,H,1,Float,°C
+tre200hn,Air temperature 2 m above ground; hourly minimum,Temperature,H,1,Float,°C
+wcc006s0,Foehn index,Wind,T,0,Integer,Code
+pva200d0,Vapour pressure 2 m above ground; daily mean,Humidity,D,1,Float,hPa
+tre200hx,Air temperature 2 m above ground; hourly maximum,Temperature,H,1,Float,°C
+tre200m0,Air temperature 2 m above ground; monthly mean,Temperature,M,1,Float,°C
+tre200mn,Air temperature 2 m above ground; absolute monthly minimum,Temperature,M,1,Float,°C
+tre200mx,Air temperature 2 m above ground; absolute monthly maximum,Temperature,M,1,Float,°C
+tre200s0,Air temperature 2 m above ground; current value,Temperature,T,1,Float,°C
+tre200y0,Air temperature 2 m above ground; annual mean,Temperature,Y,1,Float,°C
+tre200yn,Air temperature 2 m above ground; absolute annual minimum,Temperature,Y,1,Float,°C
+tre200yx,Air temperature 2 m above ground; absolute annual maximum,Temperature,Y,1,Float,°C
+tresurs0,Air temperature at surface; current value,Temperature,T,1,Float,°C
+xcd000m0,Cooling Degree Day (CDD); monthly total,Temperature,M,1,Float,°C
+pp0qffd0,Atmospheric pressure reduced to sea level (QFF); daily mean,Pressure,D,1,Float,hPa
+ppz850d0,Geopotential height of the 850 hPA level; daily mean,Pressure,D,1,Float,gpm
+ppz700d0,Geopotential height of the 700 hPA level; daily mean,Pressure,D,1,Float,gpm
+pp0qnhs0,Atmospheric pressure reduced to sea level according to standard atmosphere (QNH); current value,Pressure,T,1,Float,hPa
+pp0qffs0,Atmospheric pressure reduced to sea level (QFF); current value,Pressure,T,1,Float,hPa
+ppz850s0,Geopotential height of the 850 hPA level; current value,Pressure,T,1,Float,gpm
+ppz700s0,Geopotential height of the 700 hPA level; current value,Pressure,T,1,Float,gpm
+pva200s0,Vapour pressure 2 m above ground; current value,Humidity,T,1,Float,hPa
+ppz850m0,Geopotential height of the 850 hPA level; monthly mean,Pressure,M,1,Float,gpm
+ppz700m0,Geopotential height of the 700 hPA level; monthly mean,Pressure,M,1,Float,gpm
+ppz850y0,Geopotential height of the 850 hPA level; yearly mean,Pressure,Y,1,Float,gpm
+ppz700y0,Geopotential height of the 700 hPA level; yearly mean,Pressure,Y,1,Float,gpm
+rreetsd0,,,,,,
+rreetsm0,,,,,,
+rreetsy0,,,,,,
+dkl010d0,Wind direction; daily mean,Wind,D,0,Integer,°
+fu3010y1,Gust peak (one second); annual maximum in km/h,Wind,Y,1,Float,km/h
+fu3010z0,Wind speed; ten minutes mean in km/h,Wind,T,1,Float,km/h
+fu3010h0,Wind speed scalar; hourly mean in km/h,Wind,H,1,Float,km/h
+fu3010d0,Wind speed scalar; daily mean in km/h,Wind,D,1,Float,km/h
+fu3010m0,Wind speed scalar; monthly mean in km/h,Wind,M,1,Float,km/h
+fu3010y0,Wind speed scalar; annual mean in km/h,Wind,Y,1,Float,km/h
+olo000z0,Longwave outgoing radiation; ten minute mean,Radiation,T,0,Integer,W/m²
+tso005hs,Soil temperature at 5 cm depth; hourly current value,Soil temperature,H,1,Float,°C
+tso010hs,Soil temperature at 10 cm depth; hourly current value,Soil temperature,H,1,Float,°C
+tso020hs,Soil temperature at 20 cm depth; hourly current value,Soil temperature,H,1,Float,°C
+pp0qnhh0,Atmospheric pressure reduced to sea level according to standard atmosphere (QNH); hourly mean,Pressure,H,1,Float,hPa
+pp0qnhd0,Atmospheric pressure reduced to sea level according to standard atmosphere (QNH); daily mean,Pressure,D,1,Float,hPa
+pp0qnhm0,Atmospheric pressure reduced to sea level according to standard atmosphere (QNH); monthly mean,Pressure,M,1,Float,hPa
+pp0qnhy0,Atmospheric pressure reduced to sea level according to standard atmosphere (QNH); annual mean,Pressure,Y,1,Float,hPa
+ppz700h0,Geopotential height of the 700 hPA level; hourly mean,Pressure,H,1,Float,gpm
+ppz850h0,Geopotential height of the 850 hPA level; hourly mean,Pressure,H,1,Float,gpm
+fkl010z3,Gust peak (three seconds); maximum in m/s,Wind,T,1,Float,m/s
+osr000z0,Shortwave reflected radiation; ten minute mean,Radiation,T,0,Integer,W/m²
+fu3010z1,Gust peak (one second); maximum in km/h,Wind,T,1,Float,km/h
+fu3010h1,Gust peak (one second); hourly maximum in km/h,Wind,H,1,Float,km/h
+fu3010d1,Gust peak (one second); daily maximum in km/h,Wind,D,1,Float,km/h
+fu3010m1,Gust peak (one second); monthly maximum in km/h,Wind,M,1,Float,km/h
+htoauts0,Snow depth (automatic measurement); current value,Snow,T,0,Integer,cm
+htoauths,Snow depth (automatic measurement); hourly current value,Snow,H,0,Integer,cm
+htoautd0,Snow depth (automatic measurement); morning measurement at 6 UTC,Snow,D,0,Integer,cm
+oli000d0,Longwave incoming radiation; daily mean,Radiation,D,0,Integer,W/m²
+oli000h0,Longwave incoming radiation; hourly mean,Radiation,H,0,Integer,W/m²
+oli000m0,Longwave incoming radiation; monthly mean,Radiation,M,0,Integer,W/m²
+oli000y0,Longwave incoming radiation; annual mean,Radiation,Y,0,Integer,W/m²
+fkl010d3,Gust peak (three seconds); daily maximum in m/s,Wind,D,1,Float,m/s
+fkl010h3,Gust peak (three seconds); hourly maximum in m/s,Wind,H,1,Float,m/s
+fu3010d3,Gust peak (three seconds); daily maximum in km/h,Wind,D,1,Float,km/h
+fu3010h3,Gust peak (three seconds); hourly maximum in km/h,Wind,H,1,Float,km/h
+fu3010z3,Gust peak (three seconds); maximum in km/h,Wind,T,1,Float,km/h
+olo000d0,Longwave outgoing radiation; daily mean,Radiation,D,0,Integer,W/m²
+olo000h0,Longwave outgoing radiation; hourly mean,Radiation,H,0,Integer,W/m²
+olo000m0,Longwave outgoing radiation; monthly mean,Radiation,M,0,Integer,W/m²
+osr000d0,Shortwave reflected radiation; daily mean,Radiation,D,0,Integer,W/m²
+osr000h0,Shortwave reflected radiation; hourly mean,Radiation,H,0,Integer,W/m²
+osr000m0,Shortwave reflected radiation; monthly mean,Radiation,M,0,Integer,W/m²
+olo000y0,Longwave outgoing radiation; yearly mean,Radiation,Y,0,Integer,W/m²
+osr000y0,Shortwave reflected radiation; yearly mean,Radiation,Y,0,Integer,W/m²
+xcd000y0,Cooling Degree Day (CDD); annual total,Temperature,Y,1,Float,°C
+ods000h0,Diffuse radiation; hourly mean,Radiation,H,0,Integer,W/m²
+ods000d0,Diffuse radiation; daily mean,Radiation,D,0,Integer,W/m²
+xcd000d0,,,,,,
+xchills0,Chill temperature; current value,Temperature,T,1,Float,°C
+xno000d0,Heating degrees (HGT12/20),Temperature,D,1,Float,°C
+erefaod0,Reference evaporation from FAO; daily total,Evaporation,D,1,Float,mm/d
+wcc006d0,,,,,,
+xno000m0,Heating degrees (HGT12/20); monthly total,Temperature,M,1,Float,°C
+xno000y0,Heating degrees (HGT12/20); annual total,Temperature,Y,1,Float,°C
+xno012d0,Heating degrees (ATD12/12),Temperature,D,1,Float,°C
+xno012m0,Heating degrees (ATD12/12); monthly total,Temperature,M,1,Float,°C
+erefaoh0,Reference evaporation from FAO; hourly total,Evaporation,H,3,Float,mm/h
+wcc006h0,Foehn index; hour value,Wind,H,0,Integer,min
+tde200h0,Dew point 2 m above ground; hourly mean,Humidity,H,1,Float,°C
+fve010h0,Wind speed vectorial; hourly mean in m/s,Wind,H,1,Float,m/s
+erefaom0,Reference evaporation from FAO; monthly total,Evaporation,M,1,Float,mm/d
+erefaoy0,Reference evaporation from FAO; annual total,Evaporation,Y,1,Float,mm/d
+xno012y0,Heating degrees (ATD12/12); annual total,Temperature,Y,1,Float,°C
