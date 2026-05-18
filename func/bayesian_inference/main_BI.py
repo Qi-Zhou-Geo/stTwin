@@ -92,7 +92,7 @@ def load_config():
                     "output_dir": f"{current_dir.parent.parent}/functions/bayesian_inference0dot4/output",
                     "df_volume_file_name": "debris_flow_volume_2004_2022.txt",
                     "data_type": "10-minutes",
-                    "model_params":"SedCas_input_params_10min_bo.yaml"}
+                    "model_params":"SedCas_input_params_10min_QZ.yaml"}
     os.makedirs(params_trial["output_dir"], exist_ok=True)
 
     # load the same observed df volume and climate forcing

@@ -354,7 +354,7 @@ def run_optimization(num_trials):
                     "output_dir": "functions/SedCas/output",
                     "df_volume_file_name": "debris_flow_volume_2004_2022.txt",
                     "data_type": "10-minutes",
-                    "model_params":"SedCas_input_params_10min_bo.yaml"}
+                    "model_params":"SedCas_input_params_10min_QZ.yaml"}
 
     # load the same observed df volume and climate forcing
     y_obs = pd.read_csv(f"{params_trial['project_root']}"
