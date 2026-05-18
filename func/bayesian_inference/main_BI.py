@@ -25,13 +25,12 @@ from obspy import UTCDateTime
 
 #region ### add the sys.path to search for custom modules ###
 from pathlib import Path
+import sys
 
 current_file = Path(__file__).resolve()
 current_dir = current_file.parent
 # using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
 project_root = current_dir.parent.parent
-
-import sys
 
 sys.path.append(str(project_root))
 # endregion

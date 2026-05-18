@@ -17,20 +17,19 @@ from obspy import UTCDateTime
 
 #region ### add the sys.path to search for custom modules ###
 from pathlib import Path
+import sys
 
 current_file = Path(__file__).resolve()
 current_dir = current_file.parent
 # using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
 project_root = current_dir.parent.parent
 
-import sys
-
 sys.path.append(str(project_root))
 # endregion
 
 
 # import the custom functions
-from main_BI import load_config, log_posterior, check_MCMC_process # import all functions
+from func.bayesian_inference.main_BI import load_config, log_posterior, check_MCMC_process
 
 
 if __name__ == "__main__":

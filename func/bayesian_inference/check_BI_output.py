@@ -21,19 +21,19 @@ import corner
 
 #region ### add the sys.path to search for custom modules ###
 from pathlib import Path
+import sys
+
 current_file = Path(__file__).resolve()
 current_dir = current_file.parent
-
 # using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
 project_root = current_dir.parent.parent
 
-import sys
 sys.path.append(str(project_root))
 # endregion
 
 # import the custom functions
 from func.post_bayesian_inference.thin_posterior import sample_posterior, maximum_likelihood_theta
-from main_BI import log_posterior
+from func.bayesian_inference.main_BI import log_posterior
 
 plt.rcParams.update({'font.size': 7,
                      'axes.formatter.limits': (-4, 6),
@@ -155,6 +155,7 @@ def posterior_kde(whole_chain, theta_names, max_posterior_theta, mean_theta,
 
 def check_mcmc_results(file_name, burn_in=50):
 
+    #region
     print(f"{UTCDateTime.now().isoformat()} Loading backend: {file_name}\n")
 
     theta_names = [
@@ -184,7 +185,7 @@ def check_mcmc_results(file_name, burn_in=50):
     chain = chain[burn_in:, :, :] # discard the burn in period
     num_steps, num_walkers, num_params = chain.shape
 
-    # <editor-fold desc="(2) Basic statistic">
+    # region <Basic statistic>
     # Basic stastic
     print(f"Number of steps per walker: {backend.iteration}")
     print(f"Number of Burn-in: {burn_in}")
@@ -209,7 +210,7 @@ def check_mcmc_results(file_name, burn_in=50):
     print(f"\n")
     # endregion
 
-    # <editor-fold desc="(2) Acceptance fraction">
+    # region <Acceptance fraction>
     sampler = emcee.EnsembleSampler(num_walkers, num_params, log_posterior, backend=backend)
 
     acceptance_fraction = sampler.acceptance_fraction # shape as (num_walkers)
@@ -231,13 +232,11 @@ def check_mcmc_results(file_name, burn_in=50):
     whole_chain = chain
     posterior_kde(whole_chain, theta_names, max_posterior_theta, mean_theta,
                   lower_bounds, upper_bounds)
-    # --------------------------
+
     # Histogram plots
-    # --------------------------
     flat_chain = chain[:, :, :].reshape(-1, num_params)
 
     fig = plt.figure(figsize=(6, 6))
-
     corner.corner(
         flat_chain,
         labels=theta_names,
@@ -276,5 +275,5 @@ def check_mcmc_results(file_name, burn_in=50):
     plt.show()
     plt.close(fig=fig)
 
-file_name = f"{current_dir}/sedcas_mcmc_results_984877.h5"
+file_name = f"{current_dir}/sedcas_mcmc_results.h5"
 check_mcmc_results(file_name, burn_in=100)

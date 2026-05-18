@@ -57,3 +57,8 @@ Parameter mean: 0.309, 73.775, 38.722, 78.246, 427.125, 383.262, 1.207, 0.279, 0
 Parameter stds: 0.149, 16.335, 24.268, 36.276, 260.369, 280.310, 0.051, 0.143, 0.104, 28.515, 1.945 <br>
 Min-Mean-Max acceptance fraction: 0.125, 0.183, 0.234,  <br>
 A typical <good> acceptance_fraction range is: 0.15 to 0.5 for MCMC. <br>
+
+# 2026-05-18 <br>
+We got the 1000 steps MCMC by two process, [process1=500](func/bayesian_inference/run_BI.sh) + [process2=500](func/bayesian_inference/re_run_BI_paraller.sh) <br>
+the finial is copied from **sedcas_mcmc_results.h5** <br>
+*/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/functions/bayesian_inference0dot4/sedcas_mcmc_results_984877.h5*
