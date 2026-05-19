@@ -222,7 +222,7 @@ def save_last_status(model, current_params_trial, current_theta):
 
 
 def run_sedcas_once(params_trial, num_iteration=100,
-                    progress_bars=False, save_output=True,
+                    progress_bars=False, save_output=True, save_sed_container=False,
                     plot_output=True, show_plot=False,
                     select_t1="2004-02-01T00:00:00", select_t2="2023-01-01T00:00:00"):
 
@@ -266,7 +266,10 @@ def run_sedcas_once(params_trial, num_iteration=100,
     if save_output is True:
         model.hydro_output.to_netcdf(f"{output_dir}/hydro_output.nc")
         model.sed_output.to_netcdf(f"{output_dir}/sed_output.nc")
-        model.sed_container.to_netcdf(f"{output_dir}/sed_container.nc")
+        
+        if save_sed_container is True:
+            # this is file is around 700 Mb
+            model.sed_container.to_netcdf(f"{output_dir}/sed_container.nc")
 
     # plot it
     if plot_output is True:

@@ -1,0 +1,47 @@
+# Last Update: 2026-05-19
+# Author: QZ
+
+
+cycle_period:
+  name: cycle_period
+  value_min: 15 # half month
+  value_max: 180 # six monthes
+  value_num: 12 # delta = 15, total 12 cases
+  attrs:
+    unit: day
+    description: storm-drought-cycle
+    calibrate: No
+    usage: "np.linspace(value_min, value_max, value_num)"
+
+storm2drought_ratio:
+  name: storm2drought_ratio
+  value_min: 0.1
+  value_max: 0.5
+  value_num: 5 # delta = 0.05, total 5 cases
+  attrs:
+    unit: none
+    description: ratio of storm duration to drought ratio
+    calibrate: No
+    usage: "np.linspace(value_min, value_max, value_num)"
+
+storm_onset_month:
+  name: storm_onset_month
+  value_min: 2
+  value_max: 10
+  value_num: 9 # delta = 1, total 9 cases
+  attrs:
+    unit: month
+    description: month index of the first storm oneset
+    calibrate: No
+    usage: "np.linspace(value_min, value_max, value_num)"
+
+storm_onset_day:
+  name: storm_onset_day
+  value_min: 1
+  value_max: 15
+  value_num: 1 # delta = 15, total1 cases ---# 15 # delta = 15, total 2 cases
+  attrs:
+    unit: day
+    description: day index of the first storm oneset
+    calibrate: No
+    usage: "np.linspace(value_min, value_max, value_num)"

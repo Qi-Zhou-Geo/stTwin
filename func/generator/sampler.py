@@ -114,7 +114,7 @@ def generate_synthetic(metadata, temp_sta, radiation_sta,
         p_syn[idx+29] = p_idx
         
     # drop the first 29 elements
-    plot_SPI(p_syn, spi_window=30)
+    # plot_SPI(p_syn, spi_window=30)
     p_syn = p_syn[29:]
 
 
@@ -159,8 +159,7 @@ def daily_sampler(
         storm_onset,
         storm2drought_ratio,
         data_sampling_freq,
-        leap_year=leap_year,
-        plot=True
+        leap_year=leap_year
     )
 
     spi_boundary = pd.read_csv(f"{project_root}/data/SPI_boundary/SPI_daily_boundary.txt", header=0)

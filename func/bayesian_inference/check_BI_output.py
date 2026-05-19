@@ -20,8 +20,8 @@ from obspy import UTCDateTime
 import corner
 
 #region ### add the sys.path to search for custom modules ###
-from pathlib import Path
 import sys
+from pathlib import Path
 
 current_file = Path(__file__).resolve()
 current_dir = current_file.parent
@@ -32,7 +32,7 @@ sys.path.append(str(project_root))
 # endregion
 
 # import the custom functions
-from func.post_bayesian_inference.thin_posterior import sample_posterior, maximum_likelihood_theta
+from func.SedCas_pred.thin_posterior import sample_posterior, maximum_likelihood_theta
 from func.bayesian_inference.main_BI import log_posterior
 
 plt.rcParams.update({'font.size': 7,

@@ -188,7 +188,7 @@ def load_climate_input4model(data_type):
 
     if data_type == "default":
         # use the default data from SedCas model
-        data = pd.read_csv(f"{self.model_input_dir}/climate.met", sep='\t')
+        data = pd.read_csv(f"{project_root}/config/SedCas-main/climate.met", sep='\t')
 
         time_float = [UTCDateTime(i).timestamp for i in data.iloc[:, 0]]
         time_str = [UTCDateTime(i).strftime("%Y-%m-%dT%H:%M:%S") for i in data.iloc[:, 0]]

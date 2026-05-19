@@ -24,8 +24,6 @@ sys.path.append(str(project_root))
 # import the custom functions
 from func.SedCas_pred.thin_posterior import sample_posterior
 from func.SedCas_pred.thin_posterior import maximum_likelihood_theta
-
-# import from the current path
 from func.SedCas_pred.run_model_with_theta import run_sedcas_once
 from func.SedCas_pred.run_model_with_theta import load_config, save_last_status
 
