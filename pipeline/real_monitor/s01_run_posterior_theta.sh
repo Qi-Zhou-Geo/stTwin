@@ -3,7 +3,7 @@
 #SBATCH --job-name=posterior       # job name, "Qi_run"
 
 #SBATCH --ntasks=1
-#SBATCH --array=1-100               # job array id
+#SBATCH --array=1-50                # job array id
 #SBATCH --cpus-per-task=1           # reuest 1 cpu to run in parallel
 
 #SBATCH --mem-per-cpu=16G		       # Memory Request (per CPU; can use on GLIC)

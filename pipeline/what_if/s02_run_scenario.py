@@ -5,6 +5,8 @@
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
+import os
+
 import yaml
 import argparse
 
@@ -30,6 +32,7 @@ sys.path.append(str(project_root))
 from func.generator.main_generator import workflow
 from func.SedCas_pred.thin_posterior import sample_posterior
 from func.SedCas_pred.run_model_with_theta import run_sedcas_once
+from func.visulize.plotly_visualize import plotly_multi_time_series_xr
 
 
 def creat_input(scenario_idx):
@@ -115,6 +118,45 @@ def config_whatif_params(climate_frocing_input):
     
     return climate_forcing
 
+
+def save_result(params_trial, model, select_t1, select_t2, show_plot=False):
+    
+    # prepare the output
+    output_dir = f"{params_trial['project_root']}/{params_trial['output_dir']}"
+    os.makedirs(output_dir, exist_ok=True)
+
+    # save the results
+    model.hydro_output.to_netcdf(f"{output_dir}/hydro_output.nc")
+    model.sed_output.to_netcdf(f"{output_dir}/sed_output.nc")
+
+    # plot it
+    # update the attrs if the xr is 2024 version
+    template_sed_container = model._create_sed_dataset(num_iteration=1)
+    for var in model.sed_container.data_vars:
+        model.sed_container[var].attrs = template_sed_container[var].attrs.copy()
+        model.sed_output[f"{var}_Q1"].attrs = template_sed_container[var].attrs.copy()
+        model.sed_output[f"{var}_Q50"].attrs = template_sed_container[var].attrs.copy()
+        model.sed_output[f"{var}_Q99"].attrs = template_sed_container[var].attrs.copy()
+
+
+    time_coord = "time_str"
+    t1 = select_t1 # model.climate_forcing.coords["time_str"].values[0]
+    t2 = select_t2 # model.climate_forcing.coords["time_str"].values[-1]
+
+    ## sed
+    mask = (model.sed_output.time_str >= t1) & (model.sed_output.time_str < t2)
+    sed_output_2017 = model.sed_output.isel(time=mask)
+    # sed
+    list_of_col_names = [(time_coord, "hillslope_storage_Q50"),
+                            (time_coord, "channel_storage_Q50"),
+                            (time_coord, "sed_transport_real_Q50")]
+    fig = plotly_multi_time_series_xr(xr_dataset=sed_output_2017,
+                                        list_of_col_names=list_of_col_names,
+                                        show_plot=show_plot)
+    fig.write_html(f"{output_dir}/resolution_{params_trial['data_type']}_{t1[:4]}_{t2[:4]}_sediments.html")
+
+
+
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='input parameters')
@@ -131,7 +173,7 @@ if __name__ == "__main__":
     theta_arr, theta_name = load_posterior() # return as shape (num_draw, num_theta)
     
     # (3) loop all posteriors
-    for theta_draw_idx in range(len(theta_arr)):
+    for theta_draw_idx in range(50):#range(len(theta_arr)):
         
         # (4) pack the params
         params_trial = {}
@@ -148,6 +190,10 @@ if __name__ == "__main__":
 
         # (5) run the model
         model = run_sedcas_once(params_trial, num_iteration=100,
-                            progress_bars=True, save_output=True,
-                            plot_output=True, show_plot=False,
+                            progress_bars=True, save_output=False,
+                            plot_output=False, show_plot=False,
                             select_t1="2023-01-01T00:00:00", select_t2="2026-01-01T00:00:00")
+        
+        # (6) save results
+        save_result(params_trial, model, 
+                    select_t1="2023-01-01T00:00:00", select_t2="2026-01-01T00:00:00", show_plot=False)
