@@ -1,0 +1,27 @@
+[Unit]
+# Download seismic data and run model every 10 min
+Description=t2_main
+After=network.target
+
+[Service]
+# Run as ubuntu user
+User=ubuntu
+
+# Project root
+WorkingDirectory=/home/ubuntu/stTwin_v0dot4
+# Main python workflow
+ExecStart=/home/ubuntu/.local/share/mamba/envs/stTwin/bin/python /home/ubuntu/stTwin_v0dot4/func/liveshow/t2_main.py
+
+# Auto restart if crashed, unit is second
+Restart=always
+RestartSec=10
+
+# Clean logs
+ExecStartPre=/bin/rm -f /home/ubuntu/stTwin_v0dot4/pipeline/run_liveshow/t2.log
+
+# Save logs
+StandardOutput=append:/home/ubuntu/stTwin_v0dot4/pipeline/run_liveshow/t2.log
+StandardError=append:/home/ubuntu/stTwin_v0dot4/pipeline/run_liveshow/t2.log
+
+[Install]
+WantedBy=multi-user.target

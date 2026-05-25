@@ -9,16 +9,20 @@ import os
 import pandas as pd
 import numpy as np
 
-# region ### add the sys.path to search for custom modules ###
+from obspy import UTCDateTime
+
+#region ### add the sys.path to search for custom modules ###
+import sys
 from pathlib import Path
+
 current_file = Path(__file__).resolve()
 current_dir = current_file.parent
-
 # using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
 project_root = current_dir.parent.parent
-import sys
+
 sys.path.append(str(project_root))
 # endregion
+
 
 # import the custom functions
 from func.download_MeteoSwiss.fetch_data import fetch_data4SedCas, replace_nan
@@ -42,14 +46,36 @@ def request_latest_10min_data(station="mve", time_resolution="10 minutes"):
     df.drop(columns=['timestamp'], inplace=True)
 
     meta_data = df.columns
-    latest_data = np.array(df.iloc[-1, :])
+    latest_data = str(df.iloc[-1, 1]) # time str
 
+    
     p_dir = f"{project_root}/data/liveshow_cache/climate"
-    os.makedirs(p_dir, exist_ok=p_dir)
-    df.to_csv(f"{p_dir}/climate_2026_t.txt", index=False)
+    os.makedirs(p_dir, exist_ok=True)
+    p_path = f"{p_dir}/climate_2026_t.txt"
 
-    return meta_data, latest_data
+    # incase there are no such file when call this func at the first time
+    if os.path.exists(p_path):
+        # load the exist downlaoded data
+        df0 = pd.read_csv(p_path, header=0)
+        archived_last = str(df0.iloc[-1, 1])
+        
+        no_new_data = latest_data == archived_last # True -> same; False -> no save
+    else:
+        df.to_csv(p_path, index=False)
+        no_new_data = False
+    
+
+    # check whether get new data
+    if no_new_data is True:
+        print(f"{UTCDateTime.now().isoformat()}\n"
+              f"No new data available.\nLatest record remains <{latest_data}> from station <{station}>.")
+    else:
+        df.to_csv(f"{p_dir}/climate_2026_t.txt", index=False)
+        print(f"{UTCDateTime.now().isoformat()}\n"
+              f"Downloaded new data: <{latest_data}> from station <{station}>.")
+    
+    return no_new_data
 
 
 if __name__ == "__main__":
-    meta_data, latest_data =request_latest_10min_data()
+    no_new_data =request_latest_10min_data()

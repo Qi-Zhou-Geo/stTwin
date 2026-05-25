@@ -161,9 +161,11 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='input parameters')
     parser.add_argument("--scenario_idx", type=int)
+    parser.add_argument("--model_version", type=str, default="v0dot4")
     args = parser.parse_args()
 
     scenario_idx = args.scenario_idx
+    model_version = args.model_version
     
     # (1) create the input based defined what-if scenario for model
     file_format = creat_input(scenario_idx)
@@ -182,7 +184,7 @@ if __name__ == "__main__":
         params_trial["climate_forcing"] = climate_forcing
         params_trial["model_params"] = "SedCas_input_params_10min_after_mcmc.yaml"
         params_trial["project_root"] = Path(project_root)
-        params_trial["output_dir"] = f'pipeline/what_if/output/{file_format}/theta_{str(theta_draw_idx + 1).zfill(3)}'
+        params_trial["output_dir"] = f'pipeline/what_if/{model_version}/{file_format}/theta_{str(theta_draw_idx + 1).zfill(3)}'
         
         theta = theta_arr[theta_draw_idx, :]
         for name, value in zip(theta_name, theta):

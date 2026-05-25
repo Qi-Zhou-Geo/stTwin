@@ -41,7 +41,8 @@ def main(params_trial, theta, sigma=1, save_last=True):
     # run the model, this is most expensive time-consuming part
     # plot_output=True, show_plot=False, save but not automaticlt show it
     model = run_sedcas_once(current_params_trial, num_iteration=100,
-                            progress_bars=True, save_output=True,
+                            progress_bars=True, save_output=True, save_sed_container=True,
+                            fix_ls=False, save_ls=None,
                             plot_output=True, show_plot=False,
                             select_t1="2004-02-01T00:00:00", select_t2="2023-01-01T00:00:00")
 

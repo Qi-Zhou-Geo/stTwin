@@ -2,7 +2,6 @@ name: stTwin
 
 channels:
   - conda-forge
-  - defaults
 
 dependencies:
   # Python
@@ -13,11 +12,10 @@ dependencies:
   - scipy=1.16.2
   - pandas=2.2.3
   - xarray=2025.12.0
-  - statsmodels=0.14.5
 
   # Optimization / calibration
   - optuna=4.7.0
-  - pymc=5.28.0
+  - emcee=3.1.6
 
   # Seismic
   - obspy=1.4.2
@@ -48,17 +46,7 @@ dependencies:
   - joblib=1.5.3
   - scikit-learn=1.8.0
 
-  # Testing
-  - pytest=9.0.1
-
   # Pip-only packages
   - pip=25.2
   - pip:
-      - kaleido==1.2.0
-      - choreographer==1.2.1
-      - logistro==2.0.1
-      - orjson==3.11.4
-      - simplejson==3.20.2
-      - pluggy==1.6.0
-      - pytest-timeout==2.4.0
       - ruamel-yaml==0.19.1

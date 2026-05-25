@@ -8,21 +8,31 @@
 
 import numpy as np
 
-# region ### add the sys.path to search for custom modules ###
+#region ### add the sys.path to search for custom modules ###
+import sys
 from pathlib import Path
+
 current_file = Path(__file__).resolve()
 current_dir = current_file.parent
-
-# using ".parent" on a "pathlib.Path" object_typeect moves one level up the directory hierarchy
+# using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
 project_root = current_dir.parent.parent
-import sys
 
 sys.path.append(str(project_root))
 # endregion
 
+
+# import the custom functions
 from func.liveshow.t2s2_dash_baord import app
 
 
 if __name__ == "__main__":
+    # host="127.0.0.1"
+    # Binds the app only to localhost (same machine access only)
 
-    app.run(host="127.0.0.1", port=8050, debug=True)
+    # port=8050
+    # Local service port
+
+    # debug=False
+    # Disable Flask debug mode for stability in production
+    
+    app.run(host="127.0.0.1", port=8050, debug=False)

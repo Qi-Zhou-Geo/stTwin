@@ -6,6 +6,8 @@
 #__find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
 import os
+import json
+import yaml
 
 import numpy as np
 import pandas as pd
@@ -14,37 +16,41 @@ import xarray as xr
 from obspy import UTCDateTime
 
 #region ### add the sys.path to search for custom modules ###
+import sys
 from pathlib import Path
+
 current_file = Path(__file__).resolve()
 current_dir = current_file.parent
-
 # using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
 project_root = current_dir.parent.parent
-import sys
+
 sys.path.append(str(project_root))
 # endregion
 
+
 # import the custom functions
 from func.SedCas.SedCas import SedCas
-from func.post_bayesian_inference.thin_posterior import sample_posterior
+from func.SedCas_pred.thin_posterior import sample_posterior, maximum_likelihood_theta
 
-def prepare_posterior4model():
+def prepare_posterior4model(model_version="v0dot4", MAP=True):
+
+    posterior_h5_dir = Path(project_root) / "func" / "bayesian_inference" / "sedcas_mcmc_results.h5"
+    if MAP is True:
+        # use the MAP theta
+        theta = maximum_likelihood_theta(posterior_h5_dir, burn_in_step=100)
+    else:
+        # use the mean theta
+        sampled_theta = sample_posterior(posterior_h5_dir, num_draw=100, burn_in_step=100, fix_seed=True)
+        theta = np.mean(sampled_theta, axis=0) # select theta
     
-    model_version = "bayesian_inference0dot4"
-    posterior_h5_dir = f"{project_root}/functions/{model_version}/sedcas_mcmc_results.h5"
+    # load YAML file
+    yaml_file = Path(project_root) / "config" / "SedCas_params" / "SedCas_mcmc_params.yaml"
+    with open(yaml_file, "r") as f:
+        data = yaml.safe_load(f)
 
-    sampled_theta = sample_posterior(posterior_h5_dir, num_draw=100, burn_in_step=100, fix_seed=True)
-    theta = np.mean(sampled_theta, axis=0) # select theta
-
-    theta_names = [
-    'w_storage_cap0', 'w_storage_cap1', 'w_storage_cap2',
-    'w_residence_time0', 'w_residence_time1', 'w_residence_time2',
-    'ls_alpha_v',
-    'Qdf', 'max_s2w',
-    'channel_storage_cap', 'erosion_k']
-
-    lower = np.array([0.1, 10, 10, 1, 6, 6, 1.1, 0.1, 0.1, 1, 0.01])
-    upper = np.array([10, 100, 100, 144, 1008, 1008, 2.0, 1.0, 1.0, 100, 10])
+    theta_names = data["mcmc_theta_meta"]["theta_names"]
+    lower = np.array(data["mcmc_theta_meta"]["lower_bounds"], dtype=float)
+    upper =  np.array(data["mcmc_theta_meta"]["upper_bounds"], dtype=float)
     theta = theta * (upper - lower) + lower # normalize it back to real scale
 
     posterior_theta = {}
@@ -54,12 +60,9 @@ def prepare_posterior4model():
     return posterior_theta
 
 
-def load_climate_input4model():
+def load_climate_input4model(data_source="MeteoSwiss", station="Montana (MVE)"):
 
-    data_source = "MeteoSwiss"
-    station = "Montana (MVE)"
     time_now = UTCDateTime().isoformat()
-    
     resolution = 600  # unit is second
     
     data1 = pd.read_csv(f"{project_root}/data/liveshow_cache/climate/climate_2023_2024_2025_t.txt", header=0)
@@ -101,9 +104,9 @@ def load_climate_input4model():
     return climate_forcing
 
 
-def run_sedcas(posterior_theta, climate_forcing):
+def run_sedcas(posterior_theta, climate_forcing, num_iteration=50):
     
-    model_input_params = f"{project_root}/config/SedCas_params/SedCas_input_params_10min_bo_calibrated.yaml"
+    model_input_params = Path(project_root) / "config" / "SedCas_params" / "SedCas_input_params_10min_after_mcmc.yaml"
     model = SedCas(project_root=project_root, model_input_params=model_input_params)
     
     # assign the 2023-2026 data
@@ -133,7 +136,7 @@ def run_sedcas(posterior_theta, climate_forcing):
     # endregion
 
     model.run_hydro()
-    model.run_stochastic_simulations(seed=0, num_iteration=100, progress_bars=True)
+    model.run_stochastic_simulations(seed=0, num_iteration=num_iteration, progress_bars=True, fix_ls=False, save_ls=None)
 
     # only save the 2026 results
     t1 = "2025-01-01T00:00:00"
@@ -142,7 +145,7 @@ def run_sedcas(posterior_theta, climate_forcing):
     os.makedirs(p_dir, exist_ok=True)
 
     mask = (model.hydro_output.time_str >= t1) & (model.hydro_output.time_str < t2)
-
+    
     hydro_output = model.hydro_output.isel(time=mask)
     hydro_output.to_netcdf(f"{p_dir}/hydro_output.nc")
 
@@ -151,8 +154,12 @@ def run_sedcas(posterior_theta, climate_forcing):
     
     climate = model.climate_forcing .isel(time=mask)
     climate.to_netcdf(f"{p_dir}/climate_forcing.nc")
+
+    last_update = f"Latest stTwin Update: {UTCDateTime().strftime('%Y-%m-%dT%H:%M:%S')} [UTC+0]"
+    with open(f"{project_root}/data/liveshow_cache/results/last_stTwin_update.json", "w") as f:
+        json.dump({"last_update": last_update}, f)
     
-    
+
 def simulate():
     
     posterior_theta = prepare_posterior4model()

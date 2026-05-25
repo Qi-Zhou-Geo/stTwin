@@ -7,6 +7,7 @@
 # Please do not distribute this functions without the author's permission
 
 import os
+import json
 
 import numpy as np
 import pandas as pd
@@ -17,22 +18,23 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-
 from obspy import UTCDateTime
 
-# region ### add the sys.path to search for custom modules ###
+#region ### add the sys.path to search for custom modules ###
+import sys
 from pathlib import Path
+
 current_file = Path(__file__).resolve()
 current_dir = current_file.parent
-
-# using ".parent" on a "pathlib.Path" object_typeect moves one level up the directory hierarchy
+# using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
 project_root = current_dir.parent.parent
-import sys
 
 sys.path.append(str(project_root))
 # endregion
 
+
 # import the custom functions
+# Do not need
 
 font_global = dict(family="Arial, sans-serif", size=12, color="#2d2d2d")
 
@@ -138,12 +140,20 @@ def plotly_multi_time_series_xr(xr_dataset, list_of_col_names, vars_dict):
     )
     fig.update_xaxes(title_text="Time [UTC+0]", row=n, col=1)
 
+    last_metro_swiss = f"Latest MetroSwiss Data: {xr_dataset.coords['time_str'].values[-1]} [UTC+0]"
+    with open(f"{project_root}/data/liveshow_cache/results/last_stTwin_update.json", "r") as f:
+        temp = json.load(f)
+        # last_update = f"Latest stTwin Update: {UTCDateTime().strftime('%Y-%m-%dT%H:%M:%S')} [UTC+0]"
+    last_update = temp["last_update"]
+    
+    
     fig.update_layout(
         autosize=True,
         showlegend=False, plot_bgcolor="white", paper_bgcolor="white",
-        title=dict(text=None, x=0.5, xanchor="center"),
+        title=dict(text=f"{last_metro_swiss}<br>{last_update}", x=0.5, xanchor="center", font=dict(size=12)),
         font=font_global,
     )
+
 
     return fig
 
