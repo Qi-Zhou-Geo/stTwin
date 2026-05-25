@@ -178,13 +178,14 @@ def main(model_version, output_dir):
         list_of_tuples = []  # [(x, y_mean, y_std, label), ...]
         for key in key_list:
             print(key_type, key)
-            time_str, arr = load_data(key_type, key, model_version, num_draw=100)
+            time_str, arr = load_data(key_type, key, model_version, num_draw=50)
             y_mean = np.mean(arr, axis=1)  # by row
             y_std = np.std(arr, axis=1)  # by row
 
             list_of_tuples.append((time_str, y_mean, y_std, key))
 
         fig = plotly_multi_time_series_std(list_of_tuples, sigma_scale=1, shared_title=None)
+        os.makedirs(f"{output_dir}", exist_ok=True)
         fig.write_html(f"{output_dir}/{key_type}_{key_list[0]}.html")
 
 

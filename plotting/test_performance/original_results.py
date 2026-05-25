@@ -13,18 +13,16 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import matplotlib.gridspec as gridspec
 
-#region ### add the sys.path to search for custom modules ###
-from pathlib import Path
-
-from numpy.core.records import record
 from obspy import UTCDateTime
+
+#region ### add the sys.path to search for custom modules ###
+import sys
+from pathlib import Path
 
 current_file = Path(__file__).resolve()
 current_dir = current_file.parent
 # using ".parent" on a "pathlib.Path" object moves one level up the directory hierarchy
 project_root = current_dir.parent.parent
-
-import sys
 
 sys.path.append(str(project_root))
 # endregion

@@ -37,7 +37,8 @@ from func.SPI.ILL_SPI_daily import plot_spi_boundary
 def generate_synthetic(metadata, temp_sta, radiation_sta, 
                        extremely_dry_b, moderately_wet_b,
                        time_t, status_t, sigma_scale, 
-                       ref_last29_precp, seed):
+                       ref_last29_precp, seed, 
+                       plot=False):
     """Generate one year daily synthetic data
     
     Args:
@@ -114,7 +115,8 @@ def generate_synthetic(metadata, temp_sta, radiation_sta,
         p_syn[idx+29] = p_idx
         
     # drop the first 29 elements
-    # plot_SPI(p_syn, spi_window=30)
+    if plot is True:
+        plot_SPI(p_syn, spi_window=30)
     p_syn = p_syn[29:]
 
 
@@ -138,15 +140,16 @@ def generate_synthetic(metadata, temp_sta, radiation_sta,
 
 
 def daily_sampler(
-    cycle_period=60,  # every 60 day
+    cycle_period=90,  # every 60 day
     num_year=1,
     storm_onset=121,  # start from 1st May, 365 days
-    storm2drought_ratio=0.05,
+    storm2drought_ratio=0.1,
     sigma_scale=3,
     ref_data_resolution="h",
     leap_year=False,
     ref_last29_precp=None,
-    seed=None):
+    seed=None,
+    plot=False):
 
     if ref_data_resolution == "h":
         data_sampling_freq = 1  # 1 data per day
@@ -184,7 +187,7 @@ def daily_sampler(
                                    extremely_dry_b, moderately_wet_b,
                                    time_t, status_t, sigma_scale, 
                                    ref_last29_precp=ref_last29_precp, # the very last 29-days daily total precp.
-                                   seed=seed)
+                                   seed=seed, plot=plot)
 
     return time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic
 
@@ -315,16 +318,24 @@ def plot_SPI(p_syn, spi_window=30):
     df_obs = pd.read_csv(f"{project_root}/data/SPI_boundary/SPI_daily_cum_obs.txt", header=0)
     p_obs = df_obs.iloc[:, 1].values
     
-    fig, ax = plot_spi_boundary(df_boundary, p_syn=cum_p_syn[:365], p_obs=p_obs[:365], spi_scale=spi_window, max_precp=350)
+    fig, ax = plot_spi_boundary(df_boundary, p_syn=cum_p_syn[:365], p_obs=p_obs[:365], spi_scale=spi_window)
 
     plt.tight_layout()
     plt.savefig(f"{current_dir}/synthetic_{spi_window}.png", dpi=600)
     plt.show()
     plt.close(fig=fig)
+    
+    
+    fig, ax = plot_spi_boundary(df_boundary, p_obs=p_obs[:365], spi_scale=spi_window)
+
+    plt.tight_layout()
+    plt.savefig(f"{current_dir}/synthetic_{spi_window}_no_sum.png", dpi=600)
+    plt.show()
+    plt.close(fig=fig)
 
 
 def main(sigma_scale):
-    temp = daily_sampler(sigma_scale = sigma_scale)
+    temp = daily_sampler(sigma_scale = sigma_scale, plot=True)
     time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic = temp
     plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, sigma_scale, output_name=None)
 

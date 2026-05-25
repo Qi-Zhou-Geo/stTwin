@@ -43,6 +43,7 @@ def main(params_trial, theta):
     # plot_output=True, show_plot=False, save but not automaticlt show it
     model = run_sedcas_once(current_params_trial, num_iteration=100,
                             progress_bars=True, save_output=True,
+                            fix_ls=params_trial["fix_ls"], save_ls=params_trial["save_ls"],
                             plot_output=True, show_plot=False,
                             select_t1="2023-01-01T00:00:00", select_t2="2026-01-01T00:00:00")
 
@@ -57,6 +58,8 @@ if __name__ == "__main__":
     parser.add_argument("--burn_in_step", type=int)
     parser.add_argument("--theta_draw_idx", type=int)
     parser.add_argument("--model_params", type=str)
+    parser.add_argument("--fix_ls", type=str, default="False")
+    parser.add_argument("--save_ls", type=str, default="None")
     args = parser.parse_args()
 
     project_root = args.project_root # not this is may != project root
@@ -65,16 +68,30 @@ if __name__ == "__main__":
     burn_in_step = args.burn_in_step # discard the burn-in step
     theta_draw_idx = args.theta_draw_idx # the idx in the sampled
     model_params = args.model_params
+    
+    fix_ls = str(args.fix_ls).lower()
+    if fix_ls in ["true", "1", "yes"]:
+        fix_ls = True
+    else:
+        fix_ls = False
+        
+    save_ls = str(args.save_ls).lower()
+    if save_ls in ["", "none", "null"]:
+        save_ls = None
+    else:
+        save_ls = save_ls
     # endregion
 
+    
     data_type = "2023-2026" # for latest 10-min data
     params_trial = load_config(project_root, output_dir, data_type)
     params_trial["output_dir"] = f'{params_trial["output_dir"]}/theta_{str(theta_draw_idx + 1).zfill(3)}'
     params_trial["model_params"] = model_params # use the updated cfg file
-
+    params_trial["fix_ls"] = fix_ls
+    params_trial["save_ls"] = save_ls
 
     # retuen shape (num_draw, num_paramsters)
-    sampled_theta = sample_posterior(posterior_h5_dir, num_draw=100, burn_in_step=burn_in_step, fix_seed=True)
+    sampled_theta = sample_posterior(posterior_h5_dir, num_draw=50, burn_in_step=burn_in_step, fix_seed=True)
     theta = sampled_theta[theta_draw_idx, :] # select theta
 
     lower = params_trial["lower_bounds"]

@@ -1,0 +1,21 @@
+[Unit]
+Description=Cloudflare Tunnel for Dashboard
+After=network.target
+
+[Service]
+User=ubuntu
+ExecStart=/usr/local/bin/cloudflared tunnel --url http://127.0.0.1:8050 --protocol http2
+
+# Auto restart if crashed, unit is second
+Restart=always
+RestartSec=10
+
+# Clean logs
+ExecStartPre=/bin/rm -f /home/ubuntu/stTwin_v0dot4/pipeline/run_liveshow/t3.log
+
+# Save logs
+StandardOutput=append:/home/ubuntu/stTwin_v0dot4/pipeline/run_liveshow/t3.log
+StandardError=append:/home/ubuntu/stTwin_v0dot4/pipeline/run_liveshow/t3.log
+
+[Install]
+WantedBy=multi-user.target

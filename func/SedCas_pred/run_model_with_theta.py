@@ -223,6 +223,7 @@ def save_last_status(model, current_params_trial, current_theta):
 
 def run_sedcas_once(params_trial, num_iteration=100,
                     progress_bars=False, save_output=True, save_sed_container=False,
+                    fix_ls=False, save_ls=None,
                     plot_output=True, show_plot=False,
                     select_t1="2004-02-01T00:00:00", select_t2="2023-01-01T00:00:00"):
 
@@ -232,7 +233,7 @@ def run_sedcas_once(params_trial, num_iteration=100,
     # rather do: model.load_climate_input(data_type=data_type)
     model.climate_forcing = params_trial["climate_forcing"]
 
-    # <editor-fold desc="update the model params">
+    # region <update the model params>
     model.cfg.w_storage_cap.value[0] = [params_trial["w_storage_cap0"]]
     model.cfg.w_storage_cap.value[1] = [params_trial["w_storage_cap1"],
                                         params_trial["w_storage_cap2"]]
@@ -255,12 +256,15 @@ def run_sedcas_once(params_trial, num_iteration=100,
     model.cfg.initial_hs_storage.value = model.cfg.hillslope_storage_cap.value
     # endregion
 
-    model.run_hydro()
-    model.run_stochastic_simulations(seed=0, num_iteration=num_iteration, progress_bars=progress_bars)
 
     # prepare the output
     output_dir = f"{params_trial['project_root']}/{params_trial['output_dir']}"
     os.makedirs(output_dir, exist_ok=True)
+    
+    # run the model
+    model.run_hydro()
+    model.run_stochastic_simulations(seed=0, num_iteration=num_iteration, progress_bars=progress_bars, fix_ls=fix_ls, save_ls=save_ls)
+
 
     # save the results
     if save_output is True:
@@ -286,7 +290,7 @@ def run_sedcas_once(params_trial, num_iteration=100,
         t1 = select_t1 # model.climate_forcing.coords["time_str"].values[0]
         t2 = select_t2 # model.climate_forcing.coords["time_str"].values[-1]
 
-        # <editor-fold desc="update the model params">
+        # region <update the model params>
         ## climate forcing
         mask = (model.climate_forcing.time_str >= t1) & (model.climate_forcing.time_str < t2)
         climate_forcing_2017 = model.climate_forcing.isel(time=mask)

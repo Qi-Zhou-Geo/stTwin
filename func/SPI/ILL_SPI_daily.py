@@ -347,7 +347,7 @@ def plot_SPI_boundary_full(spi_scale, day_of_year=np.arange(1, 365 + 1), max_pre
     df_boundary.to_csv(f"{current_dir}/SPI_daily_boundary.txt", index=False)
 
 
-def plot_spi_boundary(df_boundary, p_syn=None, p_obs=None, spi_scale=30, max_precp=350):
+def plot_spi_boundary(df_boundary, p_syn=None, p_obs=None, spi_scale=30, max_precp=500):
     """
     Plot the SPI boundary
     
@@ -392,8 +392,8 @@ def plot_spi_boundary(df_boundary, p_syn=None, p_obs=None, spi_scale=30, max_pre
     if p_obs is not None:
         ax.plot(day_of_year, p_obs,
                 lw=1, ls="--", color="C1",
-                label=(f"Mean Daily Total Precipitation in Last {spi_scale} Days\n"
-                       f"(Jan. 1931 – Dec. 2025; MeteoSwiss Montana Station)"), 
+                label=(f"Mean Daily Total Precipitation\nin Last {spi_scale} Days\n"
+                       f"(Jan. 1931 – Dec. 2025;\nMeteoSwiss Montana Station)"), 
                 zorder=4)
 
 
@@ -425,6 +425,7 @@ def plot_spi_boundary(df_boundary, p_syn=None, p_obs=None, spi_scale=30, max_pre
     ax.set_xticks(x_ticks, x_ticks)
     ax.set_ylim(0, max_precp)
 
+    ax.legend(loc="upper left", fontsize=6)
     ax.set_xlabel("Day of Year", fontweight="bold")
     ax.set_ylabel(f"Rolling Total Precipitation in Last {spi_scale} days [mm]",
                   fontweight="bold")
@@ -432,9 +433,7 @@ def plot_spi_boundary(df_boundary, p_syn=None, p_obs=None, spi_scale=30, max_pre
     ax.grid(True, ls="--", lw=0.5, alpha=0.5)
     handles, labels = ax.get_legend_handles_labels()
     car_ax.axis("off")
-    car_ax.legend(
-        handles, labels,
-        loc="upper center", fontsize=6)
+    car_ax.legend(handles, labels, loc="upper center", fontsize=6)
     
     return fig, ax
   
@@ -520,7 +519,7 @@ def main(spi_scale=30):
     df_obs = pd.read_csv(f"{project_root}/data/SPI_boundary/SPI_daily_cum_obs.txt", header=0)
     p_obs = df_obs.iloc[:, 1].values
     
-    fig, ax = plot_spi_boundary(df_boundary, p_syn=None, p_obs=p_obs, spi_scale=spi_scale, max_precp=350)
+    fig, ax = plot_spi_boundary(df_boundary, p_syn=None, p_obs=p_obs, spi_scale=spi_scale)
 
     plt.tight_layout()
     plt.savefig(f"{current_dir}/spi_boundary_daily_spi_day={spi_scale}.png", dpi=600)

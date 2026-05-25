@@ -22,8 +22,7 @@ project_root = current_dir.parent.parent
 sys.path.append(str(project_root))
 # endregion
 
-
-# import the func. from the same folder
+# import custom func.
 from func.SedCas_whatif.create_bound import load_what_if_bound, cache_bound
 
 def main():

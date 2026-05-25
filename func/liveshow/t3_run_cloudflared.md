@@ -1,7 +1,12 @@
+## Quick test mode
 ```sh
-cloudflared tunnel --url http://localhost:8050 --protocol http2
+cloudflared tunnel --url http://127.0.0.1:8050 --protocol http2
 ```
 
+## Proper production mode 
+### Note: we do not have domain now
 ```sh
-ssh qizhou@sec55-dynip-174.gfz-potsdam.de
+cloudflared tunnel create stTwin-dash
+cloudflared tunnel route dns stTwin-dash dash.yourdomain.com
+cloudflared tunnel run stTwin-dash
 ```
