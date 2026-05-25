@@ -156,8 +156,8 @@ def workflow(year_list,
 
 if __name__ == "__main__":
     workflow(year_list=(2023, 2024, 2025), 
-             cycle_period=60, # every 60 day
-             storm2drought_ratio=0.01, # duration of storm / drought is 0.1
+             cycle_period=60.0, # every 60 day
+             storm2drought_ratio=0.05, # duration of storm / drought is 0.1
              storm_onset_month=3,  # start from 1st of April
-             storm_onset_day=1,
+             storm_onset_day=27,
              plot=True, seed=None)

@@ -93,7 +93,7 @@ def storm2drought_generator(cycle_period, num_year, storm_onset,
 
     # (5) plot
     if plot is True:
-        plot_storm2drought(t, y_t, save=False)
+        plot_storm2drought(t, y_t, save=plot)
 
     return t, y_t
 
@@ -114,7 +114,7 @@ def plot_storm2drought(t, y_t, save=False):
     ax.set_ylabel("Status [y(t)]", fontweight='bold')
     ax.set_yticks([-1, 1], ["Strom (-1)", "Drought (1)"])
     ax.set_xlabel(f"Number of Day [t]", fontweight='bold')
-    ax.legend(loc="lower right", fontsize='6')
+    ax.legend(loc="best", fontsize='6')
 
     if t[-1] == 365:
         ax.set_xticks([1, 50, 100, 150, 200, 250, 300, 350, 365],
@@ -136,7 +136,7 @@ def plot_storm2drought(t, y_t, save=False):
 
 def main(ref_data_resolution = "h"):
 
-    cycle_period, num_year, storm_onset = 1 / 120, 1, 121  # every 60 day, start from 1st May, 365 days
+    cycle_period, num_year, storm_onset = 60, 1, 121  # every 60 day, start from 1st May, 365 days
     storm2drought_ratio = 0.2  # storm to drought ratio
 
     if ref_data_resolution == "h":

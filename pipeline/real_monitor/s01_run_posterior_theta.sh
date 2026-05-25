@@ -24,6 +24,8 @@ posterior_h5_dir="${project_root}/func/bayesian_inference/sedcas_mcmc_results.h5
 burn_in_step=100
 theta_draw_idx=$((SLURM_ARRAY_TASK_ID - 1)) # from 0
 model_params="SedCas_input_params_10min_after_mcmc.yaml"
+fix_ls="True"
+save_ls="None" # as Default None
 
 python_script="${project_root}/func/SedCas_pred/run_posterior_theta.py"
 
@@ -33,4 +35,6 @@ srun python "${python_script}" \
             --posterior_h5_dir "${posterior_h5_dir}" \
             --burn_in_step "${burn_in_step}" \
             --theta_draw_idx "${theta_draw_idx}" \
-            --model_params "${model_params}"
+            --model_params "${model_params}" \
+            --fix_ls "${fix_ls}" \
+            --save_ls "${save_ls}"

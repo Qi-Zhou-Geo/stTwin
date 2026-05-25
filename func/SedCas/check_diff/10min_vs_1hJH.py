@@ -240,7 +240,17 @@ ax.set_xlim(0.5, 102.5)
 
 handles, labels = ax.get_legend_handles_labels()
 by_label = dict(zip(labels, handles))
-ax.legend(by_label.values(), by_label.keys(), fontsize=6, ncol=3)
+ordered_labels = [
+    "With Volume Prediction (QZ)",   # row1, col1
+    "With Volume Prediction (JH)",   # row2, col1
+    "No Volume Prediction (QZ)",     # row1, col2
+    "No Volume Prediction (JH)",     # row2, col2
+    "No Observation",                # row1, col3
+    "",                              # row2, col3 (empty placeholder)
+]
+ordered_handles = [by_label.get(l, plt.matplotlib.patches.Patch(visible=False)) for l in ordered_labels]
+ax.legend(ordered_handles, ordered_labels, fontsize=6, ncol=3)
+
 
 ax.set_yscale('log')
 ax.grid(axis='y', color='black', linestyle='--', lw=0.7, alpha=0.5, zorder=1)

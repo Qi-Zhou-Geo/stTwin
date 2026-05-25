@@ -85,9 +85,12 @@ print(df_ratio.shape)
 
 
 
+
+
+
 df_raw = pd.read_csv(f"./df_ratio.txt", header=0)
-extreme = {"min": [15, 0.1, 2], "max":[180, 0.5, 10]}
-status = "max"
+extreme = {"min": [15, 0.1, 2], "mid":[90, 0.3, 6], "max":[180, 0.5, 10]}
+status = "mid"
 
 # "cycle_period", "storm2drought_ratio", "storm_onset_month"
 idx_map = {
@@ -122,7 +125,7 @@ for idx in range(3):
     y_vals = df_sub[y].dropna()
     
     df_heat = df_sub.pivot(index=y, columns=x, values=v)
-    heatmap = sns.heatmap(df_heat, cmap="inferno", cbar=False, ax=ax_heat, vmin=0.2, vmax=0.3)
+    heatmap = sns.heatmap(df_heat, cmap="coolwarm", cbar=False, ax=ax_heat, vmin=0.7, vmax=1.3)
     ax_heat.invert_yaxis()
     ax_heat.set_xlabel(variable_map[x], fontweight='bold')
     ax_heat.set_ylabel(variable_map[y], fontweight='bold')
@@ -137,25 +140,27 @@ for idx in range(3):
 
     bar_x = df_heat.columns.values
     bar_y = np.mean(df_heat.values, axis=0)
-    ax_bar_x.bar(bar_x, bar_y, color="C0", alpha=0.7, width=0.9*(bar_x[1]-bar_x[0]))
+    ax_bar_x.bar(bar_x, bar_y, color="gray", alpha=0.7, width=0.9*(bar_x[1]-bar_x[0]))
     # ax_bar_x.set_xticks(bar_x, bar_x)
     ax_bar_x.set_xticks(bar_x)
     ax_bar_x.set_xticklabels([])
-    ax_bar_x.grid(axis="y", color="grey", linestyle="--", lw=0.5, alpha=0.5, zorder=1)
+    ax_bar_x.grid(axis="y", color="red", linestyle="--", lw=0.5, alpha=1, zorder=1)
     ax_bar_x.set_xlim(bar_x[0] - 0.9*(bar_x[1]-bar_x[0]) / 2, bar_x[-1] + 0.9*(bar_x[1]-bar_x[0]) / 2)
-    ax_bar_x.set_ylim(0, 0.3)
+    ax_bar_x.set_ylim(0.7, 1.3)
+    ax_bar_x.set_yticks([0.7, 1.0, 1.3], [0.7, 1.0, 1.3])
     ax_bar_x.set_ylabel("Mean Ratio", fontweight='bold')
     
     
     bar_x = df_heat.index.values
     bar_y = np.mean(df_heat.values, axis=1)
-    ax_bar_y.barh(bar_x, bar_y, color="C0", alpha=0.7, height=0.9*(bar_x[1]-bar_x[0]), zorder=2)
+    ax_bar_y.barh(bar_x, bar_y, color="gray", alpha=0.7, height=0.9*(bar_x[1]-bar_x[0]), zorder=2)
     # ax_bar_y.set_yticks(bar_x, bar_x)
     ax_bar_y.set_yticks(bar_x)
     ax_bar_y.set_yticklabels([])
-    ax_bar_y.grid(axis="x", color="grey", linestyle="--", lw=0.5, alpha=0.5, zorder=1)
+    ax_bar_y.grid(axis="x", color="red", linestyle="--", lw=0.5, alpha=1, zorder=1)
     ax_bar_y.set_ylim(bar_x[0] - 0.9*(bar_x[1]-bar_x[0]) / 2, bar_x[-1] + 0.9*(bar_x[1]-bar_x[0]) / 2)
-    ax_bar_y.set_xlim(0, 0.3)
+    ax_bar_y.set_xlim(0.7, 1.3)
+    ax_bar_y.set_xticks([0.7, 1.0, 1.3], [0.7, 1.0, 1.3])
     ax_bar_y.set_xlabel("Mean Ratio", fontweight='bold')
 
 

@@ -24,15 +24,6 @@ config/data_path.yaml
 
 plotting/diagram/*.png
 
-functions/SPI/archive/cached_SPI_data.npy
-functions/SPI/archive/ILL_SPI_daily.py
-functions/SPI/archive/ILL_SPI_month2day.py
-functions/SPI/archive/spi_boundary_daily_spi_1.png
-functions/SPI/archive/spi_boundary_spi_1.png
-functions/SPI/archive/spi_params_daily_spi_1.npz
-functions/SPI/archive/spi_params_daily_spi_30.npz
-functions/SPI/archive/spi_params_spi_1.npz
-
 # 
 data/liveshow_cache
 data/seismic_temp
@@ -40,8 +31,10 @@ data/seismic_temp
 config/SedCas-main/1h/sed_container_2004_2018.nc
 
 # 
+func/SedCas/1h
 func/bayesian_inference/parallel_results
 func/bayesian_inference/500step2026-03-17-backup
+
 
 #
 pipeline/real_pred/bayesian_inference0dot4
@@ -51,3 +44,7 @@ pipeline/re-calibrate/2004_2017_t_sed_container_2017_10min-new.html
 pipeline/real_pred/static/channel_storage_Q50.npz
 pipeline/real_pred/static/sed_transport_real_Q50.npz
 
+pipeline/MAP_results/v0dot4
+
+
+plotting/stastic_whatif/v0dot4

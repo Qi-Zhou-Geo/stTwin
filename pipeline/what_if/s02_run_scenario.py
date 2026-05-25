@@ -193,6 +193,7 @@ if __name__ == "__main__":
         # (5) run the model
         model = run_sedcas_once(params_trial, num_iteration=100,
                             progress_bars=True, save_output=False,
+                            fix_ls=True, save_ls=None,
                             plot_output=False, show_plot=False,
                             select_t1="2023-01-01T00:00:00", select_t2="2026-01-01T00:00:00")
         

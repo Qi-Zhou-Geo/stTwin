@@ -35,9 +35,11 @@ from func.toolkit.loss_func import calculate_pred_ratio, clean_obs_pre
 plt.rcParams.update({'font.size': 7,
                      'axes.formatter.limits': (-4, 6),
                      'axes.formatter.use_mathtext': True})
+
+
 model_verson = "bayesian_inference0dot4"
 
-# <editor-fold desc="# (1) calaulate the loss for Jacob default">
+# region <(1) calaulate the loss for Jacob default>
 # this result is use the default params and data
 sed_output = xr.open_dataset(f"{project_root}/functions/SedCas_default/sed_output_2004_2018.nc")
 
@@ -77,7 +79,7 @@ pred_ratio_JH.iloc[new_idx, 3] = pred_ratio
 # endregion
 
 
-# <editor-fold desc="# (2) calaulate the loss for QZ BI optimal">
+# region <(2) calaulate the loss for QZ BI optimal>
 # this result is use the default params and data
 sed_output = xr.open_dataset(f"{project_root}/pipeline/real_pred/{model_verson}/MAP/sed_output.nc")
 
