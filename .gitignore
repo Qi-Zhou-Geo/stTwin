@@ -18,36 +18,20 @@ run_temp_test.sh
 log_print.txt
 # ingore the folder and all files
 
+# config
+config/SedCas-main/1h/sed_container_2004_2018.nc
 
-# catchment code and event list
-config/data_path.yaml
 
-plotting/diagram/*.png
-
-functions/SPI/archive/cached_SPI_data.npy
-functions/SPI/archive/ILL_SPI_daily.py
-functions/SPI/archive/ILL_SPI_month2day.py
-functions/SPI/archive/spi_boundary_daily_spi_1.png
-functions/SPI/archive/spi_boundary_spi_1.png
-functions/SPI/archive/spi_params_daily_spi_1.npz
-functions/SPI/archive/spi_params_daily_spi_30.npz
-functions/SPI/archive/spi_params_spi_1.npz
-
-# 
+# data
 data/liveshow_cache
 data/seismic_temp
 
-config/SedCas-main/1h/sed_container_2004_2018.nc
 
-# 
-func/bayesian_inference/parallel_results
-func/bayesian_inference/500step2026-03-17-backup
+# func
+func/SedCas/1h
 
-#
-pipeline/real_pred/bayesian_inference0dot4
-pipeline/re-calibrate/2004_2017_t_hydro_container_2017_10min-new.html
-pipeline/re-calibrate/2004_2017_t_sed_container_2017_10min-new.html
+# pipelin
+pipeline/MAP_results/v0dot4/sed_output.nc
 
-pipeline/real_pred/static/channel_storage_Q50.npz
-pipeline/real_pred/static/sed_transport_real_Q50.npz
-
+# plotting
+plotting/diagram/.$workflow-DTs.drawio.bkp
