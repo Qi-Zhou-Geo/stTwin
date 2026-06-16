@@ -333,11 +333,95 @@ def plot_SPI(p_syn, spi_window=30):
     plt.show()
     plt.close(fig=fig)
 
+def plot_syn2(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, sigma_scale, output_name=None):
+
+    fig = plt.figure(figsize=(6, 6))
+    gs = gridspec.GridSpec(3, 1)
+
+
+    y_label = [
+        f"Daily Total Precipitation\n[mm]",
+        f"Daily Mean Temperature\n[degree]",
+        f"Daily Mean Radiation\n[W / m²]",
+    ]
+
+    y_min = [1, -20, 0]
+    y_max = [100, 30, 600]
+
+    for idx, data in enumerate([precp_sta, temp_sta, radiation_sta]):
+
+        ax = plt.subplot(gs[idx])
+
+        max_data = data[:, 0]
+        mean_data = data[:, 1]
+        min_data = data[:, 2]
+        std_data = data[:, 3]
+        q5_data = data[:, 4]
+        q95_data = data[:, 5]
+
+        x = range(1, len(max_data) + 1)
+        y = mean_data
+        y1 = mean_data - sigma_scale * std_data
+        y2 = mean_data + sigma_scale * std_data
+        y3 = min_data
+        y4 = max_data
+
+        if idx == 1:
+            pass
+        else:
+            # this for radation
+            y1 = np.clip(y1, a_min=0, a_max=np.max(y1))
+            y2 = np.clip(y2, a_min=0, a_max=np.max(y2))
+
+        #ax.plot(x, synthetic[:, idx], label="Synthetic", color="black", zorder=3)
+        ax.plot(x, y, color="C1", label="Mean", zorder=4)
+
+        if idx == 0:
+            ax.plot(x, y2, color="C0", label="Mean + Std.", zorder=1)
+            ax.plot(x, y4, color="C2", label="Max", zorder=2)
+            ax.set_yscale("log")
+            ax.set_ylim(1e0, 2e2)
+        else:
+            
+            if idx == 2:
+                y1 = np.clip(y1, a_min=0, a_max=None)
+                y2 = np.clip(y2, a_min=0, a_max=np.max(y2))
+                y3 = np.clip(y3, a_min=0, a_max=np.max(y3))
+                y4 = np.clip(y4, a_min=0, a_max=np.max(y4))
+
+            ax.fill_between(x, y1, y2, color="C0", label=f"Mean to {sigma_scale}Std.", alpha=0.5, zorder=1)
+            ax.fill_between(x, y3, y4, color="C2", label="Min to Max", alpha=0.5, zorder=2)
+
+        if idx in [2]:
+            ax.legend(loc="upper left", fontsize="6")
+
+        ax.set_ylabel(f"{y_label[idx]}", fontweight="bold")
+        ax.set_ylim(y_min[idx], y_max[idx])
+        
+        plot_month_background(ax, leap=False)
+        ax.set_xlim(1, 365)
+        ax.set_xticks(
+            [1, 50, 100, 150, 200, 250, 300, 350, 365],
+            [1, 50, 100, 150, 200, 250, 300, 350, 365],
+        )
+        ax.grid(axis="both", color="grey", linestyle="--", lw=0.5, alpha=0.5, zorder=1)
+
+    ax = plt.subplot(gs[2])
+    ax.set_xlabel("Day of Year", fontweight="bold") #  (1931–2025, MeteoSwiss MVE Station)
+    plt.tight_layout()
+    if output_name is None:
+        png_name = Path(current_dir) / "statistic_climate_MVE.png"
+    else:
+        png_name = output_name
+        
+    plt.savefig(png_name, dpi=600, transparent=True)
+    plt.show()
+    plt.close(fig=fig)
 
 def main(sigma_scale):
     temp = daily_sampler(sigma_scale = sigma_scale, plot=True)
     time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic = temp
-    plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, sigma_scale, output_name=None)
+    plot_syn2(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, sigma_scale, output_name=None)
 
 
 if __name__ == "__main__":

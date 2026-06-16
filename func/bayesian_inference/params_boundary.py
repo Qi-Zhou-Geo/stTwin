@@ -16,7 +16,7 @@ def custom_boundary():
         'Qdf', 'max_s2w', 
         'channel_storage_cap', 'erosion_k'], dtype=str)
 
-    lower_bounds = np.array([0.1, 10, 10, # time step, 0.1 step >> 0.1 * 10 minutes = 1 min
+    lower_bounds = np.array([0.1, 10, 10, # time step, e.g., for 10 minutes data, 0.1 step >> 0.1 * 10 minutes = 1 min
                              1, 6, 6, 
                              1.1, 
                              0.1, 0.1, 

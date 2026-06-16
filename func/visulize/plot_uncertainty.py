@@ -48,7 +48,7 @@ plt.rcParams.update({'font.size': 7,
                      'axes.formatter.use_mathtext': True})
 
 
-def load_data(key_type, key, model_version="v0dot4", num_draw=100):
+def load_data(key_type, key, model_version="v0dot4", num_draw=50):
     if key_type in ["hydro"]:
         nc_file = "hydro_output.nc"
     elif key_type in ["sed"]:

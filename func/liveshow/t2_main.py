@@ -22,7 +22,7 @@ sys.path.append(str(project_root))
 
 
 # import the custom functions
-from func.liveshow.t2s2_dash_baord import app
+from func.liveshow.t2s3_dash_baord import app
 
 
 if __name__ == "__main__":

@@ -1,12 +1,12 @@
-# Last Update: 2026-05-19
+# Last modified: 2026-06-11T18:17:59
 # Author: QZ
 
 
 cycle_period:
   name: cycle_period
-  value_min: 15 # half month
-  value_max: 180 # six monthes
-  value_num: 12 # delta = 15, total 12 cases
+  value_min: 30 # one month
+  value_max: 120 # six monthes
+  value_num: 4
   attrs:
     unit: day
     description: storm-drought-cycle
@@ -15,9 +15,9 @@ cycle_period:
 
 storm2drought_ratio:
   name: storm2drought_ratio
-  value_min: 0.1
-  value_max: 0.5
-  value_num: 5 # delta = 0.05, total 5 cases
+  value_min: 0.05
+  value_max: 0.3
+  value_num: 6
   attrs:
     unit: none
     description: ratio of storm duration to drought ratio
@@ -39,7 +39,7 @@ storm_onset_day:
   name: storm_onset_day
   value_min: 1
   value_max: 15
-  value_num: 1 # delta = 15, total1 cases ---# 15 # delta = 15, total 2 cases
+  value_num: 1 # delta = 15, total 1 cases
   attrs:
     unit: day
     description: day index of the first storm oneset

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = 2025-09-24
+# __modification time__ = Last modified: 2026-06-12T11:51:48
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -54,6 +54,8 @@ model.run_hydro()
 
 # # (4) run the sediment model
 model.run_stochastic_simulations(seed=0, num_iteration=200)
+mass_balance_checker(sed_container=model.sed_container, residual=1.0)
+
 
 # update the attrs if the xr is 2024 version
 template_sed_container = model._create_sed_dataset(num_iteration=1)

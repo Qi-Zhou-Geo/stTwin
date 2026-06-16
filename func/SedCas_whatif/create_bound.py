@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from itertools import product
 
-#region ### add the sys.path to search for custom modules ###
+# region ### add the sys.path to search for custom modules ###
 import sys
 from pathlib import Path
 
@@ -28,7 +28,7 @@ sys.path.append(str(project_root))
 def cache_bound(output_path, 
                 cycle_period_range, storm2drought_ratio_range, 
                 storm_onset_month_range, storm_onset_day_range):
-    
+
     # create all parameter combinations
     params = list(product(
         cycle_period_range,
@@ -37,11 +37,20 @@ def cache_bound(output_path,
         storm_onset_day_range
     ))
     idx = np.arange(0, len(params))
-    
+
     # create dataframe
     arr = np.hstack((idx.reshape(-1, 1), params))
     columns = ["idx", "cycle_period", "storm2drought_ratio", "storm_onset_month", "storm_onset_day"]
-    df = pd.DataFrame(arr, columns=columns)
+    df = pd.DataFrame(arr, columns=columns).astype(
+        {
+            "idx": int,
+            "cycle_period": int,
+            "storm2drought_ratio": float,
+            "storm_onset_month": int,
+            "storm_onset_day": int,
+        }
+    )
+    
     df.to_csv(output_path, index=False)
 
 
@@ -50,24 +59,22 @@ def load_what_if_bound():
     what_if_bound = Path(project_root) / "config" / "SedCas_params" / "what_if_range.yaml"
     # load YAML file
     with open(what_if_bound, "r") as f:
-        data = yaml.safe_load(f)
+        cfg = yaml.safe_load(f)
 
-    cfg = data["cycle_period"]
-    cycle_period_range = np.linspace(cfg["value_min"], cfg["value_max"], cfg["value_num"])
-
-    cfg = data["storm2drought_ratio"]
-    storm2drought_ratio_range = np.linspace(cfg["value_min"], cfg["value_max"], cfg["value_num"])
-
-    cfg = data["storm_onset_month"]
-    storm_onset_month_range = np.linspace(cfg["value_min"], cfg["value_max"], cfg["value_num"])
-
-    cfg = data["storm_onset_day"]
-    storm_onset_day_range = np.linspace(cfg["value_min"], cfg["value_max"], cfg["value_num"])
+    data = cfg["cycle_period"]
+    cycle_period_range = np.linspace(data["value_min"], data["value_max"], data["value_num"])
+    cycle_period_range = cycle_period_range.astype(int)
     
-    print(f"Note:\n"
-          f"Total combinations: {len(cycle_period_range) * len(storm2drought_ratio_range) * len(storm_onset_month_range) * len(storm_onset_day_range)}\n"
-          f"len(cycle_period_range)={len(cycle_period_range)}, len(storm2drought_ratio_range)={len(storm2drought_ratio_range)}\n"
-          f"len(storm_onset_month_range)={len(storm_onset_month_range)}, len(storm_onset_day_range)={len(storm_onset_day_range)}\n")
+    data = cfg["storm2drought_ratio"]
+    storm2drought_ratio_range = np.linspace(data["value_min"], data["value_max"], data["value_num"])
+    storm2drought_ratio_range = storm2drought_ratio_range.astype(float)
     
-    return cycle_period_range, storm2drought_ratio_range, storm_onset_month_range, storm_onset_day_range
+    data = cfg["storm_onset_month"]
+    storm_onset_month_range = np.linspace(data["value_min"], data["value_max"], data["value_num"])
+    storm_onset_month_range = storm_onset_month_range.astype(int)
+    
+    data = cfg["storm_onset_day"]
+    storm_onset_day_range = np.linspace(data["value_min"], data["value_max"], data["value_num"])
+    storm_onset_day_range = storm_onset_day_range.astype(int)
 
+    return cfg, cycle_period_range, storm2drought_ratio_range, storm_onset_month_range, storm_onset_day_range

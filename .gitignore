@@ -13,9 +13,11 @@
 .vscode
 
 task.md
+log_print.txt
+
 temp_test.py
 run_temp_test.sh
-log_print.txt
+
 # ingore the folder and all files
 
 # config
@@ -25,13 +27,25 @@ config/SedCas-main/1h/sed_container_2004_2018.nc
 # data
 data/liveshow_cache
 data/seismic_temp
-
+data/SedCas_ls
+data/SedCas_whatif_input
+data/open_access
+data/SedCas_input/climate_2004_2025_t.txt
 
 # func
 func/SedCas/1h
 
 # pipelin
-pipeline/MAP_results/v0dot4/sed_output.nc
+pipeline/run_2004_2025_posterior/v0dot4
+pipeline/run_whatif/v0dot4
+
 
 # plotting
+plotting/diagram/.$workflow-DTs.drawio.bkp
+plotting/stastic_whatif/v0dot4
+
+plotting/whatif/cache
+plotting/whatif/archive
+
+plotting/diagram/location_framework/A4.png
 plotting/diagram/.$workflow-DTs.drawio.bkp

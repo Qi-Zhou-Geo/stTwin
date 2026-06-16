@@ -104,7 +104,8 @@ def load_climate_input4model(data_source="MeteoSwiss", station="Montana (MVE)"):
     return climate_forcing
 
 
-def run_sedcas(posterior_theta, climate_forcing, num_iteration=50):
+def run_sedcas(posterior_theta, climate_forcing, num_iteration=50,
+               t1="2023-01-01T00:00:00", t2="2036-01-01T00:00:00"):
     
     model_input_params = Path(project_root) / "config" / "SedCas_params" / "SedCas_input_params_10min_after_mcmc.yaml"
     model = SedCas(project_root=project_root, model_input_params=model_input_params)
@@ -139,9 +140,7 @@ def run_sedcas(posterior_theta, climate_forcing, num_iteration=50):
     model.run_stochastic_simulations(seed=0, num_iteration=num_iteration, progress_bars=True, fix_ls=False, save_ls=None)
 
     # only save the 2026 results
-    t1 = "2025-01-01T00:00:00"
-    t2 = "2036-01-01T00:00:00"
-    p_dir = f"{project_root}/data/liveshow_cache/results"
+    p_dir = f"{project_root}/data/liveshow_cache/monitoring"
     os.makedirs(p_dir, exist_ok=True)
 
     mask = (model.hydro_output.time_str >= t1) & (model.hydro_output.time_str < t2)
@@ -156,9 +155,9 @@ def run_sedcas(posterior_theta, climate_forcing, num_iteration=50):
     climate.to_netcdf(f"{p_dir}/climate_forcing.nc")
 
     last_update = f"Latest stTwin Update: {UTCDateTime().strftime('%Y-%m-%dT%H:%M:%S')} [UTC+0]"
-    with open(f"{project_root}/data/liveshow_cache/results/last_stTwin_update.json", "w") as f:
+    with open(f"{project_root}/data/liveshow_cache/monitoring/last_stTwin_update.json", "w") as f:
         json.dump({"last_update": last_update}, f)
-    
+
 
 def simulate():
     

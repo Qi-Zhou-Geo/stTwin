@@ -1,27 +1,19 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = 2025-09-24
+# __modification time__ = Last modified: 2026-06-12T11:28:36
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 # __note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
 #           and is distributed under the terms of the GNU General Public License v3.0 (GPL-3.0).
 
-import ast
-import pickle
-
 import os
-import yaml
 
 import pandas as pd
 import numpy as np
 import xarray as xr
 
 from tqdm import tqdm
-
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import matplotlib.gridspec as gridspec
 
 from obspy import UTCDateTime
 
@@ -40,8 +32,6 @@ sys.path.append(str(project_root))
 
 
 # import the custom functions
-from func.toolkit.log_infor import log_print
-
 from func.SedCas.model_config import ModelConfig, ConfigItem
 from func.SedCas import hydro_model as SedCas_h_model
 from func.SedCas import sediment_model as SedCas_s_model
@@ -300,6 +290,11 @@ class SedCas():
                 # sediment input from landslides
                 "ls": (("time", "iteration"), np.zeros([num_data, num_iteration]),
                        {"units": f"mm per {resolution} s",
+                        "description": "Real landslide input (normalized by catchment area)"}),
+                
+                # remobilized landslids
+                "ls_remobilize": (("time", "iteration"), np.zeros([num_data, num_iteration]),
+                       {"units": f"mm per {resolution} s",
                         "description": "Remobilized landslide (normalized by catchment area)"}),
 
                 # sediment hillslope storage
@@ -418,6 +413,7 @@ class SedCas():
     def run_sediment(self, seed_i, iteration, sed_container, fix_ls=False, save_ls=None):
 
         if fix_ls is False:
+            print(f"{UTCDateTime.now().isoformat()}\nUse generated landslides.")
             # region <generate the large landslides>
             # generate the time series area-normalized landslide thickness
 
@@ -481,8 +477,10 @@ class SedCas():
             
         else:
             output_ls = Path(project_root) / "data" / "SedCas_ls"
-            print(f"{UTCDateTime.now().isoformat()}\nLoad cached landslides from: {output_ls}/{iteration:03d}.nc")
-            ds_ls = xr.open_dataset(f"{output_ls}/{iteration:03d}.nc")
+            cached_ls = f"{iteration:03d}.nc" # "000.nc" # 
+            print(f"{UTCDateTime.now().isoformat()}\nLoad cached landslides from: {output_ls}/{cached_ls}")
+            
+            ds_ls = xr.open_dataset(f"{output_ls}/{cached_ls}") 
             
             # as 'pandas.core.frame.DataFrame'
             # shape by [time, landslides magnitude[mm]]
@@ -521,21 +519,16 @@ class SedCas():
                                              Qdf=self.cfg.Qdf.value,
                                              entrainment=self.cfg.entrainment.value
                                              )
-        ls_remobilize, hillslope_storage, channel_storage, sed_transport_real, sed_transport_theory, sed_limited = sed_run
-
-        t0 = self.climate_forcing.time.values[0]
-        t1 = self.climate_forcing.time.values[-1]
-        num_year = round((t1 - t0) / (365 * 24 * 3600))
-        SedCas_t_model.check_ls_erosion(ls=ls_remobilize,
-                                        catchment_area=self.cfg.c_area.value,
-                                        num_year=num_year,
-                                        ls_unit="mm",
-                                        ref_erosion_rate=0.39, ref_std=0.03)
+        
+        ls_real_input, ls_remobilize, hillslope_storage, channel_storage, sed_transport_real, sed_transport_theory, sed_limited = sed_run
+        
         # endregion
 
         # region <add the params to sed_container>
+        # landslids input
+        sed_container["ls"][:, iteration] = ls_real_input
         # remobilized landslids
-        sed_container["ls"][:, iteration] = ls_remobilize
+        sed_container["ls_remobilize"][:, iteration] = ls_remobilize
         # hillslope storage time series
         sed_container["hillslope_storage"][:, iteration] = hillslope_storage
         # channel storage time series

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = 2025-09-24
+# __modification time__ = Last modified: 2026-06-12T11:28:43
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 # __note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
@@ -25,8 +25,6 @@ sys.path.append(str(project_root))
 
 
 # import the custom functions
-from func.toolkit.log_infor import log_print
-
 from func.SedCas.sediment_model import truncated_powerlaw_sampler
 from func.toolkit.physical_unit_converter import unit_converter
 
@@ -51,8 +49,9 @@ def check_ls_erosion(ls, catchment_area, num_year, ls_unit, ref_erosion_rate=0.3
         #       f"{mean_erosion_rate} m/year, or {mean_erosion_rate * 1e3} mm/year")
     else:
         msg = (f"Warning!\n"
+               f"total ls input: {np.sum(ls)}\n"
                f"mean_erosion_rate: {mean_erosion_rate} m/year, or {mean_erosion_rate * 1e3} mm/year")
-        log_print(msg)
+        print(msg)
 
 def define_debris_flow(Qs, sed_transport, min_df_v, max_s_c):
     """
@@ -355,7 +354,7 @@ def redistribute_ls_time(daily_ls, desired_freq, redistribute_method="fixed"):
     steps_per_day = int(1440 / desired_freq)
 
     for day, mag in daily_ls.items():
-        day = pd.to_datetime(day).normalize()
+        day = pd.to_datetime(day).normalize() # type: ignore
 
         if mag == 0:
             continue
@@ -522,10 +521,7 @@ def trans_model(large_ls, small_ls, Qs, modelled_SWE,
     large_ls = redistribute_ls_time(daily_ls=large_ls, desired_freq=desired_freq, redistribute_method="fixed")
     small_ls = redistribute_ls_time(daily_ls=small_ls, desired_freq=desired_freq, redistribute_method="fixed")
 
-    ls = large_ls.iloc[:, 0].values + small_ls.iloc[:, 0].values
-    # assert len(ls) == len(Qs), (f"length Qs != ls.\n"
-    #                             f"len(Qs) = {len(Qs)}, len(ls) = {len(ls)}")
-
+    ls = large_ls.iloc[:, 0].values + small_ls.iloc[:, 0].values # type: ignore
     if len(ls) != len(Qs) is True:
         print(f"Warning!"
               f"length Qs != ls.\n"
@@ -534,11 +530,16 @@ def trans_model(large_ls, small_ls, Qs, modelled_SWE,
         
     # initialize
     num_data = len(Qs)  # length of time series
-    ls_remobilize = np.zeros(num_data) # when the slope can not hold the new coming ls, landslides remobilize
+    ls_real_input = np.array(ls) # the ls input to the system
+    ## when the slope can NOT hold the new coming ls >> landslides will remobilize >> none zero ls_remobilize
+    ## when the slope can hold the new coming ls >> landslides will NOT remobilize >> zero ls_remobilize
+    ls_remobilize = np.zeros(num_data)
+    
     hillslope_storage = np.zeros(num_data)  # hillslope_storage
-    # the change in hillslope_storage is small.
-    # without this adjustment, the plot range becomes too wide and may cause plotting issues.
+    ## the change in hillslope_storage is small.
+    ## without this adjustment, the plot range becomes too wide and may cause plotting issues.
     hillslope_storage[0] = hillslope_storage_cap
+    
     channel_storage = np.zeros(num_data)  # channel_storage
     sed_transport_real = np.zeros(num_data)  # catchment sediment output
     sed_transport_theory = np.zeros(num_data)  # catchment sediment output in theory
@@ -579,4 +580,4 @@ def trans_model(large_ls, small_ls, Qs, modelled_SWE,
         sed_transport_theory[i] = sed_transport_theory_t
         sed_limited[i] = sed_limited_t
 
-    return ls_remobilize, hillslope_storage, channel_storage, sed_transport_real, sed_transport_theory, sed_limited
+    return ls_real_input, ls_remobilize, hillslope_storage, channel_storage, sed_transport_real, sed_transport_theory, sed_limited

@@ -107,7 +107,7 @@ print(f"g_log_like(JH): {g_log_like_JH} ")
 
 # region <(2) 10 minutes results after the MCMC>
 model_verson = "v0dot4"
-sed_output = xr.open_dataset(f"{project_root}/pipeline/MAP_results/{model_verson}/sed_output.nc")
+sed_output = xr.open_dataset(f"{project_root}/pipeline/run_2004_2025_posterior/{model_verson}/theta_001/sed_output.nc")
 
 sed_transport_real = sed_output["sed_transport_real_Q50"] # mean values
 y_pred = unit_converter(input=sed_transport_real,
@@ -118,6 +118,7 @@ y_pred = unit_converter(input=sed_transport_real,
 event_catalog = pd.read_csv(f"{project_root}/"
                             f"data/event_catalog/debris_flow_volume_2004_2022.txt",
                             skiprows=6, header=0)
+event_catalog = event_catalog.iloc[:63, :]
 
 y_obs_valid, y_pred_valid = clean_obs_pre(event_catalog, y_pred, buffer_time=3, failed_prediction=0, ratio_of_faliure=0)
 y_obs = y_obs_valid["Volume[m3]"].values
@@ -126,8 +127,8 @@ y_pred = y_pred_valid["Volume[m3]"].values
 
 # avoid log(0)
 eps = 1e-10
-y_obs = np.clip(y_obs, a_min=eps, a_max=None)
-y_pred = np.clip(y_pred, a_min=eps, a_max=None)
+y_obs = np.clip(y_obs, a_min=eps, a_max=None) # type: ignore
+y_pred = np.clip(y_pred, a_min=eps, a_max=None) # type: ignore
 
 residual = np.log10(y_obs) - np.log10(y_pred)
 sigma = 1  # fixed sigma, 4.34 is σ=10 in natural log
@@ -156,7 +157,7 @@ ratio_JH = np.array([v[-1] for v in pred_ratio_JH.values()], dtype=float)
 x = np.arange(len(pred_ratio_QZ))
 width = 0.25
 
-tolerance = 1e2
+tolerance = 1e1
 
 fig = plt.figure(figsize=(6, 4))
 gs = gridspec.GridSpec(1, 1)
@@ -236,7 +237,7 @@ ax.set_title(label=(
     f"No Volume Prediction (QZ): {num_no_prediction_QZ}, Log-Posterior: {g_log_like_QZ:.1f}"), fontsize=7)
 
 ax.set_ylim(1e-2, 1e2)
-ax.set_xlim(0.5, 102.5)
+ax.set_xlim(0.5, 63.5)
 
 handles, labels = ax.get_legend_handles_labels()
 by_label = dict(zip(labels, handles))
@@ -248,20 +249,20 @@ ordered_labels = [
     "No Observation",                # row1, col3
     "",                              # row2, col3 (empty placeholder)
 ]
-ordered_handles = [by_label.get(l, plt.matplotlib.patches.Patch(visible=False)) for l in ordered_labels]
-ax.legend(ordered_handles, ordered_labels, fontsize=6, ncol=3)
+ordered_handles = [by_label.get(l, plt.matplotlib.patches.Patch(visible=False)) for l in ordered_labels] # type: ignore
+ax.legend(ordered_handles, ordered_labels, fontsize=6, ncol=3) # type: ignore
 
 
 ax.set_yscale('log')
 ax.grid(axis='y', color='black', linestyle='--', lw=0.7, alpha=0.5, zorder=1)
 ax.xaxis.set_major_locator(ticker.MultipleLocator(10))
 ax.xaxis.set_minor_locator(ticker.MultipleLocator(1))
-ax.set_xticks([1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
-              [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+ax.set_xticks([1, 10, 20, 30, 40, 50, 60, 63],
+              [1, 10, 20, 30, 40, 50, 60, 63]) # type: ignore
 # ax.set_xlim(0.5, 62.5) # coment it for 2017
 
 ax.set_ylabel("Ratio of Predicted to Observed Volume", fontweight='bold')
-ax.set_xlabel("Debris Flow Event Index [from 2004 to 2022]", fontweight='bold')
+ax.set_xlabel("Debris Flow Event Index [from 2004 to 2017]", fontweight='bold')
 
 
 plt.tight_layout()

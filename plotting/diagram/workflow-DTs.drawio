@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36">
   <diagram name="Page-1" id="uk7gXtNpVg8cVnYmi9zu">
-    <mxGraphModel dx="3883" dy="517" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
+    <mxGraphModel dx="2786" dy="-553" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -1013,7 +1013,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="UpFiBvrEQ8KBa-8xwnpQ-56" connectable="0" parent="1" style="group" value="" vertex="1">
-          <mxGeometry height="102" width="357.78" x="-600" y="7908" as="geometry" />
+          <mxGeometry height="102" width="357.78" x="-910" y="7898.16" as="geometry" />
         </mxCell>
         <mxCell id="UpFiBvrEQ8KBa-8xwnpQ-49" parent="UpFiBvrEQ8KBa-8xwnpQ-56" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;$$ y(t) = \begin{cases} 1, &amp;amp; \text{if } t \le t_0 \\ \sin \left( 2 \pi f (t - t_0) \right) - \sin \left( \frac{\pi(1 - R_{s2d})}{2(1 + R_{s2d})} \right), &amp;amp; \text{if } t &amp;gt; t_0 \end{cases} $$&lt;/span&gt;" vertex="1">
           <mxGeometry height="60" width="357.78" y="12" as="geometry" />
@@ -1396,11 +1396,89 @@
         <mxCell id="pSPty769ziGyTqE-u7qh-91" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;$$ y(t) = \begin{cases} 1, &amp;amp; \text{if } t \le t_0 \\ \sin \left( 2 \pi f (t - t_0) \right) - \sin \left( \frac{\pi(1 - R_{s2d})}{2(1 + R_{s2d})} \right), &amp;amp; \text{if } t &amp;gt; t_0 \end{cases} $$&lt;/span&gt;" vertex="1">
           <mxGeometry height="60" width="357.78" x="-600" y="8132" as="geometry" />
         </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-100" parent="1" style="verticalLabelPosition=bottom;verticalAlign=top;html=1;shape=mxgraph.infographic.shadedCube;isoAngle=15;fillColor=#B3B3B3;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="490" width="490" x="760" y="7630" as="geometry" />
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-108" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="144" width="165.46" x="280" y="8410" as="geometry" />
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-102" parent="pSPty769ziGyTqE-u7qh-108" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;size=40;opacity=75;strokeWidth=1.5748;points=[[0,0,0,0,0],[0,0,0,0,125],[0,0,0,0,250],[0,0,0,35,285],[0,0,0,70,320],[0,0,0,145,0],[0,0,0,215,320],[0,0,0,290,0],[0,0,0,360,70],[1,1,0,0,0]];" value="" vertex="1">
+          <mxGeometry height="135.85090909090908" width="152.83822468793346" x="0.21227531206657424" as="geometry" />
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-106" connectable="0" parent="pSPty769ziGyTqE-u7qh-108" style="group;dashed=1;" value="" vertex="1">
+          <mxGeometry height="128" width="140" y="-4" as="geometry" />
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-103" edge="1" parent="pSPty769ziGyTqE-u7qh-106" style="endArrow=none;html=1;rounded=0;strokeWidth=1.5748;endFill=0;endSize=4;startSize=4;dashed=1;" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint y="100.00000000000003" as="sourcePoint" />
+            <mxPoint x="112.62135922330093" y="100.00000000000003" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-104" edge="1" parent="pSPty769ziGyTqE-u7qh-106" style="endArrow=none;html=1;rounded=0;strokeWidth=1.5748;endFill=0;exitX=1;exitY=1;exitDx=0;exitDy=0;endSize=4;startSize=4;exitPerimeter=0;dashed=1;" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="112.8155339805825" y="100.00000000000003" as="sourcePoint" />
+            <mxPoint x="113" y="4" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-105" edge="1" parent="pSPty769ziGyTqE-u7qh-106" style="endArrow=none;html=1;rounded=0;strokeWidth=1.5748;endFill=0;endSize=4;startSize=4;dashed=1;entryX=1;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" target="pSPty769ziGyTqE-u7qh-102" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="112.62135922330093" y="100.00000000000003" as="sourcePoint" />
+            <mxPoint x="134.4" y="122.18181818181817" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-109" parent="1" style="text;whiteSpace=wrap;html=1;align=center;fontSize=8;rotation=0;" value="&lt;span style=&quot;text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;Period of the storm2drought cycle \( \frac{1}{f} \)&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;\( f \) start=15, end=180, step=15&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="145.17" x="308.83" y="8550" as="geometry" />
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-110" parent="1" style="text;whiteSpace=wrap;html=1;align=center;fontSize=8;rotation=0;" value="&lt;span style=&quot;background-color: rgb(255, 255, 255);&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;text-wrap-mode: nowrap;&quot;&gt;Storm onset time&lt;/span&gt;&lt;span style=&quot;white-space: nowrap; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&amp;nbsp;\( t_0 \)&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;white-space: nowrap; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;month start=2, end=10, step=1&lt;/span&gt;&lt;/div&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="30" width="105" x="195" y="8520" as="geometry" />
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-113" parent="1" style="text;whiteSpace=wrap;html=1;align=center;fontSize=8;rotation=0;" value="&lt;span style=&quot;text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;&amp;nbsp;Ratio of storm2drought \( R_{s2d} \)&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;\( R_{s2d}&amp;nbsp;\) start=0.1, end=0.5, step=0.1&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="30" width="145.17" x="442.16" y="8480" as="geometry" />
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-115" parent="1" style="text;whiteSpace=wrap;html=1;align=center;fontSize=8;rotation=0;" value="&lt;span style=&quot;background-color: rgb(255, 255, 255);&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;white-space: nowrap; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Total Sediment Yeld Ratio&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;white-space: nowrap; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Wha-If \( S^{\prime} \)&lt;/span&gt;&lt;span style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); white-space: nowrap;&quot;&gt;&amp;nbsp;/ MVE Observed Climate Forcing&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;white-space: nowrap; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;\( S^{\prime \prime} \)&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;text-wrap-mode: nowrap;&quot;&gt;$$ R = \frac{\sum^{t=n}_{t=1} S^{\prime}_t}{\sum^{t=n}_{t=1} S^{\prime \prime}_t} $$&lt;/span&gt;&lt;/div&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="70" width="240" x="-650" y="8240" as="geometry" />
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-116" parent="1" style="text;whiteSpace=wrap;html=1;align=center;fontSize=10;rotation=0;" value="&lt;span style=&quot;background-color: rgb(255, 255, 255);&quot;&gt;&lt;div&gt;&lt;span style=&quot;white-space: nowrap; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Output [mm]&lt;/span&gt;&lt;/div&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="20" width="57.39" x="-498" y="8360" as="geometry" />
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-118" edge="1" parent="1" source="pSPty769ziGyTqE-u7qh-116" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;endFill=1;startSize=4;endSize=4;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points">
+              <mxPoint x="-420" y="8370" />
+            </Array>
+            <mxPoint x="-440" y="8370" as="sourcePoint" />
+            <mxPoint x="-400" y="8370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-119" parent="1" style="text;whiteSpace=wrap;html=1;align=center;fontSize=10;rotation=0;" value="&lt;span style=&quot;background-color: rgb(255, 255, 255);&quot;&gt;&lt;div&gt;&lt;span style=&quot;white-space: nowrap; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Output [m]&lt;/span&gt;&lt;/div&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="20" width="57.39" x="-400" y="8360" as="geometry" />
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-120" parent="1" style="text;whiteSpace=wrap;html=1;align=center;fontSize=8;rotation=0;" value="&lt;span style=&quot;background-color: rgb(255, 255, 255); text-wrap-mode: nowrap;&quot;&gt;&lt;div style=&quot;&quot;&gt;\( 10^{-3} \)&lt;/div&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="20" width="57.39" x="-449.83" y="8350" as="geometry" />
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-121" edge="1" parent="1" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;endFill=1;startSize=4;endSize=4;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points">
+              <mxPoint x="-321.61" y="8370" />
+            </Array>
+            <mxPoint x="-342.61" y="8370" as="sourcePoint" />
+            <mxPoint x="-301.61" y="8370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-122" parent="1" style="text;whiteSpace=wrap;html=1;align=center;fontSize=10;rotation=0;" value="&lt;span style=&quot;background-color: rgb(255, 255, 255);&quot;&gt;&lt;div&gt;&lt;span style=&quot;white-space: nowrap; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Output [m3]&lt;/span&gt;&lt;/div&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="20" width="57.39" x="-299.61" y="8360" as="geometry" />
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-123" parent="1" style="text;whiteSpace=wrap;html=1;align=center;fontSize=8;rotation=0;" value="&lt;span style=&quot;background-color: rgb(255, 255, 255); text-wrap-mode: nowrap;&quot;&gt;&lt;div style=&quot;&quot;&gt;Catchment&amp;nbsp;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;aera&lt;/div&gt;&lt;div style=&quot;&quot;&gt;\( A \) [km2]&amp;nbsp;&lt;/div&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="57.39" x="-357" y="8300" as="geometry" />
+        </mxCell>
+        <mxCell id="pSPty769ziGyTqE-u7qh-124" parent="1" style="text;whiteSpace=wrap;html=1;align=center;fontSize=8;rotation=0;" value="&lt;span style=&quot;background-color: rgb(255, 255, 255); text-wrap-mode: nowrap;&quot;&gt;&lt;div style=&quot;&quot;&gt;\( A * 10^6\)&lt;/div&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="20" width="57.39" x="-353" y="8350" as="geometry" />
+        </mxCell>
         <mxCell id="boLUxQRWyLEXXsI5_6TV-44" parent="0" style="locked=0;" value="layer1" />
-        <mxCell id="boLUxQRWyLEXXsI5_6TV-6" parent="boLUxQRWyLEXXsI5_6TV-44" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;fillColor=#E6E6E6;strokeColor=default;opacity=30;align=center;" value="&lt;b&gt;&lt;font style=&quot;font-size: 15px;&quot;&gt;stTwin&lt;/font&gt;&lt;/b&gt;" vertex="1">
+        <mxCell id="boLUxQRWyLEXXsI5_6TV-6" parent="boLUxQRWyLEXXsI5_6TV-44" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;fillColor=none;strokeColor=none;opacity=30;align=center;" value="&lt;b&gt;&lt;font style=&quot;font-size: 15px;&quot;&gt;stTwin&lt;/font&gt;&lt;/b&gt;" vertex="1">
           <mxGeometry height="410" width="560" x="-760" y="7050" as="geometry" />
         </mxCell>
-        <mxCell id="boLUxQRWyLEXXsI5_6TV-8" parent="boLUxQRWyLEXXsI5_6TV-44" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;fillColor=#FFF2CC;strokeColor=default;opacity=50;align=center;" value="&lt;b&gt;User Interaction&lt;/b&gt;" vertex="1">
+        <mxCell id="boLUxQRWyLEXXsI5_6TV-8" parent="boLUxQRWyLEXXsI5_6TV-44" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;fillColor=#7EA6E0;strokeColor=default;opacity=50;align=center;" value="&lt;b&gt;Application Layer&lt;/b&gt;" vertex="1">
           <mxGeometry height="100" width="540" x="-750" y="7080" as="geometry" />
         </mxCell>
         <mxCell id="boLUxQRWyLEXXsI5_6TV-7" parent="boLUxQRWyLEXXsI5_6TV-44" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;fillColor=#CDA2BE;strokeColor=default;opacity=50;align=center;" value="&lt;div&gt;&lt;b&gt;Physical Asset&lt;/b&gt;&lt;/div&gt;" vertex="1">
@@ -1562,7 +1640,7 @@
             <mxPoint x="-699" y="7252" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="boLUxQRWyLEXXsI5_6TV-23" parent="boLUxQRWyLEXXsI5_6TV-51" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#67AB9F;" value="&lt;span style=&quot;font-size: 10px;&quot;&gt;What-if&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;font-size: 10px;&quot;&gt;Scenarios&lt;/span&gt;&lt;/div&gt;" vertex="1">
+        <mxCell id="boLUxQRWyLEXXsI5_6TV-23" parent="boLUxQRWyLEXXsI5_6TV-51" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFB570;" value="&lt;span style=&quot;font-size: 10px;&quot;&gt;What-if&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;font-size: 10px;&quot;&gt;Scenarios&lt;/span&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="58.9" width="78.74" x="-297" y="7110" as="geometry" />
         </mxCell>
         <mxCell id="boLUxQRWyLEXXsI5_6TV-41" parent="boLUxQRWyLEXXsI5_6TV-51" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 8px;&quot;&gt;Query&lt;/font&gt;" vertex="1">
@@ -1574,7 +1652,7 @@
             <mxPoint x="-437" y="7340" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="boLUxQRWyLEXXsI5_6TV-24" parent="boLUxQRWyLEXXsI5_6TV-51" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#67AB9F;" value="&lt;span style=&quot;font-size: 10px;&quot;&gt;Status&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;font-size: 10px;&quot;&gt;Monitoring&lt;/span&gt;&lt;/div&gt;" vertex="1">
+        <mxCell id="boLUxQRWyLEXXsI5_6TV-24" parent="boLUxQRWyLEXXsI5_6TV-51" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFB570;" value="&lt;span style=&quot;font-size: 10px;&quot;&gt;Status&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;font-size: 10px;&quot;&gt;Monitoring&lt;/span&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="58.9" width="78.74" x="-739.6283999999999" y="7110" as="geometry" />
         </mxCell>
       </root>

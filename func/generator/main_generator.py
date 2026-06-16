@@ -137,8 +137,11 @@ def workflow(year_list,
 
     file_format = f"CP={cycle_period}_R={storm2drought_ratio}_M={storm_onset_month}_D={storm_onset_day}"
     scenario_name = f"climate_2023_2026_t_whatif_{file_format}"
-    np.savetxt(f"{project_root}/data/SedCas_input/{scenario_name}.txt", 
-            data, delimiter=",", fmt="%s", header=",".join(df.columns))
+    
+    scenario_input_path = Path(project_root) / f"data/SedCas_whatif_input/{scenario_name}.txt"
+    scenario_input_path.parent.mkdir(parents=True, exist_ok=True)
+    np.savetxt(scenario_input_path, data, delimiter=",", fmt="%s", header=",".join(df.columns))
+
 
     meta = {
     "archived_tine": UTCDateTime.now().isoformat(),
@@ -148,7 +151,9 @@ def workflow(year_list,
     "storm2drought_ratio": storm2drought_ratio,
     "sigma_scale": sigma_scale}
 
-    with open(f"{project_root}/data/SedCas_input/{scenario_name}_meta.json", "w") as f:
+    scenario_input_meta = Path(project_root) / f"data/SedCas_whatif_input/{scenario_name}_meta.json"
+    scenario_input_meta.parent.mkdir(parents=True, exist_ok=True)
+    with open(scenario_input_meta, "w") as f:
         json.dump(meta, f, indent=2)
         
     return file_format

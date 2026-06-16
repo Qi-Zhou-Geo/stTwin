@@ -228,7 +228,7 @@ def SPI_usage(precp_spi_scale_total, day_of_year, spi_scale):
         # recalculate the SPI params if it is not exist
         SPI_pipeline(spi_scale)
     
-    shape, loc, scale = dump_SPI(spi_params, params=None, mode="load")
+    shape, loc, scale = dump_SPI(spi_params, params=None, mode="load") # type: ignore
 
     # the previous is vector, now we select the right values based on month index
     shape, loc, scale = shape[day_of_year - 1], loc[day_of_year - 1], scale[day_of_year - 1]
@@ -429,8 +429,9 @@ def plot_spi_boundary(df_boundary, p_syn=None, p_obs=None, spi_scale=30, max_pre
     ax.set_xlabel("Day of Year", fontweight="bold")
     ax.set_ylabel(f"Rolling Total Precipitation in Last {spi_scale} days [mm]",
                   fontweight="bold")
-
     ax.grid(True, ls="--", lw=0.5, alpha=0.5)
+    ax.legend(loc="upper center", fontsize=6)
+    
     handles, labels = ax.get_legend_handles_labels()
     car_ax.axis("off")
     car_ax.legend(handles, labels, loc="upper center", fontsize=6)
@@ -519,7 +520,7 @@ def main(spi_scale=30):
     df_obs = pd.read_csv(f"{project_root}/data/SPI_boundary/SPI_daily_cum_obs.txt", header=0)
     p_obs = df_obs.iloc[:, 1].values
     
-    fig, ax = plot_spi_boundary(df_boundary, p_syn=None, p_obs=p_obs, spi_scale=spi_scale)
+    fig, ax = plot_spi_boundary(df_boundary, p_syn=None, p_obs=p_obs, spi_scale=spi_scale, max_precp=400)
 
     plt.tight_layout()
     plt.savefig(f"{current_dir}/spi_boundary_daily_spi_day={spi_scale}.png", dpi=600)

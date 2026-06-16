@@ -23,9 +23,9 @@ project_root = current_dir.parent.parent
 sys.path.append(str(project_root))
 # endregion
 
-
 # import the custom functions
 from func.download_MeteoSwiss.fetch_data import fetch_data4SedCas, replace_nan
+
 
 def request_latest_10min_data(station="mve", time_resolution="10 minutes"):
 
