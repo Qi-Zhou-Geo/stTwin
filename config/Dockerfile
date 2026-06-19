@@ -1,0 +1,35 @@
+# Last Update: Last modified: 2026-06-16T22:18:24
+# Author: Qi Zhou
+
+# Base image: lightweight micromamba environment (conda-forge compatible)
+FROM mambaorg/micromamba:1.5.10
+
+# Set default folder as "app"
+# All commands inside this container will run in "/app"
+WORKDIR /project
+
+# Copy mamba env definition
+# Remember to change the "FD4seis.yml" if you switch the project
+COPY config/environment.yml /tmp/environment.yml
+
+# Create environment (qz_env) and Clean cache (reduce image size)
+RUN micromamba create -y -n env-qz -f /tmp/environment.yml && micromamba clean --all --yes
+
+# Auto-activate env in container
+ENV MAMBA_DOCKERFILE_ACTIVATE=1
+
+# Copy full project
+COPY . /project
+
+
+# Make copied files readable by the runtime user
+USER root
+RUN chown -R mambauser:mambauser /project && chmod -R u+rwX,go+rX /project
+
+# Switch back to the default non-root user for safer runtime execution
+USER mambauser
+
+
+
+# Run what you want
+ENTRYPOINT ["micromamba", "run", "-n", "env-qz", "python"]
