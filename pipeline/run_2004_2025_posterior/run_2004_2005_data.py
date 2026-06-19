@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-14T14:08:29
+# __modification time__ = Last modified: 2026-06-17T16:35:32
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -50,8 +50,6 @@ if __name__ == "__main__":
     model_updated_params = "SedCas_input_params_10min_after_mcmc.yaml"
     
     
-    save_ls = True
-    
     posterior_h5_dir = Path(project_root) / "func/bayesian_inference/sedcas_mcmc_results.h5"
     burn_in_step = 100
     num_draw = 21
@@ -66,12 +64,14 @@ if __name__ == "__main__":
     if theta_draw_idx == 0:
         theta = get_MAP_theta(posterior_h5_dir, burn_in_step=burn_in_step)
         fix_ls = False
+        save_ls = True
         plot_output = True
     else:
         # retuen shape (num_draw, num_paramsters)
         sampled_theta = get_posterior_theta(posterior_h5_dir, num_draw=num_draw, burn_in_step=burn_in_step, fix_seed=True)
         theta = sampled_theta[theta_draw_idx, :] # select theta
-        fix_ls = True
+        fix_ls = False
+        save_ls = False
         plot_output = False
         
     # normalize it back to real scale

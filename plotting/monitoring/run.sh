@@ -17,4 +17,4 @@ mkdir -p logs
 source /home/qizhou/miniforge3/bin/activate
 conda activate stTwin
 
-srun python s02_plot_results.py
+srun python plot_results.py

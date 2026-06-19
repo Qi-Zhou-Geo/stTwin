@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-12T11:28:36
+# __modification time__ = Last modified: 2026-06-17T17:07:18
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 # __note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
@@ -410,9 +410,20 @@ class SedCas():
         self.hydro_output = SedCas_h_model.area_weight_aggregate(hydro_container=self.hydro_container,
                                                                  weights=self.cfg.area_ratio_HRU.value)
 
-    def run_sediment(self, seed_i, iteration, sed_container, fix_ls=False, save_ls=None):
+    def run_sediment(self, seed_i, iteration, sed_container, fix_ls=False, save_ls=False):
 
-        if fix_ls is False:
+        if fix_ls is True:
+            output_ls = Path(project_root) / "data" / "SedCas_ls"
+            cached_ls = f"{iteration:03d}.nc" # "000.nc" # 
+            print(f"{UTCDateTime.now().isoformat()}\nLoad cached landslides from: {output_ls}/{cached_ls}")
+            
+            ds_ls = xr.open_dataset(f"{output_ls}/{cached_ls}") 
+            
+            # as 'pandas.core.frame.DataFrame'
+            # shape by [time, landslides magnitude[mm]]
+            large_ls = ds_ls["large_ls"].to_pandas()
+            small_ls = ds_ls["small_ls"].to_pandas()
+        else:
             print(f"{UTCDateTime.now().isoformat()}\nUse generated landslides.")
             # region <generate the large landslides>
             # generate the time series area-normalized landslide thickness
@@ -463,7 +474,7 @@ class SedCas():
             small_ls.index = large_ls.index
             # endregion
 
-            if save_ls is not None:
+            if save_ls is True:
                 ds_ls = xr.Dataset({
                     "large_ls": (("time", "ls_id"), large_ls.values),
                     "small_ls": (("time", "ls_id"), small_ls.values),
@@ -475,18 +486,6 @@ class SedCas():
                 os.makedirs(output_ls, exist_ok=True)
                 ds_ls.to_netcdf(f"{output_ls}/{iteration:03d}.nc")
             
-        else:
-            output_ls = Path(project_root) / "data" / "SedCas_ls"
-            cached_ls = f"{iteration:03d}.nc" # "000.nc" # 
-            print(f"{UTCDateTime.now().isoformat()}\nLoad cached landslides from: {output_ls}/{cached_ls}")
-            
-            ds_ls = xr.open_dataset(f"{output_ls}/{cached_ls}") 
-            
-            # as 'pandas.core.frame.DataFrame'
-            # shape by [time, landslides magnitude[mm]]
-            large_ls = ds_ls["large_ls"].to_pandas()
-            small_ls = ds_ls["small_ls"].to_pandas()
-
 
         # region <mix water and sediments>
         # desired_freq unit by minutes

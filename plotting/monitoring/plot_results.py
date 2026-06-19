@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-14T10:49:48
+# __modification time__ = Last modified: 2026-06-17T18:27:41
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -64,45 +64,6 @@ def plot_region(ax):
                np.where(time_str == "2025-12-31T23:50:00")[0][0], 
                 color="C1", alpha=0.1, zorder=1)
 
-
-
-def uq_in_stochastic_or_mcmc1(source, key, stochastic_id, num_draw):
-    
-    value = []
-    
-    for mcmc_draw in range(2, num_draw + 1, 1):
-        monitor_MAP = Path(project_root) / f'pipeline/run_2004_2025_posterior/v0dot4/theta_{mcmc_draw:03d}/sed_container.nc'
-        ds_temp = xr.load_dataset(monitor_MAP)
-        
-        if source == "MCMC":
-            value_temp = ds_temp[key][:, stochastic_id].values # shape: (time,)
-        elif source == "Stochastic_MCMC":
-            value_temp = ds_temp[key].values # shape as (time, num_stochastic)
-        else:
-            raise ValueError(f"Please check your UQ source.")
-        
-        value_temp = unit_converter(input=value_temp, catchment_area=4.83, method="area-aggregated")
-        value.append(value_temp)
-        
-        del ds_temp # release memory
-    
-    # for MCMC
-    # value is (time, num_draws)
-    
-    # for Stochastic_MCMC
-    # value is (time, num_draws × num_stochastic)
-
-    value = np.column_stack(value)
-    print(f"source={source}, key={key}, stochastic_id={stochastic_id}, num_draw={num_draw}, value.shape={value.shape}")
-    
-    q05 = np.quantile(a=value, q=0.05, axis=1)
-    q50 = np.quantile(a=value, q=0.50, axis=1)
-    q95 = np.quantile(a=value, q=0.95, axis=1)
-
-    y_mean = np.mean(value, axis=1)
-    y_std = np.std(value, axis=1, ddof=1)
-
-    return q05, q50, q95, y_mean, y_std
 
 def uq_in_stochastic_or_mcmc(source, key, stochastic_id, num_draw):
     
