@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-12T11:28:43
+# __modification time__ = Last modified: 2026-06-21T17:52:28
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 # __note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
@@ -522,11 +522,12 @@ def trans_model(large_ls, small_ls, Qs, modelled_SWE,
     small_ls = redistribute_ls_time(daily_ls=small_ls, desired_freq=desired_freq, redistribute_method="fixed")
 
     ls = large_ls.iloc[:, 0].values + small_ls.iloc[:, 0].values # type: ignore
-    if len(ls) != len(Qs) is True:
+    if len(ls) != len(Qs):
         print(f"Warning!"
               f"length Qs != ls.\n"
               f"len(Qs) = {len(Qs)}, len(ls) = {len(ls)}")
         print(f"<ls> will be slice as same length as <Qs>")
+        ls = ls[:len(Qs)]
         
     # initialize
     num_data = len(Qs)  # length of time series

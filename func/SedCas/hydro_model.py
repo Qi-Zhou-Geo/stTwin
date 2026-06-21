@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-12T11:28:14
+# __modification time__ = Last modified: 2026-06-21T17:32:21
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 # __note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
@@ -500,6 +500,13 @@ def h_model(snow_acc, snow_melt,
                                                               current_storage, w_storage_cap, w_residence_time)
         # update the current_storage
         current_storage = c_w_storage_updated
+        
+        # ensures (1,) arrays and 0-d arrays are both reduced to scalars
+        AET_t = np.asarray(AET_t).squeeze()
+        Qss_t = np.asarray(Qss_t).squeeze()
+        Qs_t = np.asarray(Qs_t).squeeze()
+        current_storage = np.asarray(current_storage).squeeze()
+
         # assign the values
         AET[i] = AET_t
         Qss[i] = Qss_t
