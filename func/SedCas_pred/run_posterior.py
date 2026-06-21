@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-21T16:38:16
+# __modification time__ = Last modified: 2026-06-21T18:39:53
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -160,7 +160,8 @@ def save_last_status(model, current_params_trial, current_theta):
 
 def run_posterior_sedcas(params_trial, num_iteration=100,
                          
-                         progress_bars=False, save_output=True, save_sed_container=False,
+                         progress_bars=False, save_output=True, 
+                         save_sed_container=False, save_climate_forcing=False,
                          
                          fix_ls=False, save_ls=None,
                          
@@ -229,6 +230,13 @@ def run_posterior_sedcas(params_trial, num_iteration=100,
         ds = ds.isel(time=mask)
         encoding = {var: {"zlib": True, "complevel": 4, "dtype": "float32"} for var in ds.data_vars}
         ds.to_netcdf(f"{output_dir}/sed_container.nc", engine="h5netcdf", encoding=encoding)
+
+    if save_climate_forcing is True:
+        ds = model.climate_forcing
+        mask = (ds.time_str >= select_t1) & (ds.time_str < select_t2) # type: ignore
+        ds = ds.isel(time=mask) # type: ignore
+        encoding = {var: {"zlib": True, "complevel": 4, "dtype": "float32"} for var in ds.data_vars}
+        ds.to_netcdf(f"{output_dir}/climate_forcing.nc", engine="h5netcdf", encoding=encoding)
 
 
     # plot it
