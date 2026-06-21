@@ -1,10 +1,12 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = 2026-04-29
+# __modification time__ = Last modified: 2026-06-21T18:35:14
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
+
+import argparse
 
 import time
 import schedule
@@ -26,35 +28,53 @@ sys.path.append(str(project_root))
 # import the custom functions
 from func.liveshow.t1s1_fetch_data import request_latest_10min_data
 from func.liveshow.t1s2_run_model import simulate
+from func.toolkit.logger_printer import setup_logger
 
-def run_pipeline():
+def run_pipeline(logger):
     
     try:
-        no_new_data = request_latest_10min_data()
+        is_new_data, msg = request_latest_10min_data()
     except Exception as e:
-        print(f"{UTCDateTime.now().isoformat()} \n <request_latest_10min_data> failed:\n {e}")
+        is_new_data = False
+        msg = f"<request_latest_10min_data> failed:\n {e}"
+    logger.info(msg)
 
 
-    if no_new_data is True:
+    if is_new_data is False:
+        # no new data
         pass
     else:
+        # find new data
         try:
-            simulate()
+            simulate(num_iteration=10)
         except Exception as e:
-            print(f"{UTCDateTime.now().isoformat()} \n <simulate> failed:\n {e}")
+            logger(f"<simulate> failed:\n {e}")
 
 
 
 if __name__ == "__main__":
     
+    parser = argparse.ArgumentParser(description='input parameters')
+    parser.add_argument("--output_dir", type=str, default=f"{project_root}/data/liveshow_cache")
+    parser.add_argument("--log_filename", type=str, default="t1_main_logs.txt")
+    args = parser.parse_args()
+    
+
+    # setuo logger
+    time_now = UTCDateTime.now().strftime("%Y-%m-%d")
+    log_filename = f"{time_now}_{args.log_filename}"
+    logger = setup_logger(args.output_dir, log_filename, force_reset=False)
+    
     # run it immediately
-    run_pipeline()
+    run_pipeline(logger)
     
     # repeat every 10 minutes
     schedule.every(10).minutes.do(run_pipeline)
     
+    
     while True:
         schedule.run_pending()
         time.sleep(5) # sleep 5 seconds, then heck schedule
-        print(f"{UTCDateTime.now().isoformat()}\n"
-              f"<t1-pipeline> is sleeping\n")
+        
+        msg = f"<t1-main> is sleeping.\n"
+        logger.info(msg)
