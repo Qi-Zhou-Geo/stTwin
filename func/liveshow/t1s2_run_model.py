@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-21T18:44:47
+# __modification time__ = Last modified: 2026-06-21T22:48:09
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -33,7 +33,7 @@ from func.SedCas.load_climate_input import load_climate_input4model
 
 def simulate(num_iteration=100,
              project_root=project_root, 
-             output_dir=f"data/liveshow_cache/monitoring",
+             output_dir=f"deploy/liveshow_cache/monitoring",
              select_t1="2004-01-01T00:00:00", select_t2="2050-01-01T00:00:00"):
 
     model_input_params = "SedCas_input_params_10min_QZ.yaml"
@@ -44,7 +44,7 @@ def simulate(num_iteration=100,
     climate_input_path1 = Path(project_root) / f"data/SedCas_input/climate_2004_2025_t.txt"
     df_climate1 = pd.read_csv(climate_input_path1, header=0)
     
-    climate_input_path2 = Path(project_root) / f"data/liveshow_cache/climate/climate_2026_t.txt"
+    climate_input_path2 = Path(project_root) / f"deploy/liveshow_cache/climate/climate_2026_t.txt"
     df_climate2 = pd.read_csv(climate_input_path2, header=0)
     
     df_climate = pd.concat([df_climate1, df_climate2], axis=0)
@@ -92,7 +92,7 @@ def simulate(num_iteration=100,
 
     # (6) record the meta
     last_update = f"Latest stTwin Update: {UTCDateTime().strftime('%Y-%m-%dT%H:%M:%S')} [UTC+0]"
-    json_path = Path(project_root) / f"data/liveshow_cache/monitoring/last_stTwin_update.json"
+    json_path = Path(project_root) / f"deploy/liveshow_cache/monitoring/last_stTwin_update.json"
     json_path.parent.mkdir(parents=True, exist_ok=True)
     with open(json_path, "w") as f:
         json.dump({"last_update": last_update}, f)

@@ -1,11 +1,12 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-19T17:15:30
+# __modification time__ = Last modified: 2026-06-22T09:31:17
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
 
+import argparse
 import numpy as np
 
 #region ### add the sys.path to search for custom modules ###
@@ -22,10 +23,27 @@ sys.path.append(str(project_root))
 
 
 # import the custom functions
-from func.liveshow.t2s3_dash_baord import app
+from func.liveshow.t2s3_dash_baord import create_app
+from func.toolkit.logger_printer import setup_logger
 
 
 if __name__ == "__main__":
+    
+    parser = argparse.ArgumentParser(description='input parameters')
+    parser.add_argument("--host", type=str, default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8050)
+    
+    parser.add_argument("--output_dir", type=str, default=f"{project_root}/deploy/liveshow_cache/logs")
+    parser.add_argument("--log_filename", type=str, default="t2_main_logs.txt")
+    args = parser.parse_args()
+    
+
+    # setup logger
+    logger = setup_logger(args.output_dir, args.log_filename, force_reset=False)
+    
+    # run app
+    app = create_app()
+    
     # host="127.0.0.1"
     # Binds the app only to localhost (same machine access only)
 
@@ -35,4 +53,4 @@ if __name__ == "__main__":
     # debug=False
     # Disable Flask debug mode for stability in production
     
-    app.run(host="127.0.0.1", port=8050, debug=False)
+    app.run(host=args.host, port=args.port, debug=False)

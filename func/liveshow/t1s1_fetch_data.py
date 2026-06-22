@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-21T16:19:32
+# __modification time__ = Last modified: 2026-06-21T22:49:05
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -50,7 +50,7 @@ def request_latest_10min_data(station="mve", time_resolution="10 minutes"):
     
     # prepare the output dir
     time_year = UTCDateTime.now().year
-    txt_dir = Path(project_root) / f"data/liveshow_cache/climate"
+    txt_dir = Path(project_root) / f"deploy/liveshow_cache/climate"
     txt_path = Path(txt_dir) / f"climate_{time_year}_t.txt"
     txt_path.parent.mkdir(parents=True, exist_ok=True)
 

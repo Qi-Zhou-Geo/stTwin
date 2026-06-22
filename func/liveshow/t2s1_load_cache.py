@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-21T18:40:26
+# __modification time__ = Last modified: 2026-06-22T09:11:38
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
@@ -33,7 +33,7 @@ sys.path.append(str(project_root))
 def load_cache_monitoring(data_type, t1="2025-01-01T00:00:00", t2="2036-01-01T00:00:00"):
 
 
-    data_path = Path(project_root) / "data/liveshow_cache/monitoring"
+    data_path = Path(project_root) / f"deploy/liveshow_cache/monitoring"
     key1 = "output"
     hydro_key = ""
     sed_key = "_Q50"
@@ -72,10 +72,9 @@ def load_cache_monitoring(data_type, t1="2025-01-01T00:00:00", t2="2036-01-01T00
     vars_to_keep  = list(vars_dict.keys())
     ds_sub = ds_merged[vars_to_keep]
 
-    print(f"{UTCDateTime.now().isoformat()}\n"
-        f"<load_cache> with latest data <{ds_sub.coords['time_str'].values[-1]}> \n")
+    msg = (f"<load_cache> with latest data <{ds_sub.coords['time_str'].values[-1]}> \n")
 
-    return ds_sub, vars_dict
+    return msg, ds_sub, vars_dict
 
 def load_cache_whatif(data_type, whatif_type=None, t1="2023-01-01T00:00:00", t2="2026-01-01T00:00:00"):
 
@@ -119,8 +118,7 @@ def load_cache_whatif(data_type, whatif_type=None, t1="2023-01-01T00:00:00", t2=
     vars_to_keep  = list(vars_dict.keys())
     ds_sub_whatif = ds_merged[vars_to_keep]
 
-    print(f"{UTCDateTime.now().isoformat()}\n"
-        f"<load_cache> with latest data <{ds_sub_whatif.coords['time_str'].values[-1]}> \n")
+    msg = f"<load_cache> with latest data <{ds_sub_whatif.coords['time_str'].values[-1]}> \n"
 
 
     # real-monitoring with fixed ls
@@ -159,4 +157,4 @@ def load_cache_whatif(data_type, whatif_type=None, t1="2023-01-01T00:00:00", t2=
     vars_to_keep  = list(vars_dict.keys())
     ds_sub_monitoring = ds_merged[vars_to_keep]
 
-    return ds_sub_whatif, vars_dict_whatif, ds_sub_monitoring, vars_dict_monitoring
+    return msg, ds_sub_whatif, vars_dict_whatif, ds_sub_monitoring, vars_dict_monitoring

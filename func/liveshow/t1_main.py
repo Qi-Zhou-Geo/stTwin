@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-21T18:35:14
+# __modification time__ = Last modified: 2026-06-22T09:10:06
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
@@ -33,7 +33,7 @@ from func.toolkit.logger_printer import setup_logger
 def run_pipeline(logger):
     
     try:
-        is_new_data, msg = request_latest_10min_data()
+        is_new_data, msg = request_latest_10min_data(station="mve", time_resolution="10 minutes")
     except Exception as e:
         is_new_data = False
         msg = f"<request_latest_10min_data> failed:\n {e}"
@@ -46,24 +46,23 @@ def run_pipeline(logger):
     else:
         # find new data
         try:
-            simulate(num_iteration=10)
+            simulate(num_iteration=50)
         except Exception as e:
-            logger(f"<simulate> failed:\n {e}")
+            msg = f"<simulate> failed:\n {e}"
+            logger.info(msg)
 
 
 
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='input parameters')
-    parser.add_argument("--output_dir", type=str, default=f"{project_root}/data/liveshow_cache")
+    parser.add_argument("--output_dir", type=str, default=f"{project_root}/deploy/liveshow_cache/logs")
     parser.add_argument("--log_filename", type=str, default="t1_main_logs.txt")
     args = parser.parse_args()
     
 
     # setuo logger
-    time_now = UTCDateTime.now().strftime("%Y-%m-%d")
-    log_filename = f"{time_now}_{args.log_filename}"
-    logger = setup_logger(args.output_dir, log_filename, force_reset=False)
+    logger = setup_logger(args.output_dir, args.log_filename, force_reset=False)
     
     # run it immediately
     run_pipeline(logger)

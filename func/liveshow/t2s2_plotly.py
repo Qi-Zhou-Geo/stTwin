@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-19T17:15:41
+# __modification time__ = Last modified: 2026-06-22T09:12:12
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
@@ -113,7 +113,8 @@ def plotly_multi_time_series_xr(xr_dataset,
     fig.update_xaxes(title_text="Time [UTC+0]", row=n, col=1)
 
     last_metro_swiss = f"Latest MetroSwiss Data: {xr_dataset.coords['time_str'].values[-1]} [UTC+0]"
-    with open(f"{project_root}/data/liveshow_cache/monitoring/last_stTwin_update.json", "r") as f:
+    json_path = Path(project_root) / f"deploy/liveshow_cache/monitoring/last_stTwin_update.json"
+    with open(json_path, "r") as f:
         temp = json.load(f)
     last_update = temp["last_update"]
 
