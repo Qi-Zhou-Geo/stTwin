@@ -1,0 +1,53 @@
+# service 1
+services:
+  sedcas:
+
+    # Build Docker image
+    build:
+      context: /home/ubuntu/stTwin
+      dockerfile: /home/ubuntu/stTwin/deploy/Dockerfile
+    
+    # Inside the container, use "/app" as the working folder.
+    working_dir: /app
+
+    # start the work flow
+    command: python /app/func/liveshow/t1_main.py
+
+    # Restart the container automatically if it crashes
+    restart: always
+
+    # Share folders between the real server and the docker container
+    volumes:
+      ## Mount this folder between the "Docker container" and the "server"
+      ## two-way mount: "Docker container" <<-->> "server"
+      - /home/ubuntu/stTwin/deploy/liveshow_cache/logs:/app/deploy/liveshow_cache/logs
+
+    # Environment variables passed into the container.
+    environment:
+      - PYTHONUNBUFFERED=1
+
+# service 2
+  dashboard:
+
+    build:
+      context: /home/ubuntu/stTwin
+      dockerfile: /home/ubuntu/stTwin/deploy/Dockerfile
+
+    working_dir: /app
+    command: python /app/func/liveshow/t2_main.py --host 0.0.0.0 --port 8050
+    restart: always
+    volumes:
+      - /home/ubuntu/stTwin/deploy/liveshow_cache/logs:/app/deploy/liveshow_cache/logs
+
+    environment:
+      - PYTHONUNBUFFERED=1
+
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+
+    command: tunnel --url http://dashboard:8050 --protocol http2
+    restart: always
+    
+    depends_on:
+      - dashboard

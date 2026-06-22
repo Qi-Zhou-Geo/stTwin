@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-22T09:10:06
+# __modification time__ = Last modified: 2026-06-22T11:00:16
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
@@ -68,8 +68,8 @@ if __name__ == "__main__":
     run_pipeline(logger)
     
     # repeat every 10 minutes
-    schedule.every(10).minutes.do(run_pipeline)
-    
+    schedule.every(10).minutes.do(run_pipeline, logger)
+
     
     while True:
         schedule.run_pending()

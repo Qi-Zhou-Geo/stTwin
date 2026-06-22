@@ -1,5 +1,5 @@
 ```sh
-# Last Update: Last modified: 2026-06-17T09:18:53
+# Last Update: Last modified: 2026-06-21T21:52:55
 # Author: Qi Zhou
 ```
 
@@ -16,4 +16,4 @@ sudo apt install -y bzip2
 ### 2. Connect by ssh and play it like a normal server
 
 
-### 3. Run the python tasks as service, check the [workflow](aws/pipeline/run_liveshow#Run_AWS.md)
+### 3. Run the python tasks as service, check the [workflow](../config/aws/pipeline/run_liveshow#Run_AWS.md)

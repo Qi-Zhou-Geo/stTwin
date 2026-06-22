@@ -1,4 +1,4 @@
-# Last Update: Last modified: 2026-06-16T22:18:24
+# Last Update: Last modified: 2026-06-19T17:06:27
 # Author: Qi Zhou
 
 # Base image: lightweight micromamba environment (conda-forge compatible)
@@ -19,6 +19,7 @@ RUN micromamba create -y -n env-qz -f /tmp/environment.yml && micromamba clean -
 ENV MAMBA_DOCKERFILE_ACTIVATE=1
 
 # Copy full project
+# If you want to ingore something, add it to ".dockerignore"
 COPY . /project
 
 

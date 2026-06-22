@@ -1,5 +1,5 @@
 ```sh
-# Last Update: Last modified: 2026-06-17T15:13:52
+# Last Update: Last modified: 2026-06-22T09:47:49
 # Author: Qi Zhou
 ```
 
@@ -21,9 +21,9 @@ ls
 Make sure your Docker desktop App is running.
 
 ```sh
-docker build -f config/Dockerfile -t st-image:dev .
+docker build -f deploy/Dockerfile -t st-image:dev .
 # docker build >> create a Docker image
-# -f config/Dockerfile >> use this specific Dockerfile
+# -f deploy/Dockerfile >> use this specific Dockerfile
 # -t st-image:dev >> name the image "st-image", tag it as "dev"
 # . >> use current directory as the build context (project root)
 ```
@@ -101,7 +101,7 @@ Align this tag version with the GitHub tag. <br>
 You can change the image name and tag as needed.<br>
 Name the image "st-image", tag it as "dev". 
 ```sh
-docker build -f config/Dockerfile -t st-image:v0dot1 .
+docker build -f deploy/Dockerfile -t st-image:v0dot1 .
 ```
 ---
 

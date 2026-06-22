@@ -1,4 +1,4 @@
-# Last Update: Last modified: 2026-06-19T16:44:02
+# Last Update: Last modified: 2026-06-19T17:09:05
 # Author: Qi Zhou
 
 name: st-twin
@@ -57,7 +57,7 @@ dependencies:
 
   # Download data
   - requests=2.34.2
-  - aramiko=5.0.0
+  - paramiko=5.0.0
 
   # pip-only
   - pip:
