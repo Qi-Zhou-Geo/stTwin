@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-22T09:41:54
+# __modification time__ = Last modified: 2026-06-22T16:33:34
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
@@ -29,7 +29,7 @@ from func.SedCas_whatif.create_bound import load_what_if_bound
 from func.toolkit.logger_printer import setup_logger
 
 
-logger = setup_logger(f"{project_root}/deploy/liveshow_cache/logs", "t2_main_logs.txt", force_reset=False)
+logger = setup_logger(f"{project_root}/deploy/liveshow_cache/logs", "t2_main.log", force_reset=False)
 font_global = {"fontFamily": "Arial, sans-serif", "fontSize": "12px", "color": "#2d2d2d"}
 
 
@@ -226,7 +226,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8050)
     
     parser.add_argument("--output_dir", type=str, default=f"{project_root}/deploy/liveshow_cache/logs")
-    parser.add_argument("--log_filename", type=str, default="t2_main_logs.txt")
+    parser.add_argument("--log_filename", type=str, default="t2_main.log")
     args = parser.parse_args()
     
 

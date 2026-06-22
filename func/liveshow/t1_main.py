@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-22T11:00:16
+# __modification time__ = Last modified: 2026-06-22T19:51:23
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
@@ -10,7 +10,6 @@ import argparse
 
 import time
 import schedule
-from obspy import UTCDateTime
 
 #region ### add the sys.path to search for custom modules ###
 import sys
@@ -46,7 +45,7 @@ def run_pipeline(logger):
     else:
         # find new data
         try:
-            simulate(num_iteration=50)
+            simulate(num_iteration=10)
         except Exception as e:
             msg = f"<simulate> failed:\n {e}"
             logger.info(msg)
@@ -57,7 +56,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='input parameters')
     parser.add_argument("--output_dir", type=str, default=f"{project_root}/deploy/liveshow_cache/logs")
-    parser.add_argument("--log_filename", type=str, default="t1_main_logs.txt")
+    parser.add_argument("--log_filename", type=str, default="t1_main.log")
     args = parser.parse_args()
     
 

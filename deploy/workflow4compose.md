@@ -1,5 +1,5 @@
 ```sh
-# Last Update: Last modified: 2026-06-22T09:54:45
+# Last Update: Last modified: 2026-06-22T18:57:01
 # Author: Qi Zhou
 ```
 
@@ -27,6 +27,9 @@ docker compose up -d --build
 ### 2. Check the status
 ```sh
 docker compose ps
+# docker compose logs --tail=100 sedcas
+# docker compose logs --tail=100 dashboard
+# docker compose logs --tail=100 cloudflared
 ```
 ---
 

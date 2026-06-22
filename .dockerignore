@@ -11,6 +11,7 @@
 .idea/
 .DS_Store
 .vscode
+.git/
 
 task.md
 log_print.txt
@@ -18,6 +19,18 @@ log_print.txt
 temp_test.py
 run_temp_test.sh
 
+
 # ingore the folder and all files
-data/
-.git/
+config/SedCas-main
+
+data/seismic
+data/event_catalog
+
+demo
+
+func/bayesian_inference/plots
+
+deploy/st-image.tar
+
+pipeline
+plotting

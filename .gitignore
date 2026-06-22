@@ -25,12 +25,15 @@ config/SedCas-main/1h/sed_container_2004_2018.nc
 
 
 # data
-data/liveshow_cache
-data/seismic_temp
+data/seismic
 data/SedCas_ls
 data/SedCas_whatif_input
 data/open_access
 data/SedCas_input/climate_2004_2025_t.txt
+
+# deploy cache
+deploy/liveshow_cache
+deploy/st-image.tar
 
 # func
 func/SedCas/1h

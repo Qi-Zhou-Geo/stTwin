@@ -1,3 +1,8 @@
+```sh
+# Last Update: Last modified: 2026-06-19T17:16:45
+# Author: Qi Zhou
+```
+
 ## 📢 Welcome to **stTwin**
 A digital twin framework for catchment-scale sediments transport.
 ---

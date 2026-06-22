@@ -1,4 +1,4 @@
-# Last Update: Last modified: 2026-06-19T17:06:27
+# Last Update: Last modified: 2026-06-22T13:17:59
 # Author: Qi Zhou
 
 # Base image: lightweight micromamba environment (conda-forge compatible)
@@ -6,7 +6,7 @@ FROM mambaorg/micromamba:1.5.10
 
 # Set default folder as "app"
 # All commands inside this container will run in "/app"
-WORKDIR /project
+WORKDIR /app
 
 # Copy mamba env definition
 # Remember to change the "FD4seis.yml" if you switch the project
@@ -20,12 +20,12 @@ ENV MAMBA_DOCKERFILE_ACTIVATE=1
 
 # Copy full project
 # If you want to ingore something, add it to ".dockerignore"
-COPY . /project
+COPY . /app
 
 
 # Make copied files readable by the runtime user
 USER root
-RUN chown -R mambauser:mambauser /project && chmod -R u+rwX,go+rX /project
+RUN chown -R mambauser:mambauser /app && chmod -R u+rwX,go+rX /app
 
 # Switch back to the default non-root user for safer runtime execution
 USER mambauser

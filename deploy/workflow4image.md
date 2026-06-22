@@ -1,5 +1,5 @@
 ```sh
-# Last Update: Last modified: 2026-06-22T09:47:49
+# Last Update: Last modified: 2026-06-22T13:19:42
 # Author: Qi Zhou
 ```
 
@@ -26,6 +26,8 @@ docker build -f deploy/Dockerfile -t st-image:dev .
 # -f deploy/Dockerfile >> use this specific Dockerfile
 # -t st-image:dev >> name the image "st-image", tag it as "dev"
 # . >> use current directory as the build context (project root)
+
+# docker build -f deploy/Dockerfile --platform linux/amd64 -t st-image:dev .
 ```
 ---
 
@@ -110,5 +112,18 @@ docker build -f deploy/Dockerfile -t st-image:v0dot1 .
 Push the versioned image for full reproducibility.
 ```sh
 docker push st-image:v0dot1
+```
+---
+
+
+### 8. Save and load the image
+Save to local PC
+```sh
+docker save -o deploy/st-image.tar st-image:dev
+```
+
+Once you upload it server
+```sh
+docker load -i deploy/st-image.tar
 ```
 ---

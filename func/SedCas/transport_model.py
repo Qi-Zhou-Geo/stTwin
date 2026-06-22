@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-21T17:52:28
+# __modification time__ = Last modified: 2026-06-22T20:05:56
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 # __note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
@@ -523,10 +523,12 @@ def trans_model(large_ls, small_ls, Qs, modelled_SWE,
 
     ls = large_ls.iloc[:, 0].values + small_ls.iloc[:, 0].values # type: ignore
     if len(ls) != len(Qs):
-        print(f"Warning!"
+        
+        msg = (f"Warning!"
               f"length Qs != ls.\n"
               f"len(Qs) = {len(Qs)}, len(ls) = {len(ls)}")
-        print(f"<ls> will be slice as same length as <Qs>")
+        msg = (f"<ls> will be slice as same length as <Qs>")
+        
         ls = ls[:len(Qs)]
         
     # initialize
