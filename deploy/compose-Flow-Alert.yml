@@ -1,6 +1,6 @@
 # service 1
 services:
-  sedcas:
+  flow-alert:
 
     # Build Docker image
     # build:
@@ -8,7 +8,7 @@ services:
     #   dockerfile: ${PROJECT_ROOT}/deploy/Dockerfile
     
     # Or use the loaded imgae
-    image: st-image:dev
+    image: fa-image:dev
 
     # run as root, it may overwrite host files
     user: "0:0"
@@ -17,7 +17,7 @@ services:
     working_dir: ${WORKING_ROOT}
 
     # start the work flow in container
-    command: ${WORKING_ROOT}/func/liveshow/t1_main.py
+    command: ${WORKING_ROOT}/func/liveshow/t3_main.py
 
     # Restart the container automatically if it crashes
     restart: always
@@ -31,34 +31,3 @@ services:
     # Environment variables passed into the container.
     environment:
       - PYTHONUNBUFFERED=1
-
-# service 2
-  dashboard:
-
-    image: st-image:dev
-    user: "0:0"
-
-    working_dir: ${WORKING_ROOT}
-    command: ${WORKING_ROOT}/func/liveshow/t2_main.py --host 0.0.0.0 --port 8050
-
-    restart: always
-    volumes:
-      - ${CACHE_DIR_HOST}:${CACHE_DIR_CONTAINER}
-
-    environment:
-      - PYTHONUNBUFFERED=1
-
-# cloudflare
-  cloudflared:
-  
-    image: cloudflare/cloudflared:latest
-    user: "0:0"
-    
-    command: tunnel --url http://dashboard:8050 --protocol http2 --logfile ${CACHE_DIR_CONTAINER}/log/t3_main.log --loglevel info
-    
-    restart: always
-    volumes:
-      - ${CACHE_DIR_HOST}:${CACHE_DIR_CONTAINER}
-    
-    depends_on:
-      - dashboard

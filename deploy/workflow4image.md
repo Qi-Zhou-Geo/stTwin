@@ -1,5 +1,5 @@
 ```sh
-# Last Update: Last modified: 2026-06-22T13:19:42
+# Last Update: Last modified: 2026-06-24T12:32:06
 # Author: Qi Zhou
 ```
 
@@ -21,13 +21,13 @@ ls
 Make sure your Docker desktop App is running.
 
 ```sh
-docker build -f deploy/Dockerfile -t st-image:dev .
+docker build -f deploy/Dockerfile.stTwin -t st-image:dev .
 # docker build >> create a Docker image
-# -f deploy/Dockerfile >> use this specific Dockerfile
+# -f deploy/Dockerfile.stTwin >> use this specific Dockerfile
 # -t st-image:dev >> name the image "st-image", tag it as "dev"
 # . >> use current directory as the build context (project root)
 
-# docker build -f deploy/Dockerfile --platform linux/amd64 -t st-image:dev .
+# docker build -f deploy/Dockerfile.stTwin --platform linux/amd64 -t st-image:dev .
 ```
 ---
 
@@ -88,42 +88,17 @@ docker run -it --rm \
 ---
 
 
-### 6-1. Release/Publish stage by Github
-Export the current environment, then build the image. <br>
-If the build passes, proceed to publish.
-
-```sh
-mamba env export -n fd --no-builds > config/environment.yml
-```
----
-
-
-### 6-2. Release/Publish stage by Docker Hub
-Align this tag version with the GitHub tag. <br>
-You can change the image name and tag as needed.<br>
-Name the image "st-image", tag it as "dev". 
-```sh
-docker build -f deploy/Dockerfile -t st-image:v0dot1 .
-```
----
-
-
-### 7. Publish image to Docker Hub
-Push the versioned image for full reproducibility.
-```sh
-docker push st-image:v0dot1
-```
----
-
-
-### 8. Save and load the image
+### 6. Save and load the image
 Save to local PC
 ```sh
 docker save -o deploy/st-image.tar st-image:dev
+# docker save -o deploy/fa-image.tar fa-image:dev
 ```
 
 Once you upload it server
 ```sh
-docker load -i deploy/st-image.tar
+# now you should in "deploy" folder
+docker load -i st-image.tar
+# docker load -i fa-image.tar
 ```
 ---

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-24T11:31:54
+# __modification time__ = Last modified: 2026-06-24T12:23:26
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
@@ -25,17 +25,18 @@ sys.path.append(str(project_root))
 
 
 # import the custom functions
-from func.liveshow.t1s1_fetch_data import request_latest_10min_data
-from func.liveshow.t1s2_run_model import simulate
+from func.liveshow.t3s1_download_seismic import check_new_data_name, download_new_data
 from func.toolkit.logger_printer import setup_logger
+
 
 def run_pipeline(logger):
     
     try:
-        is_new_data, msg = request_latest_10min_data(station="mve", time_resolution="10 minutes")
+        is_new_data, new_data_name, msg = check_new_data_name()
     except Exception as e:
         is_new_data = False
-        msg = f"<request_latest_10min_data> failed:\n {e}"
+        new_data_name = []
+        msg = f"<check_new_data_name> failed:\n {e}"
     logger.info(msg)
 
 
@@ -45,9 +46,9 @@ def run_pipeline(logger):
     else:
         # find new data
         try:
-            simulate(num_iteration=10)
+            download_new_data(new_data_name, logger)
         except Exception as e:
-            msg = f"<simulate> failed:\n {e}"
+            msg = f"<download_new_data> failed:\n {e}"
             logger.info(msg)
 
 
@@ -56,7 +57,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='input parameters')
     parser.add_argument("--output_dir", type=str, default=f"{project_root}/deploy/liveshow_cache/logs")
-    parser.add_argument("--log_filename", type=str, default="t1_main.log")
+    parser.add_argument("--log_filename", type=str, default="t3_main.log")
     args = parser.parse_args()
     
 
@@ -66,13 +67,13 @@ if __name__ == "__main__":
     # run it immediately
     run_pipeline(logger)
     
-    # repeat every 10 minutes
-    schedule.every(10).minutes.do(run_pipeline, logger)
+    # repeat every 1 minutes
+    schedule.every(1).minutes.do(run_pipeline, logger)
 
     
     while True:
         schedule.run_pending()
         time.sleep(5) # sleep 5 seconds, then check schedule
         
-        msg = f"<t1-main> is sleeping.\n"
+        msg = f"<t3-main> is sleeping.\n"
         logger.info(msg)

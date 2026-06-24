@@ -1,4 +1,4 @@
-# Last Update: Last modified: 2026-06-22T13:17:59
+# Last Update: Last modified: 2026-06-24T12:15:01
 # Author: Qi Zhou
 
 # Base image: lightweight micromamba environment (conda-forge compatible)
@@ -10,7 +10,7 @@ WORKDIR /app
 
 # Copy mamba env definition
 # Remember to change the "FD4seis.yml" if you switch the project
-COPY config/environment.yml /tmp/environment.yml
+COPY config/environment_stTwin.yml /tmp/environment.yml
 
 # Create environment (qz_env) and Clean cache (reduce image size)
 RUN micromamba create -y -n env-qz -f /tmp/environment.yml && micromamba clean --all --yes
