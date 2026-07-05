@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-07-01T12:52:05
+# __modification time__ = Last modified: 2026-07-05T12:13:30
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -64,6 +64,7 @@ sed_output = xr.open_dataset(f"{project_root}/pipeline/run_2004_2025_posterior/{
 sed_transport_real = sed_output["sed_transport_real_Q50"] # mean values
 
 
+# (1) stastic
 # region < Fix MAP, use 1-100 ls, UQ along the ls stochastic dimension > 
 cache_name = "fix_MAP__use_ls_1-100"
 key = "sed_transport_real"
@@ -215,7 +216,6 @@ pred_ratio_QZ.to_csv(f"{current_dir}/cache/{cache_name}_{key}_compare_obs.txt", 
 
 
 # (2) plot it
-
 x = np.arange(len(pred_ratio_QZ))
 width = 0.25
 subplot_idx = ["(a)", "(b)", "(c)", "(d)"]

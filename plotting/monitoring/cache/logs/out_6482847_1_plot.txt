@@ -1,0 +1,30 @@
+2026-07-03T13:32:38.586382 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/fix_MAP__use_ls_1-100_uq_in_hillslope_storage.npz
+2026-07-03T13:32:41.435515 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/fix_MAP__use_ls_1-100_uq_in_channel_storage.npz
+2026-07-03T13:32:44.433437 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/fix_MAP__use_ls_1-100_uq_in_sed_transport_real.npz
+2026-07-03T13:35:46.211203 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/fix_ls__use_MCMC_1-21_uq_in_hillslope_storage_0.npz
+2026-07-03T13:38:49.486090 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/fix_ls__use_MCMC_1-21_uq_in_hillslope_storage_49.npz
+2026-07-03T13:41:47.402529 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/fix_ls__use_MCMC_1-21_uq_in_hillslope_storage_99.npz
+2026-07-03T13:44:44.107308 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/fix_ls__use_MCMC_1-21_uq_in_channel_storage_0.npz
+2026-07-03T13:47:43.286637 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/fix_ls__use_MCMC_1-21_uq_in_channel_storage_49.npz
+2026-07-03T13:50:39.108430 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/fix_ls__use_MCMC_1-21_uq_in_channel_storage_99.npz
+2026-07-03T13:53:35.081415 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/fix_ls__use_MCMC_1-21_uq_in_sed_transport_real_0.npz
+2026-07-03T13:56:31.519755 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/fix_ls__use_MCMC_1-21_uq_in_sed_transport_real_49.npz
+2026-07-03T13:59:26.525709 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/fix_ls__use_MCMC_1-21_uq_in_sed_transport_real_99.npz
+2026-07-03T14:03:37.147689 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/use_ls_1-100__use_MCMC_1-21_uq_in_hillslope_storage.npz
+2026-07-03T14:07:30.030670 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/use_ls_1-100__use_MCMC_1-21_uq_in_channel_storage.npz
+2026-07-03T14:11:26.794084 Cache data at:
+/storage/vast-gfz-hpc-01/home/qizhou/3paper/stTwin/plotting/monitoring/cache/use_ls_1-100__use_MCMC_1-21_uq_in_sed_transport_real.npz
