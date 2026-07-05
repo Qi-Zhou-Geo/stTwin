@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-14T14:08:57
+# __modification time__ = Last modified: 2026-07-03T12:35:33
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -119,11 +119,8 @@ if __name__ == "__main__":
     posterior_h5_dir = Path(project_root) / "func/bayesian_inference/sedcas_mcmc_results.h5"
     burn_in_step = 100
     num_draw = 21
-    
-    fix_ls = True
-    save_ls = False
 
-    
+
     # (1) create the input based defined what-if scenario for model
     file_format = creat_input(scenario_idx)
     climate_frocing_input = f"climate_2023_2026_t_whatif_{file_format}.txt"
@@ -140,17 +137,27 @@ if __name__ == "__main__":
         params_trial["model_input_params"] =  "SedCas_input_params_10min_QZ.yaml"
         params_trial["project_root"] = Path(project_root)
         params_trial["output_dir"] = f'pipeline/run_whatif/{model_version}/{file_format}/theta_{str(theta_draw_idx + 1).zfill(3)}'
-
+        output_ls_dir = f"{project_root}/pipeline/run_whatif/{model_version}/{file_format}/SedCas_ls"
+        
         
         # (4) load the posterior for model
         if theta_draw_idx == 0:
             theta = get_MAP_theta(posterior_h5_dir, burn_in_step=burn_in_step)
+
+            fix_ls = False
+            save_ls = True
             plot_output = True
+            save_climate_forcing = True
         else:
             # retuen shape (num_draw, num_paramsters)
             sampled_theta = get_posterior_theta(posterior_h5_dir, num_draw=num_draw, burn_in_step=burn_in_step, fix_seed=True)
             theta = sampled_theta[theta_draw_idx, :] # select theta
+            
+            fix_ls = True
+            save_ls = False
             plot_output = False
+            save_climate_forcing = False
+            
             
         # normalize it back to real scale
         theta_names, lower_bounds, upper_bounds = custom_boundary()
@@ -178,9 +185,10 @@ if __name__ == "__main__":
         
         
         # (7) run the model, this is most expensive time-consuming part
-        model = run_posterior_sedcas(current_params_trial, num_iteration=100,
+        model = run_posterior_sedcas(current_params_trial, num_iteration=100, output_ls_dir=output_ls_dir,
                                     
-                                    progress_bars=True, save_output=True, save_sed_container=True,
+                                    progress_bars=True, save_output=True, 
+                                    save_sed_container=True, save_climate_forcing=save_climate_forcing,
                                     
                                     fix_ls=params_trial["fix_ls"], save_ls=params_trial["save_ls"],
                                     

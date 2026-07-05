@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-22T09:12:12
+# __modification time__ = Last modified: 2026-07-03T09:58:24
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
@@ -112,17 +112,29 @@ def plotly_multi_time_series_xr(xr_dataset,
     )
     fig.update_xaxes(title_text="Time [UTC+0]", row=n, col=1)
 
-    last_metro_swiss = f"Latest MetroSwiss Data: {xr_dataset.coords['time_str'].values[-1]} [UTC+0]"
-    json_path = Path(project_root) / f"deploy/liveshow_cache/monitoring/last_stTwin_update.json"
+
+    # add time stamps
+    json_path = Path(project_root) / f"deploy/liveshow_cache/monitoring/last_SedCas_update.json"
     with open(json_path, "r") as f:
         temp = json.load(f)
-    last_update = temp["last_update"]
+    last_SedCas_update = temp["Latest SedCas Update"]
+    
+    
+    json_path = Path(project_root.parent) / "Flow-Alert/deploy/liveshow_cache/pro/last_Flow-Alert_update.json"
+    with open(json_path, "r") as f:
+        temp = json.load(f)
+    last_seismic_update = temp["Latest WSL 9S-ILL12-EHZ Data"]
+    last_Flow_Alert_update = temp["Latest Flow-Alert Update"]
 
+    fig_note = (f"Latest MetroSwiss Data: {xr_dataset.coords['time_str'].values[-1]} [UTC+0]<br>Latest WSL 9S-ILL12-EHZ Data: {last_seismic_update}<br>"
+                f"Latest SedCas Update: {last_SedCas_update}<br>Latest Flow-Alert Update: {last_Flow_Alert_update}")
+    
+    
     fig.update_layout(
         autosize=True,
         showlegend=False,
         plot_bgcolor="white", paper_bgcolor="white",
-        title=dict(text=f"{last_metro_swiss}<br>{last_update}", x=0.5, xanchor="center", font=dict(size=12)),
+        title=dict(text=fig_note, x=0.55, y=0.98, xanchor="right", font=dict(size=10)),
         font=font_global,
     )
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-21T22:48:09
+# __modification time__ = Last modified: 2026-07-02T18:08:52
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -91,11 +91,11 @@ def simulate(num_iteration=100,
     mass_balance_checker(sed_container=model.sed_container, residual=1.0, iteration=None, silence=True)
 
     # (6) record the meta
-    last_update = f"Latest stTwin Update: {UTCDateTime().strftime('%Y-%m-%dT%H:%M:%S')} [UTC+0]"
-    json_path = Path(project_root) / f"deploy/liveshow_cache/monitoring/last_stTwin_update.json"
+    last_update = {f"Latest SedCas Update": f"{UTCDateTime().strftime('%Y-%m-%dT%H:%M:%S')} [UTC+0]"}
+    json_path = Path(project_root) / f"deploy/liveshow_cache/monitoring/last_SedCas_update.json"
     json_path.parent.mkdir(parents=True, exist_ok=True)
     with open(json_path, "w") as f:
-        json.dump({"last_update": last_update}, f)
+        json.dump(last_update, f)
         
     return msg
 

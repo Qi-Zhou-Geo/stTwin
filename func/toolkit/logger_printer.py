@@ -11,12 +11,12 @@ from pathlib import Path
 import logging
 
 
-def setup_logger(current_dir, 
+def setup_logger(output_dir, 
                  log_filename, 
                  level=logging.INFO, 
                  force_reset=True):
 
-    log_path = Path(current_dir) / log_filename
+    log_path = Path(output_dir) / log_filename
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
     # delete old log

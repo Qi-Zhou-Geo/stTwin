@@ -60,14 +60,19 @@ ls_volume = unit_converter(input=ls_volume, catchment_area=4.83, method="area-ag
 
 
 
-fig = plt.figure(figsize=(5, 5))
-gs = gridspec.GridSpec(1, 1)
+fig = plt.figure(figsize=(6, 4))
+gs = gridspec.GridSpec(1, 2)
 ax = plt.subplot(gs[0])
+ax.set_title(label="(a)", fontsize=7, fontweight='bold', loc="left")
+
+ax1 = plt.subplot(gs[1])
+ax1.set_title(label="(b)", fontsize=7, fontweight='bold', loc="left")
+
 
 color = "black"
 label = "Synthetic Landslide"
 zorder = 2
-alpha = 0.3
+alpha = 0.1
 
 for scenario_idx in range(0, 100):
     
@@ -77,7 +82,9 @@ for scenario_idx in range(0, 100):
     # P(V > sorted_v[i]) = (n - rank) / n, where rank is 1-indexed
     ccdf = (n - np.arange(1, n + 1)) / n  # equivalent to 1 - rank/n
     
-    ax.plot(sorted_v, ccdf, alpha=alpha, color=color, zorder=zorder)
+    # ax.plot(sorted_v, ccdf, alpha=alpha, color=color, zorder=zorder)
+    ax.scatter(sorted_v, ccdf, alpha=alpha, color=color, zorder=zorder)
+    sns.kdeplot(ls_volume[:, scenario_idx], color=color, alpha=alpha, clip=(2, 1e6), ax=ax1)
 
 ax.axvline(x=2, color="C0", ls="--", lw=1, zorder=1, label=r"Min volume = $2 \times 10^0$")
 ax.axvline(x=1000000, color="C1", ls="--", lw=1, zorder=1, label=r"Max volume = $1 \times 10^6$")
@@ -89,13 +96,23 @@ ax.legend(by_label.values(), by_label.keys(), loc="lower left")
 
 
 ax.set_xlim(1e0, 2e6)
-ax.set_ylim(1e-8, 1e-3)
+ax.set_ylim(1e-7, 1e-2)
 ax.set_xscale("log")
 ax.set_yscale("log")
 ax.set_ylabel(r"Probability $P \,\, (\, V > v \,)$", fontweight='bold')
 ax.set_xlabel(r"Landslide Volume $v$ [$\mathrm{m}^3$]", fontweight='bold')
 ax.grid(axis='both', which='major', color='grey', linestyle='--', lw=0.5, alpha=0.5, zorder=1)
 
+
+ax1.set_xlim(1e0, 2e6)
+ax1.set_ylim(1e-7, 1e-2)
+ax1.set_xscale("log")
+ax1.set_yscale("log")
+ax1.set_ylabel(f"Kernel Density Estimate", fontweight='bold')
+ax1.set_xlabel(r"Landslide Volume $v$ [$\mathrm{m}^3$]", fontweight='bold')
+ax1.grid(axis='both', which='major', color='grey', linestyle='--', lw=0.5, alpha=0.5, zorder=1)
+ax1.axvline(x=2, color="C0", ls="--", lw=1, zorder=1, label=r"Min volume = $2 \times 10^0$")
+ax1.axvline(x=1000000, color="C1", ls="--", lw=1, zorder=1, label=r"Max volume = $1 \times 10^6$")
 
 # complementary cumulative distribution function
 png_path = Path(current_dir) / f"landslide_ccdf.png"

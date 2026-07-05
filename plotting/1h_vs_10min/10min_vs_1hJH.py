@@ -158,7 +158,7 @@ x = np.arange(len(pred_ratio_QZ))
 width = 0.25
 
 subplot_idx = ["(a)", "(b)"]
-fig = plt.figure(figsize=(6, 6))
+fig = plt.figure(figsize=(6, 5))
 gs = gridspec.GridSpec(2, 1)
 
 
@@ -183,12 +183,12 @@ for subplot_id, tolerance in enumerate([1e2, 1e1]):
                 # no detection
                 ratio = 1
                 color = "orange"
-                label = "No Volume Prediction (QZ)"
+                label = "No Volume (QZ)"
                 num_no_prediction_QZ = num_no_prediction_QZ + 1
             else:
                 # succssed
                 color = "blue"
-                label = "With Volume Prediction (QZ)"
+                label = "With Volume (QZ)"
 
             ax.bar(1 + idx + width/2, ratio, width, color=color, alpha=0.7, label=label, zorder=2)
 
@@ -204,12 +204,12 @@ for subplot_id, tolerance in enumerate([1e2, 1e1]):
                 # no detection
                 ratio = 1
                 color = "red"
-                label = "No Volume Prediction (JH)"
+                label = "No Volume (JH)"
                 num_no_prediction_JH = num_no_prediction_JH + 1
             else:
                 # succssed
                 color = "C0"
-                label = "With Volume Prediction (JH)"
+                label = "With Volume (JH)"
 
             ax.bar(1 + idx - width/2, ratio, width, color=color, alpha=0.7, label=label, zorder=2)
 
@@ -225,11 +225,11 @@ for subplot_id, tolerance in enumerate([1e2, 1e1]):
                 # no detection
                 ratio = 1
                 color = "orange"
-                label = "No Volume Prediction (QZ)"
+                label = "No Volume (QZ)"
             else:
                 # succssed
                 color = "blue"
-                label = "With Volume Prediction (QZ)"
+                label = "With Volume (QZ)"
 
             ax.bar(1 + idx + width/2, ratio, width, color=color, alpha=0.7, label=label, zorder=2)
 
@@ -241,8 +241,8 @@ for subplot_id, tolerance in enumerate([1e2, 1e1]):
     ax.set_title(label=(
         rf"$\bf{{{subplot_idx[subplot_id]}}}$"
         f" {1 / tolerance} <= threshold <= {tolerance}\n"
-        f"No Volume Prediction (JH):  {num_no_prediction_JH}, {space}Log-Posterior: {g_log_like_JH:.1f}\n"
-        f"No Volume Prediction (QZ): {num_no_prediction_QZ}, Log-Posterior: {g_log_like_QZ:.1f}"), fontsize=7, loc="left")
+        f"No Volume (JH): {num_no_prediction_JH}, {space}Log-Posterior: {g_log_like_JH:.1f}; "
+        f"No Volume (QZ): {num_no_prediction_QZ}, Log-Posterior: {g_log_like_QZ:.1f}"), fontsize=7, loc="left")
 
     ax.set_ylim(1e-2, 1e2)
     ax.set_xlim(0.5, 63.5)
@@ -250,10 +250,10 @@ for subplot_id, tolerance in enumerate([1e2, 1e1]):
     handles, labels = ax.get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     ordered_labels = [
-        "With Volume Prediction (QZ)",   # row1, col1
-        "With Volume Prediction (JH)",   # row2, col1
-        "No Volume Prediction (QZ)",     # row1, col2
-        "No Volume Prediction (JH)",     # row2, col2
+        "With Volume (QZ)",   # row1, col1
+        "With Volume (JH)",   # row2, col1
+        "No Volume (QZ)",     # row1, col2
+        "No Volume (JH)",     # row2, col2
         "No Observation",                # row1, col3
         "",                              # row2, col3 (empty placeholder)
     ]
@@ -269,11 +269,12 @@ for subplot_id, tolerance in enumerate([1e2, 1e1]):
                 [1, 10, 20, 30, 40, 50, 60, 63]) # type: ignore
     # ax.set_xlim(0.5, 62.5) # coment it for 2017
 
-    ax.set_ylabel("Ratio of Predicted to Observed Volume", fontweight='bold')
+    ax.set_ylabel("", fontweight='bold')
     ax.set_xlabel("", fontweight='bold')
 
 ax = plt.subplot(gs[1])
 ax.set_xlabel("Debris Flow Event Index [from 2004 to 2017]", fontweight='bold')
+fig.text(x=0, y=0.5, s='Ratio of Predicted to Observed Volume', weight='bold', va='center', rotation='vertical')
 
 
 plt.tight_layout()

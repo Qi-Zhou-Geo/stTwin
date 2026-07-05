@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-21T17:47:35
+# __modification time__ = Last modified: 2026-07-03T12:27:50
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 # __note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
@@ -410,14 +410,23 @@ class SedCas():
         self.hydro_output = SedCas_h_model.area_weight_aggregate(hydro_container=self.hydro_container,
                                                                  weights=self.cfg.area_ratio_HRU.value)
 
-    def run_sediment(self, seed_i, iteration, sed_container, fix_ls=False, save_ls=False):
-
-        if fix_ls is True:
-            output_ls = Path(project_root) / "data" / "SedCas_ls"
-            cached_ls = f"{iteration:03d}.nc" # "000.nc" # 
-            print(f"{UTCDateTime.now().isoformat()}\nLoad cached landslides from: {output_ls}/{cached_ls}")
+    def run_sediment(self, seed_i, iteration, sed_container, fix_ls=False, save_ls=False, output_ls_dir=None):
+        
+        # parepare the landsldies output path and file name
+        if output_ls_dir is None:
+            # default path
+            output_ls_dir = Path(project_root) / f"data/SedCas_ls"
+        else:
+            # custom path
+            output_ls_dir = Path(output_ls_dir)
             
-            ds_ls = xr.open_dataset(f"{output_ls}/{cached_ls}") 
+        output_ls_dir.parent.mkdir(parents=True, exist_ok=True)
+        ls_path = Path(output_ls_dir) / f"{iteration:03d}.nc"
+        
+        
+        if fix_ls is True:
+            ds_ls = xr.open_dataset(ls_path)
+            print(f"{UTCDateTime.now().isoformat()}\nLoad cached landslides from: {ls_path}")
             
             # as 'pandas.core.frame.DataFrame'
             # shape by [time, landslides magnitude[mm]]
@@ -425,6 +434,7 @@ class SedCas():
             small_ls = ds_ls["small_ls"].to_pandas()
         else:
             print(f"{UTCDateTime.now().isoformat()}\nUse generated landslides.")
+            
             # region <generate the large landslides>
             # generate the time series area-normalized landslide thickness
 
@@ -479,12 +489,9 @@ class SedCas():
                     "large_ls": (("time", "ls_id"), large_ls.values),
                     "small_ls": (("time", "ls_id"), small_ls.values),
                     },
-                    coords={"time": large_ls.index, "ls_id": large_ls.columns}
-                )
+                    coords={"time": large_ls.index, "ls_id": large_ls.columns})
 
-                output_ls = Path(project_root) / "data" / "SedCas_ls"
-                os.makedirs(output_ls, exist_ok=True)
-                ds_ls.to_netcdf(f"{output_ls}/{iteration:03d}.nc")
+                ds_ls.to_netcdf(ls_path)
             
 
         # region <mix water and sediments>
@@ -543,14 +550,14 @@ class SedCas():
         return sed_run
 
     # for combine model together
-    def run_stochastic_simulations(self, seed=0, num_iteration=None, progress_bars=True, fix_ls=False, save_ls=None):
+    def run_stochastic_simulations(self, seed=0, num_iteration=None, progress_bars=True, fix_ls=False, save_ls=None, output_ls_dir=None):
 
         # sediment module with stochastic landslide magnitudes
         if num_iteration is None:
             # default is 100 times
-            num_iteration = self.cfg.num_iteration.value
+            num_iteration = self.cfg.num_iteration.value # type: ignore
         else:
-            self.cfg.num_iteration.value = int(num_iteration)
+            self.cfg.num_iteration.value = int(num_iteration) # type: ignore
 
         self.sed_container = self._create_sed_dataset(num_iteration=num_iteration)
 
@@ -560,9 +567,11 @@ class SedCas():
             iterator = tqdm(iterator,
                             desc="running sediment model by stochastic simulations",
                             file=sys.stdout)
-        # loop
+        
+        # loop all iterations
         for iteration in iterator:
-            sed_run = self.run_sediment(seed_i=seed, iteration=iteration, sed_container=self.sed_container, fix_ls=fix_ls, save_ls=save_ls)
+            sed_run = self.run_sediment(seed_i=seed, iteration=iteration, sed_container=self.sed_container, 
+                                        fix_ls=fix_ls, save_ls=save_ls, output_ls_dir=output_ls_dir) # type: ignore
             seed = seed + 1
 
         # calculate the stastic values

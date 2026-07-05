@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-22T20:04:31
+# __modification time__ = Last modified: 2026-07-02T17:48:08
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     logger = setup_logger(args.output_dir, args.log_filename, force_reset=False)
     
     # wait the sedcas finish
-    json_path = Path(project_root) / f"deploy/liveshow_cache/monitoring/last_stTwin_update.json"
+    json_path = Path(project_root) / f"deploy/liveshow_cache/monitoring/last_SedCas_update.json"
     timeout_seconds = 1200  # maximum wait is 10 minutes
     elapsed = 0
     

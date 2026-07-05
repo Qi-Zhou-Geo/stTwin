@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-#__modification time__ = Last modified: 2026-06-16T18:59:37
+#__modification time__ = Last modified: 2026-06-19T17:13:09
 #__author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 #__find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 # Please do not distribute this code without the author's permission
@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-print("This is a package version check.")
+print("This is a package-version checker.")
 print(f"UTC+0 Time: {UTCDateTime.now().isoformat()}")
 
 

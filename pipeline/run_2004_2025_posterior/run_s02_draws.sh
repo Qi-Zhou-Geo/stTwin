@@ -24,7 +24,7 @@ echo "Job started at: $start_time"
 model_version="v0dot4"
 theta_draw_idx=$((SLURM_ARRAY_TASK_ID - 1)) # from 0
 
-srun python run_2004_2005_data.py \
+srun python run_2004_2025_data.py \
     --model_version "${model_version}"\
     --theta_draw_idx "${theta_draw_idx}"
 

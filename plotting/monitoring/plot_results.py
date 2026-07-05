@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-17T18:27:41
+# __modification time__ = Last modified: 2026-07-03T15:30:44
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -59,51 +59,10 @@ def plot_region(ax):
 
     ax.axvspan(np.where(time_str == "2008-09-01T00:00:00")[0][0], 
                np.where(time_str == "2012-06-08T17:00:00")[0][0], 
-                color="C3", alpha=0.1, zorder=1)
-    ax.axvspan(np.where(time_str == "2022-01-01T00:00:00")[0][0], 
+               color="C3", alpha=0.2, zorder=1, label="2008-09-01 to 2012-06-08 17:00")
+    ax.axvspan(np.where(time_str == "2023-01-01T00:00:00")[0][0], 
                np.where(time_str == "2025-12-31T23:50:00")[0][0], 
-                color="C1", alpha=0.1, zorder=1)
-
-
-def uq_in_stochastic_or_mcmc(source, key, stochastic_id, num_draw):
-    
-    value = []
-    
-    for mcmc_draw in range(2, num_draw + 1, 1):
-        monitor_MAP = Path(project_root) / f'pipeline/run_2004_2025_posterior/v0dot4/theta_{mcmc_draw:03d}/sed_container.nc'
-        ds_temp = xr.load_dataset(monitor_MAP)
-        
-        if source == "MCMC":
-            value_temp = ds_temp[key][:, stochastic_id].values # shape: (time,)
-        elif source == "Stochastic_MCMC":
-            value_temp = ds_temp[key].values # shape as (time, num_stochastic)
-            value_temp = np.quantile(a=value_temp, q=0.50, axis=1)  # shape as (time,)
-        else:
-            raise ValueError(f"Please check your UQ source.")
-        
-        value_temp = unit_converter(input=value_temp, catchment_area=4.83, method="area-aggregated")
-        
-        value.append(value_temp)
-        
-        del ds_temp # release memory
-    
-    # for MCMC
-    # value is (time, num_draws)
-    
-    # for Stochastic_MCMC
-    # value is (time, num_draws × num_stochastic)
-
-    value = np.column_stack(value)
-    print(f"source={source}, key={key}, stochastic_id={stochastic_id}, num_draw={num_draw}, value.shape={value.shape}")
-    
-    q05 = np.quantile(a=value, q=0.05, axis=1)
-    q50 = np.quantile(a=value, q=0.50, axis=1)
-    q95 = np.quantile(a=value, q=0.95, axis=1)
-
-    y_mean = np.mean(value, axis=1)
-    y_std = np.std(value, axis=1, ddof=1)
-
-    return q05, q50, q95, y_mean, y_std
+                color="C1", alpha=0.2, zorder=1, label="2023-01-01 to 2025-12-31 23:50")
 
 
 monitor_MAP = Path(project_root) / f'pipeline/run_2004_2025_posterior/v0dot4/theta_001/sed_container.nc'
@@ -136,65 +95,56 @@ for year in range(2005, 2025 + 1, 1):
 
 # region < label >
 subplot_idx = ["(a)", "(b)", "(c)"]
-y_label = ["Hillslope Storage\n" + r"[$10^5 \times \mathrm{m}^3$]", 
-           "Channel Storage\n" + r"[$10^6 \times \mathrm{m}^3$]", 
-           "Sediment Yield\n" + r"[$10^4 \times \mathrm{m}^3$]"]
+y_label = ["Hillslope Storage\n" + r"[$\times 10^5 \, \mathrm{m}^3$]", 
+           "Channel Storage\n" + r"[$\times 10^6 \, \mathrm{m}^3$]", 
+           "Sediment Yield\n" + r"[$\times 10^4 \, \mathrm{m}^3$]"]
 y_zoom = np.array([1e5, 1e6, 1e4])
-y_min = np.array([5.765e5, 0,   0]) / y_zoom
-y_max = np.array([5.770e5, 5e6, 5e4]) / y_zoom
+y_min = np.array([5.764e5, 0,   0]) / y_zoom
+y_max = np.array([5.772e5, 6e6, 6e4]) / y_zoom
 y_scale = ["linear", "linear", "linear"]
 # endregion
 
 
-
+# region < Fix MAP, use 1-100 ls, UQ along the ls stochastic dimension > 
+cache_name = "fix_MAP__use_ls_1-100"
 fig = plt.figure(figsize=(6.5, 6))
 gs = gridspec.GridSpec(3, 1)
 
 
-# Fix MCMC = MAP, UQ along the ls stochastic dimension
-zorder = 10
 monitor_MAP = Path(project_root) / f'pipeline/run_2004_2025_posterior/v0dot4/theta_001/sed_container.nc'
 ds = xr.load_dataset(monitor_MAP)
+
 for idx, key in enumerate(["hillslope_storage", "channel_storage", "sed_transport_real"]):
 
-    # region
+
     ax = plt.subplot(gs[idx])
     ax.set_title(label=f"{subplot_idx[idx]}", loc="left", fontsize=7, fontweight='bold')
     
     
-    cache_path = Path(current_dir) / f"cache/stochastic_uq_in_{key}.npz"
+    cache_path = Path(current_dir) / f"cache/{cache_name}_uq_in_{key}.npz"
     try:
         cache_data = np.load(cache_path, allow_pickle=True)
         q05, q50, q95 = cache_data["q05"], cache_data["q50"], cache_data["q95"]
-        y_mean, y_std = cache_data["y_mean"], cache_data["y_std"]
-        
-        print(f"{UTCDateTime.now().isoformat()} Load the stochastic UQ data.\n{cache_path}")
+
+        print(f"{UTCDateTime.now().isoformat()} Load data from:\n{cache_path}")
     except:
-        value = ds[key].values # shape as (time, num_stochastic)
+        value = ds[key].values # shape as (time, num_ls_stochastic)
         value = unit_converter(input=value, catchment_area=4.83, method="area-aggregated")
 
         q05 = np.quantile(a=value, q=0.05, axis=1) # collapse the num_stochastic dimension
         q50 = np.quantile(a=value, q=0.50, axis=1) # collapse the num_stochastic dimension
         q95 = np.quantile(a=value, q=0.95, axis=1) # collapse the num_stochastic dimension
 
-        y_mean = np.mean(value, axis=1) # collapse the num_stochastic dimension
-        y_std = np.std(value, axis=1, ddof=1) # collapse the num_stochastic dimension
-        
         cache_path.parent.mkdir(parents=True, exist_ok=True)
-        np.savez_compressed(cache_path, q05=q05, q50=q50, q95=q95, y_mean=y_mean, y_std=y_std)
-        print(f"{UTCDateTime.now().isoformat()} Cache the stochastic UQ data.\n{cache_path}")
+        np.savez_compressed(cache_path, q05=q05, q50=q50, q95=q95)
+        print(f"{UTCDateTime.now().isoformat()} Cache data at:\n{cache_path}")
 
-
-    # y = y_mean
-    # y1 = y_mean - y_std
-    # y2 = y_mean + y_std
-    
     y = q50 / y_zoom[idx]
     y1 = q05 / y_zoom[idx]
     y2 = q95 / y_zoom[idx]
 
-    ax.plot(x, y, color="C2", zorder=zorder, alpha=0.75, label="Q50 (draw=MAP)")
-    ax.fill_between(x, y1=y1, y2=y2, color="C2", zorder=zorder - 1, alpha=0.25, label="Q5 to Q95 (draw=MAP)")
+    ax.plot(x, y, color="C0", zorder=5, alpha=0.75, label="Q50")
+    ax.fill_between(x, y1=y1, y2=y2, color="C0", zorder=4, alpha=0.25, label="Q5 to Q95")
 
     ax.set_xlim(x[0], x[-1]+1)
     ax.set_yscale(y_scale[idx])
@@ -205,61 +155,182 @@ for idx, key in enumerate(["hillslope_storage", "channel_storage", "sed_transpor
     ax.set_ylabel(y_label[idx], fontweight='bold')
     ax.set_xlabel("", fontweight='bold')
     plot_region(ax)
-    # endregion
 
 
 
-# # UQ along the stochastic (Q50) + MCMC 20 draws
-zorder = 5
-for idx, key in enumerate(["hillslope_storage", "channel_storage", "sed_transport_real"]):
 
-    # region
-    ax = plt.subplot(gs[idx])
-    ax.set_title(label=f"{subplot_idx[idx]}", loc="left", fontsize=7, fontweight='bold')
-
-    cache_path = Path(current_dir) / f"cache/stochastic_+_mcmc_uq_in_{key}.npz"
-    try:
-        cache_data = np.load(cache_path, allow_pickle=True)
-        q05, q50, q95 = cache_data["q05"], cache_data["q50"], cache_data["q95"]
-        y_mean, y_std = cache_data["y_mean"], cache_data["y_std"]
-        
-        print(f"{UTCDateTime.now().isoformat()} Load the MCMC UQ data.\n{cache_path}")
-    except:
-        q05, q50, q95, y_mean, y_std = uq_in_stochastic_or_mcmc(source="Stochastic_MCMC", key=key, stochastic_id=66, num_draw=21)
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        np.savez_compressed(cache_path, q05=q05, q50=q50, q95=q95, y_mean=y_mean, y_std=y_std)
-
-        print(f"{UTCDateTime.now().isoformat()} Cache the MCMC UQ data.\n{cache_path}")
-
-    y = q50 / y_zoom[idx]
-    y1 = q05 / y_zoom[idx]
-    y2 = q95 / y_zoom[idx]
-
-    ax.plot(x, y, color="black", zorder=zorder, alpha=0.75, label="Q50 (draw=20)")
-    ax.fill_between(x, y1=y1, y2=y2, color="black", zorder=zorder - 1, alpha=0.25, label="Q5 to Q95 (draw=20)")
-
-    ax.set_xlim(x[0], x[-1]+1)
-    ax.set_yscale(y_scale[idx])
-    ax.set_ylim(y_min[idx], y_max[idx])
-
-    ax.set_xticks(ticks_location, labels=ticks_label)
-    ax.set_xticks(minor_ticks, minor=True)
-    ax.set_ylabel(y_label[idx], fontweight='bold')
-    ax.set_xlabel("", fontweight='bold')
-    plot_region(ax)
-    # endregion
-
-
-ax = plt.subplot(gs[1])
-ax.legend(loc="upper right", fontsize=6, ncol=1)
+ax = plt.subplot(gs[0])
+ax.legend(loc="lower left", fontsize=6, ncol=4)
 
 ax = plt.subplot(gs[2])
-ax.set_xlabel("UTC+0 Time [Resolution = 10 minutes]", fontweight='bold')
+ax.set_xlabel("UTC+0 Time", fontweight='bold') #  [Resolution = 10 minutes]
 
 
 plt.tight_layout()
-png_path = Path(current_dir) / f"2004-2025_monitoring.png"
+png_path = Path(current_dir) / f"2004-2025_monitoring_MAP.png"
 png_path.parent.mkdir(parents=True, exist_ok=True)
 plt.savefig(png_path, dpi=600)
 plt.show()
 plt.close(fig)
+
+# endregion
+
+
+
+# region < Fix ls = 1 or 50 or 100, use 1-21 posterior, UQ along the MCMC dimension  > 
+cache_name = "fix_ls__use_MCMC_1-21"
+ls_scenario = [0, 49, 99]
+cmap = plt.get_cmap('viridis')
+colors = [cmap(i) for i in [0, 0.5, 0.99]]  # evenly spaced: start, middle, end
+color_dict = dict(zip(ls_scenario, colors))
+
+fig = plt.figure(figsize=(6.5, 6))
+gs = gridspec.GridSpec(3, 1)
+
+
+for idx, key in enumerate(["hillslope_storage", "channel_storage", "sed_transport_real"]):
+
+    ax = plt.subplot(gs[idx])
+    ax.set_title(label=f"{subplot_idx[idx]}", loc="left", fontsize=7, fontweight='bold')
+    
+
+    for ls_idx in ls_scenario:
+        
+        cache_path = Path(current_dir) / f"cache/{cache_name}_uq_in_{key}_{ls_idx}.npz"
+        try:
+            cache_data = np.load(cache_path, allow_pickle=True)
+            q05, q50, q95 = cache_data["q05"], cache_data["q50"], cache_data["q95"]
+
+            print(f"{UTCDateTime.now().isoformat()} Load data from:\n{cache_path}")
+        except:
+            empty_arr = []
+            for theta_idx in range(1, 21 + 1, 1):
+                sed_container_path = Path(project_root) / f'pipeline/run_2004_2025_posterior/v0dot4/theta_{theta_idx:03d}/sed_container.nc'
+                ds = xr.load_dataset(sed_container_path)
+
+                value = ds[key].values # shape as (time, num_ls_stochastic)
+                value = unit_converter(input=value, catchment_area=4.83, method="area-aggregated")
+                
+                empty_arr.append(value[:, ls_idx])
+                
+            value = np.column_stack(empty_arr) # stack as column, shape as (time, num_mcmc_draw)
+            q05 = np.quantile(a=value, q=0.05, axis=1) # collapse the num_mcmc_draw dimension
+            q50 = np.quantile(a=value, q=0.50, axis=1) # collapse the num_mcmc_draw dimension
+            q95 = np.quantile(a=value, q=0.95, axis=1) # collapse the num_mcmc_draw dimension
+            
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            np.savez_compressed(cache_path, q05=q05, q50=q50, q95=q95)
+            print(f"{UTCDateTime.now().isoformat()} Cache data at:\n{cache_path}")
+
+        y = q50 / y_zoom[idx]
+        y1 = q05 / y_zoom[idx]
+        y2 = q95 / y_zoom[idx]
+
+        ax.plot(x, y, color=color_dict[ls_idx], zorder=5, alpha=0.75, label=f"Q50 (ls={ls_idx+1})")
+        ax.fill_between(x, y1=y1, y2=y2, color=color_dict[ls_idx], zorder=4, alpha=0.25, label=f"Q5 to Q95 (ls={ls_idx+1})")
+
+    ax.set_xlim(x[0], x[-1]+1)
+    ax.set_yscale(y_scale[idx])
+    ax.set_ylim(y_min[idx], y_max[idx])
+
+    ax.set_xticks(ticks_location, labels=ticks_label)
+    ax.set_xticks(minor_ticks, minor=True)
+    ax.set_ylabel(y_label[idx], fontweight='bold')
+    ax.set_xlabel("", fontweight='bold')
+    plot_region(ax)
+
+
+
+
+ax = plt.subplot(gs[1])
+ax.legend(loc="upper right", fontsize=6, ncol=4)
+
+ax = plt.subplot(gs[2])
+ax.set_xlabel("UTC+0 Time", fontweight='bold') #  [Resolution = 10 minutes]
+
+
+plt.tight_layout()
+png_path = Path(current_dir) / f"2004-2025_monitoring_LS.png"
+png_path.parent.mkdir(parents=True, exist_ok=True)
+plt.savefig(png_path, dpi=600)
+plt.show()
+plt.close(fig)
+
+# endregion
+
+
+
+# region < use 1-100 ls, use 1-21 posterior, UQ along the ls stochastic and MCMC dimension  > 
+cache_name = "use_ls_1-100__use_MCMC_1-21"
+
+fig = plt.figure(figsize=(6.5, 6))
+gs = gridspec.GridSpec(3, 1)
+
+
+for idx, key in enumerate(["hillslope_storage", "channel_storage", "sed_transport_real"]):
+
+    ax = plt.subplot(gs[idx])
+    ax.set_title(label=f"{subplot_idx[idx]}", loc="left", fontsize=7, fontweight='bold')
+    
+
+    cache_path = Path(current_dir) / f"cache/{cache_name}_uq_in_{key}.npz"
+    try:
+        cache_data = np.load(cache_path, allow_pickle=True)
+        q05, q50, q95 = cache_data["q05"], cache_data["q50"], cache_data["q95"]
+
+        print(f"{UTCDateTime.now().isoformat()} Load data from:\n{cache_path}")
+    except:
+        empty_arr = []
+        for theta_idx in range(1, 21 + 1, 1):
+            sed_container_path = Path(project_root) / f'pipeline/run_2004_2025_posterior/v0dot4/theta_{theta_idx:03d}/sed_container.nc'
+            ds = xr.load_dataset(sed_container_path)
+
+            value = ds[key].values # shape as (time, num_ls_stochastic)
+            value = unit_converter(input=value, catchment_area=4.83, method="area-aggregated")
+            
+            empty_arr.append(value)
+            
+        value = np.column_stack(empty_arr) # stack as column, shape as (time, num_mcmc_draw * num_stochastic dimension)
+        q05 = np.quantile(a=value, q=0.05, axis=1) # collapse the num_mcmc_draw * num_stochastic dimension
+        q50 = np.quantile(a=value, q=0.50, axis=1) # collapse the num_mcmc_draw * num_stochastic dimension
+        q95 = np.quantile(a=value, q=0.95, axis=1) # collapse the num_mcmc_draw * num_stochastic dimension
+        
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(cache_path, q05=q05, q50=q50, q95=q95)
+        print(f"{UTCDateTime.now().isoformat()} Cache data at:\n{cache_path}")
+        
+    y = q50 / y_zoom[idx]
+    y1 = q05 / y_zoom[idx]
+    y2 = q95 / y_zoom[idx]
+
+    ax.plot(x, y, color="C0", zorder=5, alpha=0.75, label=f"Q50")
+    ax.fill_between(x, y1=y1, y2=y2, color="C0", zorder=4, alpha=0.25, label=f"Q5 to Q95")
+
+    ax.set_xlim(x[0], x[-1]+1)
+    ax.set_yscale(y_scale[idx])
+    ax.set_ylim(y_min[idx], y_max[idx])
+
+    ax.set_xticks(ticks_location, labels=ticks_label)
+    ax.set_xticks(minor_ticks, minor=True)
+    ax.set_ylabel(y_label[idx], fontweight='bold')
+    ax.set_xlabel("", fontweight='bold')
+    plot_region(ax)
+
+
+
+
+ax = plt.subplot(gs[0])
+ax.legend(loc="lower left", fontsize=6, ncol=4)
+
+ax = plt.subplot(gs[2])
+ax.set_xlabel("UTC+0 Time", fontweight='bold') #  [Resolution = 10 minutes]
+
+
+plt.tight_layout()
+png_path = Path(current_dir) / f"2004-2025_monitoring_MAP_LS.png"
+png_path.parent.mkdir(parents=True, exist_ok=True)
+plt.savefig(png_path, dpi=600)
+plt.show()
+plt.close(fig)
+
+# endregion

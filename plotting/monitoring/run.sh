@@ -6,7 +6,7 @@
 #SBATCH --array=1-1                 # job array id
 #SBATCH --cpus-per-task=1           # reuest 1 cpu to run in parallel
 
-#SBATCH --mem-per-cpu=24G		       # Memory Request (per CPU; can use on GLIC)
+#SBATCH --mem-per-cpu=64G		       # Memory Request (per CPU; can use on GLIC)
 
 #SBATCH --output=logs/out_%A_%a_%x.txt  # Standard Output Log File
 #SBATCH --error=logs/err_%A_%a_%x.txt   # Standard Error Log File

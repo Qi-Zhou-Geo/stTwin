@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-21T18:39:53
+# __modification time__ = Last modified: 2026-07-03T12:27:51
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -158,7 +158,7 @@ def save_last_status(model, current_params_trial, current_theta):
           f" {output_yaml}\n")
 
 
-def run_posterior_sedcas(params_trial, num_iteration=100,
+def run_posterior_sedcas(params_trial, num_iteration=100, output_ls_dir=None,
                          
                          progress_bars=False, save_output=True, 
                          save_sed_container=False, save_climate_forcing=False,
@@ -207,7 +207,8 @@ def run_posterior_sedcas(params_trial, num_iteration=100,
 
     # run the model
     model.run_hydro()
-    model.run_stochastic_simulations(seed=0, num_iteration=num_iteration, progress_bars=progress_bars, fix_ls=fix_ls, save_ls=save_ls)
+    model.run_stochastic_simulations(seed=0, num_iteration=num_iteration, progress_bars=progress_bars, 
+                                     fix_ls=fix_ls, save_ls=save_ls, output_ls_dir=output_ls_dir)
 
     # save the results
     if save_output is True:

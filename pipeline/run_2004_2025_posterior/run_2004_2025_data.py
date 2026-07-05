@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-21T16:55:16
+# __modification time__ = Last modified: 2026-07-03T11:39:57
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -66,13 +66,15 @@ if __name__ == "__main__":
         fix_ls = False
         save_ls = True
         plot_output = True
+        save_climate_forcing = True
     else:
         # retuen shape (num_draw, num_paramsters)
         sampled_theta = get_posterior_theta(posterior_h5_dir, num_draw=num_draw, burn_in_step=burn_in_step, fix_seed=True)
         theta = sampled_theta[theta_draw_idx, :] # select theta
-        fix_ls = False
+        fix_ls = True
         save_ls = False
         plot_output = False
+        save_climate_forcing = False
         
     # normalize it back to real scale
     lower = params_trial["lower_bounds"]
@@ -99,7 +101,8 @@ if __name__ == "__main__":
     # plot_output=True, show_plot=False, save but not automaticlt show it
     model = run_posterior_sedcas(current_params_trial, num_iteration=100,
                                  
-                                 progress_bars=True, save_output=True, save_sed_container=True,
+                                 progress_bars=True, save_output=True, 
+                                 save_sed_container=True, save_climate_forcing=save_climate_forcing,
                                  
                                  fix_ls=params_trial["fix_ls"], save_ls=params_trial["save_ls"],
                                  

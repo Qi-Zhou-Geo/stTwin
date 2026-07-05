@@ -1,9 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-21T22:49:05
+# __modification time__ = Last modified: 2026-07-02T16:21:56
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
+
+import logging
 
 import pandas as pd
 import numpy as np
@@ -26,7 +28,7 @@ sys.path.append(str(project_root))
 from func.download_MeteoSwiss.fetch_data import fetch_data4SedCas, replace_nan
 
 
-def request_latest_10min_data(station="mve", time_resolution="10 minutes"):
+def request_latest_10min_data(logger=None, station="mve", time_resolution="10 minutes"):
 
     df1 = fetch_data4SedCas(station=station, 
                            time_resolution=time_resolution, 
@@ -77,6 +79,11 @@ def request_latest_10min_data(station="mve", time_resolution="10 minutes"):
         msg = (f"No new data available.\n"
                f"Latest record remains <{latest_data}> from station <{station}>.")
 
+    if isinstance(logger, logging.Logger):
+        logger.info(msg)
+    else:
+        print(msg)
+        
     
     return is_new_data, msg
 

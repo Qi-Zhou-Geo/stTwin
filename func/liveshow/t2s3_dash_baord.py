@@ -1,13 +1,16 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-22T16:33:34
+# __modification time__ = Last modified: 2026-07-03T15:07:48
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
 
 import argparse
 from dash import Dash, dcc, html, Output, Input, State
+
+import numpy as np
+import pandas as pd
 
 # region ### add the sys.path to search for custom modules ###
 import sys
@@ -23,31 +26,43 @@ sys.path.append(str(project_root))
 
 
 # import the custom functions
-from func.liveshow.t2s1_load_cache import load_cache_monitoring, load_cache_whatif
+from func.liveshow.t2s1_load_cache import load_cache_monitoring, load_cache_whatif, load_cache_pro
 from func.liveshow.t2s2_plotly import plotly_multi_time_series_xr
 from func.SedCas_whatif.create_bound import load_what_if_bound
 from func.toolkit.logger_printer import setup_logger
 
 
-logger = setup_logger(f"{project_root}/deploy/liveshow_cache/logs", "t2_main.log", force_reset=False)
 font_global = {"fontFamily": "Arial, sans-serif", "fontSize": "12px", "color": "#2d2d2d"}
 
 
-def load_whatif_slider():
+def load_whatif_slider(method="from_text"):
 
-    cfg, cycle_period_range, storm2drought_ratio_range, storm_onset_month_range, storm_onset_day_range = load_what_if_bound()
+    if method == "from_yaml":
+        cfg, cycle_period_range, storm2drought_ratio_range, storm_onset_month_range, storm_onset_day_range = load_what_if_bound()
 
-    cycle_period_range = [int(v) for v in cycle_period_range]
-    storm2drought_ratio_range = [round(float(v), 1) for v in storm2drought_ratio_range]
-    storm_onset_month_range = [int(v) for v in storm_onset_month_range]
-    storm_onset_day_range = [int(v) for v in storm_onset_day_range]
-
-    return cfg, cycle_period_range, storm2drought_ratio_range, storm_onset_month_range, storm_onset_day_range
+        cycle_period_range = [int(v) for v in cycle_period_range]
+        storm2drought_ratio_range = [round(float(v), 1) for v in storm2drought_ratio_range]
+        storm_onset_month_range = [int(v) for v in storm_onset_month_range]
+        storm_onset_day_range = [int(v) for v in storm_onset_day_range]
+    
+    elif method == "from_text":
+        scenario_path = Path(project_root) / "pipeline/run_whatif/scenario_bound.txt"
+        df = pd.read_csv(scenario_path, header=0)
+        
+        cycle_period_range = np.unique(df["cycle_period"]).tolist()
+        storm2drought_ratio_range = np.unique(df["storm2drought_ratio"]).tolist()
+        storm_onset_month_range = np.unique(df["storm_onset_month"]).tolist()
+        storm_onset_day_range = np.unique(df["storm_onset_day"]).tolist()
+        
+    else:
+        raise ValueError(f"method got unexception value: {method}")
+         
+    return cycle_period_range, storm2drought_ratio_range, storm_onset_month_range, storm_onset_day_range
 
 
 def build_layout(whatif_slider_cfg):
     
-    cfg, cycle_period_range, storm2drought_ratio_range, storm_onset_month_range, storm_onset_day_range = whatif_slider_cfg
+    cycle_period_range, storm2drought_ratio_range, storm_onset_month_range, storm_onset_day_range = whatif_slider_cfg
     
     # app layout
     layout = html.Div(
@@ -65,12 +80,13 @@ def build_layout(whatif_slider_cfg):
                 style={"marginBottom": "3px", "fontSize": "14px", "gap": "1px"},
             ),
 
-            # Level 2: Hydro or Sed
+            # Level 2: Hydro or Sed or Seis
             dcc.RadioItems(
                 id="level2-toggle",
                 options=[
-                    {"label": "Hydro", "value": "hydro"},
-                    {"label": "Sed",   "value": "sed"},
+                    {"label": "Discharge Magnitude", "value": "hydro"}, # results from SedCas
+                    {"label": "Sediment Magnitude",   "value": "sed"}, # results from SedCas
+                    {"label": "Debris-Flow Probability",  "value": "seis"}, # results from Flow-Alert
                 ],
                 value="sed",
                 inline=True,
@@ -82,47 +98,40 @@ def build_layout(whatif_slider_cfg):
                 id="whatif-panel",
                 children=[
                     html.Div([
-                        html.Label("cycle_period"),
-                        dcc.Slider(id="cycle_period",
-                                min=cfg["cycle_period"]["value_min"],
-                                max=cfg["cycle_period"]["value_max"],
-                                step=None,
-                                value=float(cycle_period_range[0]),
-                                marks={v: str(v) for v in cycle_period_range},
-                                ),
+                        html.Label("Cycle Period"),
+                        dcc.RadioItems(
+                            id="cycle_period",
+                            options=[{"label": str(v), "value": v} for v in cycle_period_range],
+                            value=cycle_period_range[0],
+                            inline=True
+                            ),
                     ], style={"marginBottom": "10px"}),
 
                     html.Div([
-                        html.Label("cstorm2drought_ratio"),
-                        dcc.Slider(id="storm2drought_ratio",
-                                min=cfg["storm2drought_ratio"]["value_min"],
-                                max=cfg["storm2drought_ratio"]["value_max"],
-                                step=None,
-                                value=float(storm2drought_ratio_range[0]),
-                                marks={v: str(v) for v in storm2drought_ratio_range},
-                                ),
+                        html.Label("Storm to Drought Ratio"),
+                        dcc.RadioItems(
+                            id="storm2drought_ratio",
+                            options=[{"label": str(v), "value": v} for v in storm2drought_ratio_range],
+                            value=storm2drought_ratio_range[0],
+                            inline=True),
                     ], style={"marginBottom": "10px"}),
 
                     html.Div([
-                        html.Label("storm_onset_month"),
-                        dcc.Slider(id="storm_onset_month",
-                                min=cfg["storm_onset_month"]["value_min"],
-                                max=cfg["storm_onset_month"]["value_max"],
-                                step=None,
-                                value=float(storm_onset_month_range[0]),
-                                marks={v: str(v) for v in storm_onset_month_range},
-                                ),
+                        html.Label("Storm Onset Month"),
+                        dcc.RadioItems(
+                            id="storm_onset_month",
+                            options=[{"label": str(v), "value": v} for v in storm_onset_month_range],
+                            value=storm_onset_month_range[0],
+                            inline=True),
                     ], style={"marginBottom": "10px"}),
 
                     html.Div([
-                        html.Label("storm_onset_day"),
-                        dcc.Slider(id="storm_onset_day",
-                                min=cfg["storm_onset_day"]["value_min"],
-                                max=cfg["storm_onset_day"]["value_max"],
-                                step=None,
-                                value=float(storm_onset_day_range[0]),
-                                marks={v: str(v) for v in storm_onset_day_range},
-                                ),
+                        html.Label("Storm Onset Day"),
+                        dcc.RadioItems(
+                            id="storm_onset_day",
+                            options=[{"label": str(v), "value": v} for v in storm_onset_day_range],
+                            value=storm_onset_day_range[0],
+                            inline=True),
                     ], style={"marginBottom": "10px"}),
                 ],
                 style={"display": "none", "padding": "10px", "border": "1px solid #ddd"},
@@ -152,30 +161,56 @@ def refresh_chart(n_intervals, level1, level2,
                   cycle_period, storm2drought_ratio,
                   storm_onset_month, storm_onset_day):
     
-    msg = f"CP={cycle_period} R={storm2drought_ratio} M={storm_onset_month} D={storm_onset_day}"
-    logger.info(msg)
-    
-    # we will have four combinations
+    # we will have these combinations
     # level1 in ["monitoring", "whatif"]
-    # level2 in ["hydro", "sed"]
+    # level2 in ["hydro", "sed", "seis"]
     
-    application_type, data_type = level1, level2
+    # (1) level 1 >> ["monitoring", "whatif"]
     if level1 == "monitoring":
-        msg, ds_sub, vars_dict = load_cache_monitoring(data_type, t1="2025-01-01T00:00:00", t2="2036-01-01T00:00:00")
-        list_of_col_names = [("time_str", key) for key in vars_dict.keys()]
         
-        fig = plotly_multi_time_series_xr(ds_sub, list_of_col_names, vars_dict, xr_dataset_whatif=None)
-    elif level1 == "whatif":
-        whatif_type = f"CP={float(cycle_period)}_R={float(storm2drought_ratio)}_M={float(storm_onset_month)}_D={float(storm_onset_day)}"
+        # (1-1) level2 >> ["hydro", "sed", "seis"]
+        # results from SedCas
+        if level2 in ["hydro", "sed"]:
+            msg, ds_monitoring, vars_dict = load_cache_monitoring(data_type=level2, 
+                                                           t1="2025-01-01T00:00:00", 
+                                                           t2="2036-01-01T00:00:00")
+            list_of_col_names = [("time_str", key) for key in vars_dict.keys()]
+            xr_dataset_whatif = None
+            
+            # fig = plotly_multi_time_series_xr(ds_sub, list_of_col_names, vars_dict, xr_dataset_whatif=None)
         
-        msg, ds_whatif, vars_dict_whatif, ds_monitoring, vars_dict = load_cache_whatif(data_type, whatif_type, t1="2023-01-01T00:00:00", t2="2026-01-01T00:00:00")
-        list_of_col_names = [("time_str", key) for key in vars_dict.keys()]
-        
-        fig = plotly_multi_time_series_xr(ds_monitoring, list_of_col_names, vars_dict, xr_dataset_whatif=ds_whatif)
-    else:
-        raise ValueError(f"Please check your level1 parameter.\nlevel1 = {level1}")
+        # (1-2) level2 >> ["hydro", "sed", "seis"]
+        # results from Flow-Alert
+        elif level2 in ["seis"]:
+            pro_dir = Path(project_root.parent) / "Flow-Alert/deploy/liveshow_cache/pro"
+            msg, ds_monitoring, vars_dict = load_cache_pro(pro_dir) # type: ignore
+            list_of_col_names = [("time_str", key) for key in vars_dict.keys()]
+            xr_dataset_whatif = None
+            
+        # (1-3) level2 >> error
+        else:
+            raise ValueError(f"level 2 got unexcepted value: level2={level2}")
     
-    logger.info(msg)
+    # (2) level 1 >> ["monitoring", "whatif"]
+    elif level1 == "whatif":
+        
+        # (2-1) level2 >> do not need
+        whatif_type = f"CP={cycle_period}.0_R={storm2drought_ratio}_M={storm_onset_month}.0_D={storm_onset_day}.0"
+        
+        msg, xr_dataset_whatif, vars_dict_whatif, ds_monitoring, vars_dict = load_cache_whatif(data_type=level2, 
+                                                                                       whatif_type=whatif_type, 
+                                                                                       t1="2023-01-01T00:00:00", 
+                                                                                       t2="2026-01-01T00:00:00")
+        list_of_col_names = [("time_str", key) for key in vars_dict.keys()]
+
+    # (3) level 1 >> error
+    else:
+        raise ValueError(f"level 1 got unexcepted value: level2={level1}")
+    
+    fig = plotly_multi_time_series_xr(xr_dataset=ds_monitoring, 
+                                      list_of_col_names=list_of_col_names,
+                                      vars_dict=vars_dict, 
+                                      xr_dataset_whatif=xr_dataset_whatif)
     
     return fig
 
@@ -222,28 +257,17 @@ def create_app():
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='input parameters')
+    # host="127.0.0.1" >> Binds the app only to localhost (same machine access only)
     parser.add_argument("--host", type=str, default="127.0.0.1")
+    # port=8050 >> Local service port
     parser.add_argument("--port", type=int, default=8050)
     
     parser.add_argument("--output_dir", type=str, default=f"{project_root}/deploy/liveshow_cache/logs")
     parser.add_argument("--log_filename", type=str, default="t2_main.log")
     args = parser.parse_args()
     
-
-    # setup logger
-    logger = setup_logger(args.output_dir, args.log_filename, force_reset=False)
-    
-    
     # run app
     app = create_app()
-    
-    # host="127.0.0.1"
-    # Binds the app only to localhost (same machine access only)
 
-    # port=8050
-    # Local service port
-
-    # debug=False
-    # Disable Flask debug mode for stability in production
-    
-    app.run(host=args.host, port=args.port, debug=True)
+    # debug=False >> Disable Flask debug mode for stability in production
+    app.run(host=args.host, port=args.port, debug=False)
