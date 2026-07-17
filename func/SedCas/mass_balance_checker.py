@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-14T16:26:06
+# __modification time__ = Last modified: 2026-07-09T11:19:53
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -74,7 +74,7 @@ def mass_balance_checker(sed_container, residual=1.0, iteration=None, silence=Tr
             "sed_in": sed_in,
             
             "sed_out": sed_out
-        })
+        }) # all unit is area-normalized mm
              
     return results
 

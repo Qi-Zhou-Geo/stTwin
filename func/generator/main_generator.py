@@ -42,15 +42,20 @@ def workflow(year_list,
              plot=False, seed=None):
 
     # region <sampling the daily resolution data>
-    num_year=1 # one year
     sigma_scale=3 # for std
-    ref_data_resolution="h" # hourly data
-
     time_t_l = []
     status_t_l = []
     synthetic_l = []
 
-    for year in year_list:
+    
+    if isinstance(year_list, tuple):
+        scenario_year = list(year_list)
+    elif isinstance(year_list, int):
+        scenario_year = [year_list]
+    else:
+        raise ValueError(f"Unsupport data type. type(year_list) is {type(year_list)}.")
+    
+    for year in list(scenario_year):
 
         storm_onset = UTCDateTime(year=year, month=int(storm_onset_month), day=int(storm_onset_day)).julday
 
@@ -64,20 +69,20 @@ def workflow(year_list,
 
         ref_last29_precp = np.full(shape=29, fill_value=0.0)
         temp = daily_sampler(
-            cycle_period,
-            num_year,
-            storm_onset,
-            storm2drought_ratio,
-            sigma_scale,
-            ref_data_resolution,
-            leap_year,
-            ref_last29_precp,
-            seed=seed)
+            cycle_period=cycle_period,
+            storm_onset=storm_onset,
+            storm2drought_ratio=storm2drought_ratio,
+            sigma_scale=sigma_scale,
+            leap_year=leap_year,
+            ref_last29_precp=ref_last29_precp,
+            seed=seed,
+            plot=False)
+
 
         time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic = temp
         
         if plot is True:
-            output_dir = Path(project_root) / "pipeline" / "what_if" / "plots"
+            output_dir = Path(project_root) / "plotting/what_if_plots"
             output_name = f"{output_dir}/{year}_cycle_period={cycle_period}_storm2drought_ratio={storm2drought_ratio}_storm_onset={storm_onset}.png"
             os.makedirs(output_dir, exist_ok=True)
             plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, sigma_scale, output_name=output_name)
@@ -106,11 +111,11 @@ def workflow(year_list,
         upsampled_data = upsampler_prcp(daily_total)
         prec_l.append(upsampled_data)
 
-        daily_mean = synthetic_arr[day, 1]
+        daily_mean = synthetic_arr[day, 1] # temperature
         upsampled_data = upsampler_temp(daily_mean)
         temp_l.append(upsampled_data)
 
-        daily_mean = synthetic_arr[day, 2]
+        daily_mean = synthetic_arr[day, 2] # radiation
         upsampled_data = upsampler_radi(daily_mean)
         radi_l.append(upsampled_data)
 
@@ -135,7 +140,7 @@ def workflow(year_list,
                            radi.reshape(-1, 1)
                         ), axis = 1)
 
-    file_format = f"CP={cycle_period}_R={storm2drought_ratio}_M={storm_onset_month}_D={storm_onset_day}"
+    file_format = f"CP={int(cycle_period)}_R={storm2drought_ratio:.3f}_M={int(storm_onset_month)}_D={int(storm_onset_day)}"
     scenario_name = f"climate_2023_2026_t_whatif_{file_format}"
     
     scenario_input_path = Path(project_root) / f"data/SedCas_whatif_input/{scenario_name}.txt"
@@ -160,9 +165,9 @@ def workflow(year_list,
 
 
 if __name__ == "__main__":
-    workflow(year_list=(2023, 2024, 2025), 
-             cycle_period=60.0, # every 60 day
-             storm2drought_ratio=0.05, # duration of storm / drought is 0.1
-             storm_onset_month=3,  # start from 1st of April
-             storm_onset_day=27,
-             plot=True, seed=None)
+    file_format = workflow(year_list=(2023, 2024, 2025),
+                           cycle_period=30, # every N day
+                           storm2drought_ratio=0.05, # duration of storm / drought is 0.1
+                           storm_onset_month=2,  # start from 1st of Febuary
+                           storm_onset_day=1,
+                           plot=True, seed=None)

@@ -126,12 +126,18 @@ def generate_synthetic(metadata, temp_sta, radiation_sta,
     data = df.iloc[:, 2]
     
     if np.sum(p_syn) > np.max(data):
-        print(f"The model generates too much total precipitation in one year.\n"
-              f"The unit of the following values is mm.\n"
-              f"np.sum(p_syn)={np.sum(p_syn) :.1f} > np.max(data)={np.max(data) :.1f} \n"
-              f"np.min(data)={np.min(data) :.1f}\n" 
-              f"np.std(data, ddof=0)={np.std(data, ddof=0) :.1f}\n"
-              f"np.mean(data)={np.mean(data) :.1f}\n")
+        marker = "too much"
+    elif np.sum(p_syn) < np.max(data):
+        marker = "too less"
+    else:
+        marker = "too perfect"
+        
+    print(f"The model generates <<{marker}>> total precipitation in one year.\n"
+            f"The unit of the following values is mm.\n"
+            f"np.sum(p_syn)={np.sum(p_syn) :.1f} > np.max(data)={np.max(data) :.1f} \n"
+            f"np.min(data)={np.min(data) :.1f}\n" 
+            f"np.std(data, ddof=0)={np.std(data, ddof=0) :.1f}\n"
+            f"np.mean(data)={np.mean(data) :.1f}\n")
 
     # (7) prepare return
     synthetic = np.column_stack([p_syn, t_syn, r_syn])
@@ -140,41 +146,32 @@ def generate_synthetic(metadata, temp_sta, radiation_sta,
 
 
 def daily_sampler(
-    cycle_period=90,  # every 60 day
-    num_year=1,
-    storm_onset=121,  # start from 1st May, 365 days
-    storm2drought_ratio=0.1,
+    cycle_period=30,  # every 60 day
+    storm_onset=32,  # start from 1st May, 365 days
+    storm2drought_ratio=0.05,
     sigma_scale=3,
-    ref_data_resolution="h",
     leap_year=False,
     ref_last29_precp=None,
     seed=None,
     plot=False):
 
-    if ref_data_resolution == "h":
-        data_sampling_freq = 1  # 1 data per day
-    elif ref_data_resolution == "t":
-        data_sampling_freq = 144  # 144 data per day
-
     time_t, status_t = storm2drought_generator(
-        cycle_period,
-        num_year,
-        storm_onset,
-        storm2drought_ratio,
-        data_sampling_freq,
+        cycle_period=cycle_period,
+        t0=storm_onset,
+        Rs2d=storm2drought_ratio,
         leap_year=leap_year
     )
-
+    
     spi_boundary = pd.read_csv(f"{project_root}/data/SPI_boundary/SPI_daily_boundary.txt", header=0)
-    extremely_dry_b = spi_boundary["SPI=-2.0"].values
-    moderately_wet_b = spi_boundary["SPI=+1.0"].values
+    extremely_dry_b = spi_boundary["SPI=-2.0"].values # represents the "Extremely Dry"
+    moderately_wet_b = spi_boundary["SPI=+1.0"].values # represents the "Moderatly Wet"
     
     
     metadata, precp_sta, temp_sta, radiation_sta = sta_loader()
     if leap_year is True:
         precp_sta, temp_sta, radiation_sta = precp_sta[:366, :], temp_sta[:366, :], radiation_sta[:366, :]
-        extremely_dry_b = np.append(extremely_dry_b, extremely_dry_b[-1])
-        moderately_wet_b= np.append(moderately_wet_b, moderately_wet_b[-1])
+        extremely_dry_b = np.append(extremely_dry_b, extremely_dry_b[-1]) # type: ignore
+        moderately_wet_b= np.append(moderately_wet_b, moderately_wet_b[-1]) # type: ignore
     else:
         precp_sta, temp_sta, radiation_sta = precp_sta[:365, :], temp_sta[:365, :], radiation_sta[:365, :]
 
@@ -211,25 +208,26 @@ def plot_month_background(ax, leap=False):
 
 def plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, sigma_scale, output_name=None):
 
-    fig = plt.figure(figsize=(6, 8))
+    fig = plt.figure(figsize=(6, 7))
     gs = gridspec.GridSpec(4, 1)
 
     ax = plt.subplot(gs[0])
     ax.plot(time_t, status_t, color='black', zorder=3)
+    ax.set_title("(a)", fontweight='bold', fontsize=7, loc='left')
     storm_onset = np.where(status_t==-1)[0][0]
-    ax.axvline(x=storm_onset, color="C3", ls="--", lw=1, label=f"Storm Onset (t0={storm_onset})")
+    ax.axvline(x=storm_onset, color="C3", ls="--", lw=1, label=f"First Storm Onset (" + r"$t_0$" + f"={storm_onset})")
     ax.set_xlim(time_t[0], time_t[-1])
     
     ax.set_xlim(1, 365)
     ax.set_xticks(
         [1, 50, 100, 150, 200, 250, 300, 350, 365],
-        [1, 50, 100, 150, 200, 250, 300, 350, 365],
+        [1, 50, 100, 150, 200, 250, 300, 350, 365], # type: ignore
     )
     plot_month_background(ax, leap=False)
     ax.grid(axis="both", color="grey", linestyle="--", lw=0.5, alpha=0.5, zorder=1)
-    ax.set_ylabel("y(t)", fontweight='bold')
+    ax.set_ylabel("Status", fontweight='bold')
     ax.set_yticks([-1, 1], ["Strom (-1)", "Drought (1)"])
-    ax.set_xlabel(f"Day of Year [t]", fontweight='bold')
+    ax.set_xlabel(f"", fontweight='bold')
     ax.legend(loc="lower left", fontsize='6')
 
 
@@ -237,16 +235,18 @@ def plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, si
 
     y_label = [
         f"Daily Total Precipitation\n[mm]",
-        f"Daily Mean Temperature\n[degree]",
-        f"Sun Radiation\n[W per squared m]",
+        f"Daily Mean Temperature\n[" + r"$^{\circ}\mathrm{C}$" + f"]",
+        f"Sun Radiation\n[" + r"$\mathrm{W\,m^{-2}}$" + f"]",
     ]
 
-    y_min = [1, -30, 0]
-    y_max = [100, 30, 600]
-
+    y_min = [1, -20, 0]
+    y_max = [300, 30, 600]
+    subplot_label = ["(b)", "(c)", "(d)"]
+    
     for idx, data in enumerate([precp_sta, temp_sta, radiation_sta]):
 
         ax = plt.subplot(gs[idx + 1])
+        ax.set_title(f"{subplot_label[idx]}", fontweight='bold', fontsize=7, loc='left')
 
         max_data = data[:, 0]
         mean_data = data[:, 1]
@@ -278,30 +278,34 @@ def plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, si
             ax.set_yscale("log")
             ax.set_ylim(1e0, 2e2)
         else:
-            ax.fill_between(x, y1, y2, color="C0", label=f"Mean +- {sigma_scale} * Std.", alpha=0.5, zorder=1)
+            ax.fill_between(x, y1, y2, color="C0", label=f"Mean" + r"$\pm$" + f"{sigma_scale}" + r"$\times$" + f"Std.", alpha=0.5, zorder=1)
             ax.fill_between(x, y3, y4, color="C2", label="Min to Max", alpha=0.5, zorder=2)
 
         if idx in [2]:
             ax.legend(loc="upper left", fontsize="6")
+        
+        if idx in [0]:
+            ax.legend(loc="upper left", fontsize="6", ncol=4)
 
         ax.set_ylabel(f"{y_label[idx]}", fontweight="bold")
-        # ax.set_ylim(y_min[idx], y_max[idx])
+        ax.set_ylim(y_min[idx], y_max[idx])
         
         plot_month_background(ax, leap=False)
         ax.set_xlim(1, 365)
         ax.set_xticks(
             [1, 50, 100, 150, 200, 250, 300, 350, 365],
-            [1, 50, 100, 150, 200, 250, 300, 350, 365],
+            [1, 50, 100, 150, 200, 250, 300, 350, 365], # type: ignore
         )
         ax.grid(axis="both", color="grey", linestyle="--", lw=0.5, alpha=0.5, zorder=1)
 
-    ax.set_xlabel("Day of Year (1931–2025, MeteoSwiss)", fontweight="bold")
+    ax.set_xlabel("Day of Year", fontweight="bold") # (1931–2025, MeteoSwiss)
     plt.tight_layout()
     if output_name is None:
         png_name = Path(current_dir) / "input_scenarios-storm_drought_cycle.png"
     else:
         png_name = output_name
-        
+    
+    print(f"Figure from <plot_syn> will be saved at: {png_name}")
     plt.savefig(png_name, dpi=600, transparent=True)
     plt.show()
     plt.close(fig=fig)
@@ -402,7 +406,7 @@ def plot_syn2(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, s
         ax.set_xlim(1, 365)
         ax.set_xticks(
             [1, 50, 100, 150, 200, 250, 300, 350, 365],
-            [1, 50, 100, 150, 200, 250, 300, 350, 365],
+            [1, 50, 100, 150, 200, 250, 300, 350, 365], # type: ignore
         )
         ax.grid(axis="both", color="grey", linestyle="--", lw=0.5, alpha=0.5, zorder=1)
 
