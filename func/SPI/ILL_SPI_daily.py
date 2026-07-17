@@ -175,7 +175,7 @@ def SPI_pipeline(spi_scale):
         f"loc.shape: {loc.shape}\n"
         f"scale.shape: {scale.shape}\n")
 
-    out_file = f"{current_dir}/spi_params_daily_spi_day={spi_scale}.npz"
+    out_file = f"{project_root}/data/SPI_boundary/spi_params_daily_spi_day={spi_scale}.npz"
     print(f"out_file: {out_file}\n")
     dump_SPI(out_file, params, mode="save")
     
@@ -221,7 +221,7 @@ def classify_spi(spi):
 
 def SPI_usage(precp_spi_scale_total, day_of_year, spi_scale):
 
-    spi_params = Path(current_dir) / f"spi_params_daily_spi_day={spi_scale}.npz"
+    spi_params = Path(project_root) / f"data/SPI_boundary/spi_params_daily_spi_day={spi_scale}.npz"
     if spi_params.exists():
         pass
     else:
@@ -266,21 +266,22 @@ def plot_SPI_boundary_full(spi_scale, day_of_year=np.arange(1, 365 + 1), max_pre
         mean_daily_total_in_last_spi_scale.append(np.nanmean(value))
     print(f"np.sum(mean_daily_total_in_last_spi_scale): {np.sum(mean_daily_total_in_last_spi_scale)}")
 
-    spi_params = Path(current_dir) / f"spi_params_daily_spi_day={spi_scale}.npz"
-    shape, loc, scale = dump_SPI(spi_params, params=None, mode="load")
+    spi_params = Path(project_root) / f"data/SPI_boundary/spi_params_daily_spi_day={spi_scale}.npz"
+    shape, loc, scale = dump_SPI(spi_params, params=None, mode="load") # type: ignore
 
     spi_status = {
         "Extremely Dry (SPI ≤ -2.0)" : (-4.0, -2.0),
         "Very Dry (-2.0 < SPI ≤ -1.5)" : (-2.0, -1.5),
         "Moderately Dry (-1.5 < SPI ≤ -1.0)" : (-1.5, -1.0),
-        "Near Normal (-1.0 < SPI ≤ 1.0)" : (-1.0, 1.0),
+        "Near Normal (-1.0 < SPI ≤ 0)" : (-1.0, 0), # split as two normal region
+        "Near Normal (0 < SPI ≤ 1.0)" : (0, 1.0),  # split as two normal region
         "Moderately Wet  (1.0 < SPI ≤ 1.5)" : (1.0, 1.5),
         "Very Wet  (1.5 < SPI ≤ 2.0)" : (1.5, 2.0),
         "Extremely Wet  (2.0 < SPI)" : (2.0, 4.0),
     }
 
     color_alpha = [("C3", 0.9), ("C3", 0.6), ("C3", 0.3),
-                   ("black", 0.3),
+                   ("black", 0.3), ("gray", 0.3),
                    ("C0", 0.3), ("C0", 0.6), ("C0", 0.9),]
 
     df_boundary = [day_of_year.reshape(-1, 1)]
@@ -309,7 +310,7 @@ def plot_SPI_boundary_full(spi_scale, day_of_year=np.arange(1, 365 + 1), max_pre
             y = high_b
             ax.plot(day_of_year, y, lw=1, color=color, alpha=alpha, zorder=3)
             ax.fill_between(x=day_of_year, y1=np.full(shape=len(day_of_year), fill_value=0), y2=y, color=color, alpha=alpha, label=label, zorder=2) 
-        elif idx == 6:
+        elif idx == 7:
             y = low_b
             ax.plot(day_of_year, y, lw=1, color=color, alpha=alpha, zorder=3)
             ax.fill_between(x=day_of_year, y1=y, y2=np.full(shape=len(day_of_year), fill_value=max_precp), color=color, alpha=alpha, label=label, zorder=2)
@@ -319,7 +320,7 @@ def plot_SPI_boundary_full(spi_scale, day_of_year=np.arange(1, 365 + 1), max_pre
             ax.fill_between(x=day_of_year, y1=low_b, y2=high_b, color=color, alpha=alpha, label=label, zorder=2)
 
         df_boundary.append(y.reshape(-1, 1))
-
+    print(df_boundary.shape) # type: ignore
     ax.set_xlim(1, 365)
     ax.set_ylim(0, max_precp)
     
@@ -371,17 +372,17 @@ def plot_spi_boundary(df_boundary, p_syn=None, p_obs=None, spi_scale=30, max_pre
         ("C3", 0.6, "Very Dry (-2.0 < SPI ≤ -1.5)"), 
         ("C3", 0.3, "Moderately Dry (-1.5 < SPI ≤ -1.0)"),
         
-        ("black", 0.3, "Near Normal (-1.0 < SPI ≤ 1.0)"),
+        ("black", 0.3, "Near Normal (-1.0 < SPI ≤ 0)"),
+        ("gray", 0.3, "Near Normal (0 < SPI ≤ 1.0)"),
         
         ("C0", 0.3, "Moderately Wet  (1.0 < SPI ≤ 1.5)"),
         ("C0", 0.6, "Very Wet  (1.5 < SPI ≤ 2.0)"),
         ("C0", 0.9, "Extremely Wet  (2.0 < SPI)"),
     ]
 
-    fig = plt.figure(figsize=(6, 6))
-    gs = gridspec.GridSpec(2, 1, height_ratios=[5, 1])
+    fig = plt.figure(figsize=(6, 4))
+    gs = gridspec.GridSpec(1, 1)
     ax = plt.subplot(gs[0])
-    car_ax = plt.subplot(gs[1])
     
     # Optional: plot p_syn
     if p_syn is not None:
@@ -392,8 +393,8 @@ def plot_spi_boundary(df_boundary, p_syn=None, p_obs=None, spi_scale=30, max_pre
     if p_obs is not None:
         ax.plot(day_of_year, p_obs,
                 lw=1, ls="--", color="C1",
-                label=(f"Mean Daily Total Precipitation\nin Last {spi_scale} Days\n"
-                       f"(Jan. 1931 – Dec. 2025;\nMeteoSwiss Montana Station)"), 
+                label=(f"Mean Daily Total Precipitation in Last {spi_scale} Days\n"
+                       f"(Jan. 1931 – Dec. 2025; MeteoSwiss Montana Station)"), 
                 zorder=4)
 
 
@@ -402,8 +403,7 @@ def plot_spi_boundary(df_boundary, p_syn=None, p_obs=None, spi_scale=30, max_pre
         y = df_boundary[col].values
         color, alpha, label = color_alpha[idx]
 
-        ax.plot(day_of_year, y,
-                lw=1, color=color, alpha=alpha, zorder=3)
+        ax.plot(day_of_year, y, lw=1, color=color, alpha=alpha, zorder=3)
 
         # fill logic
         if idx == 0: # value in 0 - SPI+1.0
@@ -427,15 +427,11 @@ def plot_spi_boundary(df_boundary, p_syn=None, p_obs=None, spi_scale=30, max_pre
 
     ax.legend(loc="upper left", fontsize=6)
     ax.set_xlabel("Day of Year", fontweight="bold")
-    ax.set_ylabel(f"Rolling Total Precipitation in Last {spi_scale} days [mm]",
+    ax.set_ylabel(f"Rolling Total Precipitation in Last-{spi_scale}-Day [mm]",
                   fontweight="bold")
     ax.grid(True, ls="--", lw=0.5, alpha=0.5)
     ax.legend(loc="upper center", fontsize=6)
-    
-    handles, labels = ax.get_legend_handles_labels()
-    car_ax.axis("off")
-    car_ax.legend(handles, labels, loc="upper center", fontsize=6)
-    
+
     return fig, ax
   
 def archive_data(spi_scale, day_of_year=np.arange(1, 365 + 1), max_precp=350):
@@ -453,14 +449,15 @@ def archive_data(spi_scale, day_of_year=np.arange(1, 365 + 1), max_precp=350):
 
 
 
-    spi_params = Path(current_dir) / f"spi_params_daily_spi_day={spi_scale}.npz"
-    shape, loc, scale = dump_SPI(spi_params, params=None, mode="load")
+    spi_params = Path(project_root) / f"data/SPI_boundary/spi_params_daily_spi_day={spi_scale}.npz"
+    shape, loc, scale = dump_SPI(spi_params, params=None, mode="load") # type: ignore
 
     spi_status = {
         "Extremely Dry (SPI ≤ -2.0)" : (-4.0, -2.0),
         "Very Dry (-2.0 < SPI ≤ -1.5)" : (-2.0, -1.5),
         "Moderately Dry (-1.5 < SPI ≤ -1.0)" : (-1.5, -1.0),
-        "Near Normal (-1.0 < SPI ≤ 1.0)" : (-1.0, 1.0),
+        "Near Normal (-1.0 < SPI ≤ 0)" : (-1.0, 0), # split as two normal region
+        "Near Normal (0 < SPI ≤ 1.0)" : (0, 1.0),  # split as two normal region
         "Moderately Wet  (1.0 < SPI ≤ 1.5)" : (1.0, 1.5),
         "Very Wet  (1.5 < SPI ≤ 2.0)" : (1.5, 2.0),
         "Extremely Wet  (2.0 < SPI)" : (2.0, 4.0),
@@ -479,20 +476,20 @@ def archive_data(spi_scale, day_of_year=np.arange(1, 365 + 1), max_precp=350):
         low_b, high_b = boundary[0], boundary[1]
         if idx == 0:
             y = high_b
-        elif idx == 6:
+        elif idx == 7:
             y = low_b
         else:
             y = high_b
 
         df_boundary.append(y.reshape(-1, 1))
 
-
-    output_path = Path(project_root) / "data" / "SPI_boundary"
-    
-    
     df_boundary = pd.DataFrame(np.hstack(df_boundary), columns=["day_of_year", 
                                                                 "SPI=-2.0", "SPI=-1.5", "SPI=-1.0", 
-                                                                "SPI=+1.0", "SPI=+1.5", "SPI=+2.0", "SPI=+4.0"])
+                                                                "SPI=0", 
+                                                                "SPI=+1.0", "SPI=+1.5", "SPI=+2.0", 
+                                                                "SPI=+4.0"])
+    
+    output_path = Path(project_root) / "data/SPI_boundary"
     df_boundary.to_csv(f"{output_path}/SPI_daily_boundary.txt", index=False)
     
     
@@ -523,13 +520,13 @@ def main(spi_scale=30):
     fig, ax = plot_spi_boundary(df_boundary, p_syn=None, p_obs=p_obs, spi_scale=spi_scale, max_precp=400)
 
     plt.tight_layout()
-    plt.savefig(f"{current_dir}/spi_boundary_daily_spi_day={spi_scale}.png", dpi=600)
+    plt.savefig(f"{project_root}/data/SPI_boundary/spi_boundary_daily_spi_day={spi_scale}.png", dpi=600)
     plt.show()
     plt.close(fig=fig)
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--spi_scale", type=int, default=30, help="unit by day")
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
 
     main(args.spi_scale)

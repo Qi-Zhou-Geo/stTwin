@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-11T19:11:32
+# __modification time__ = Last modified: 2026-07-19T17:27:00
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
 # usage
 # python s01_prepare_scenario.py --method "manual" \
-#     --cycle_period_range 15 30 60 \
-#     --storm2drought_ratio_range 0.05 0.10 0.15 0.20 0.25 0.30 \
-#     --storm_onset_month_range 2 3 4 5 6 7 8 9 \
+#     --cycle_period_range 30 45 60 75 90 105 120 \
+#     --storm2drought_ratio_range 0.05 \
+#     --storm_onset_month_range 1 2 3 4 5 6 7 8 9 \
 #     --storm_onset_day_range 1

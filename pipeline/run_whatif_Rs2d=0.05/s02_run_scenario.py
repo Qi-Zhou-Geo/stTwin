@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-07-03T12:35:33
+# __modification time__ = Last modified: 2026-07-19T16:26:47
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -13,7 +13,7 @@ import pandas as pd
 
 from obspy import UTCDateTime
 
-#region ### add the sys.path to search for custom modules ###
+# region ### add the sys.path to search for custom modules ###
 import sys
 from pathlib import Path
 
@@ -27,7 +27,7 @@ sys.path.append(str(project_root))
 
 # import the func. from the same folder
 from func.SedCas.mass_balance_checker import mass_balance_checker
-from func.generator.main_generator import workflow
+from func.generator.main_generator import s2d_workflow
 from func.bayesian_inference.params_boundary import custom_boundary
 from func.bayesian_inference.sample_posterior import get_posterior_theta, get_MAP_theta
 from func.SedCas_pred.run_posterior import run_posterior_sedcas
@@ -41,17 +41,20 @@ def creat_input(scenario_idx):
     scenario = df.iloc[scenario_idx, :].values
     idx, cycle_period, storm2drought_ratio, storm_onset_month, storm_onset_day = scenario
 
-    file_format = workflow(
+    file_format, data = s2d_workflow(
         year_list=(2023, 2024, 2025),
-        cycle_period=cycle_period,  # every 60 day
-        storm2drought_ratio=storm2drought_ratio,  # duration of storm / drought is 0.1
-        storm_onset_month=storm_onset_month,  # start from 1st of April
+        cycle_period=int(cycle_period),
+        storm2drought_ratio=float(storm2drought_ratio),
+        storm_onset_month=int(storm_onset_month),
         storm_onset_day=storm_onset_day,
-        plot=True
+        sigma_scale=3,
+        plot=False,
+        seed=None,
+        ref_history=True,
     )
 
     print(f"scenario_idx={scenario_idx}, {file_format}")
-    
+
     return file_format 
 
 
@@ -111,15 +114,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='input parameters')
     parser.add_argument("--scenario_idx", type=int, default=0)
     parser.add_argument("--model_version", type=str, default="v0dot4")
+    parser.add_argument("--num_draw", type=int, default=1)
     args = parser.parse_args()
 
     scenario_idx = args.scenario_idx
     model_version = args.model_version
+    num_draw = args.num_draw
+    
     
     posterior_h5_dir = Path(project_root) / "func/bayesian_inference/sedcas_mcmc_results.h5"
     burn_in_step = 100
-    num_draw = 21
-
+    
 
     # (1) create the input based defined what-if scenario for model
     file_format = creat_input(scenario_idx)
@@ -136,8 +141,8 @@ if __name__ == "__main__":
         params_trial["climate_forcing"] = climate_forcing
         params_trial["model_input_params"] =  "SedCas_input_params_10min_QZ.yaml"
         params_trial["project_root"] = Path(project_root)
-        params_trial["output_dir"] = f'pipeline/run_whatif/{model_version}/{file_format}/theta_{str(theta_draw_idx + 1).zfill(3)}'
-        output_ls_dir = f"{project_root}/pipeline/run_whatif/{model_version}/{file_format}/SedCas_ls"
+        params_trial["output_dir"] = f"{current_dir}/{model_version}/{file_format}/theta_{str(theta_draw_idx + 1).zfill(3)}"
+        output_ls_dir = f"{current_dir}/{model_version}/{file_format}/SedCas_ls"
         
         
         # (4) load the posterior for model

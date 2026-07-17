@@ -18,7 +18,7 @@ import matplotlib.gridspec as gridspec
 
 from obspy import UTCDateTime
 
-#region ### add the sys.path to search for custom modules ###
+# region ### add the sys.path to search for custom modules ###
 from pathlib import Path
 current_file = Path(__file__).resolve()
 current_dir = current_file.parent
@@ -32,15 +32,17 @@ sys.path.append(str(project_root))
 # import the func. from the same folder
 from func.generator.storm2drought import storm2drought_generator
 from func.generator.load_statistics import sta_loader
-from func.SPI.ILL_SPI_daily import plot_spi_boundary
+from func.SPI.ILL_SPI_daily import plot_spi_boundary, dump_SPI
+
 
 def generate_synthetic(metadata, temp_sta, radiation_sta, 
-                       extremely_dry_b, moderately_wet_b,
+                       extremely_dry_b, spi_1_upper_norm, moderately_wet_b,
                        time_t, status_t, sigma_scale, 
                        ref_last29_precp, seed, 
                        plot=False):
+
     """Generate one year daily synthetic data
-    
+
     Args:
         metadata (_type_): _description_
         precp_sta (_type_): _description_
@@ -60,12 +62,14 @@ def generate_synthetic(metadata, temp_sta, radiation_sta,
         meta_dict[sta_method] = idx
 
     # (2) prepare the day indices
-    days = np.array(time_t, dtype=int)
+    # note: -1 >> force the time_t, day-of-yeart
+    # which originaly from 1-365 or 1-366, starts from 0-364 or 1-365
+    days = np.array(time_t, dtype=int) - 1
 
     # (3) define sampling boundary
     # region
     is_drought = status_t == 1
-    
+
     t_low = np.where(
         is_drought,
         temp_sta[days, meta_dict["mean"]], # if drought (is_drought == True)
@@ -95,43 +99,52 @@ def generate_synthetic(metadata, temp_sta, radiation_sta,
     t_syn = rng.uniform(t_low, t_high)
     r_syn = rng.uniform(r_low, r_high)
 
-
     # (5) sample the precp
     p_syn = np.full(shape=len(days), fill_value=0)
     p_syn = np.append(ref_last29_precp, p_syn) # shape by 394 = 365 + 29 or 395 = 366 + 29
     for idx, drought in enumerate(is_drought):
 
-        sum_last_29 = np.sum(p_syn[idx:29+idx]) # default is SPI30
+        current_idx = idx + 29
+        sum_last_29 = np.sum(p_syn[current_idx-29:current_idx])
+
         if drought == True:
-            # need dry -> keep 30-day sum below extremely dry boundary (SPI30 = -2.0)
-            # extremely_dry_b[idx] - sum_last_29 < 0 -> last 29 days total precp is too wet
+            # need dry -> keep sum-last-30-day meet:
+            # SPI-1 ≤ -2.0
+            # (1) lower Extremely Dry
+
+            # if extremely_dry_b[idx] - sum_last_29 < 0
+            # it means >> last 29 days total precp is too high
             remaining = max(0.0, extremely_dry_b[idx] - sum_last_29)
             p_idx = rng.uniform(low=0, high=remaining)
         else:
-            # need wet -> keep 30-day sum above extremely wet boundary (SPI30 = +2.0)
-            needed = max(0.0, moderately_wet_b[idx] - sum_last_29)
-            p_idx = rng.uniform(low=needed, high=moderately_wet_b[idx])
+            # need wet -> keep sum-last-30-day meet:
+            # 1.0 < SPI-1 ≤ 1.5
+            # (1) above Normal boundary
+            # (2) lower Moderdately
+            low = max(0.0, spi_1_upper_norm[idx] - sum_last_29)
+            high = max(0.0, moderately_wet_b[idx] - sum_last_29)
+            p_idx = rng.uniform(low=low, high=high)
 
-        p_syn[idx+29] = p_idx
-        
-    # drop the first 29 elements
+        p_syn[current_idx] = p_idx
+
+    # plot it or not
     if plot is True:
         plot_SPI(p_syn, spi_window=30)
+    # drop the first 29 elements, it is from "ref_last29_precp"
     p_syn = p_syn[29:]
-
 
     # (6) check the p_syn and historical yearly total
     data_path = Path(project_root) / "data" / "SedCas_input" / "prep_1931_2026_y.txt"
     df = pd.read_csv(data_path, skiprows=5, header=0)
     data = df.iloc[:, 2]
-    
+
     if np.sum(p_syn) > np.max(data):
         marker = "too much"
     elif np.sum(p_syn) < np.max(data):
         marker = "too less"
     else:
         marker = "too perfect"
-        
+
     print(f"The model generates <<{marker}>> total precipitation in one year.\n"
             f"The unit of the following values is mm.\n"
             f"np.sum(p_syn)={np.sum(p_syn) :.1f} > np.max(data)={np.max(data) :.1f} \n"
@@ -159,18 +172,20 @@ def daily_sampler(
         cycle_period=cycle_period,
         t0=storm_onset,
         Rs2d=storm2drought_ratio,
-        leap_year=leap_year
+        leap_year=leap_year,
+        plot=False
     )
     
     spi_boundary = pd.read_csv(f"{project_root}/data/SPI_boundary/SPI_daily_boundary.txt", header=0)
-    extremely_dry_b = spi_boundary["SPI=-2.0"].values # represents the "Extremely Dry"
-    moderately_wet_b = spi_boundary["SPI=+1.0"].values # represents the "Moderatly Wet"
-    
+    extremely_dry_b = spi_boundary["SPI=-2.0"].values # represents the "Extremely Dry SPI ≤ -2.0"
+    spi_1_upper_norm = spi_boundary["SPI=+1.0"].values # represents the "Moderatly Wet 1.0 < SPI ≤ 1.5"
+    moderately_wet_b = spi_boundary["SPI=+1.5"].values # represents the "Moderatly Wet 1.0 < SPI ≤ 1.5"
     
     metadata, precp_sta, temp_sta, radiation_sta = sta_loader()
     if leap_year is True:
         precp_sta, temp_sta, radiation_sta = precp_sta[:366, :], temp_sta[:366, :], radiation_sta[:366, :]
         extremely_dry_b = np.append(extremely_dry_b, extremely_dry_b[-1]) # type: ignore
+        spi_1_upper_norm = np.append(spi_1_upper_norm, spi_1_upper_norm[-1]) # type: ignore
         moderately_wet_b= np.append(moderately_wet_b, moderately_wet_b[-1]) # type: ignore
     else:
         precp_sta, temp_sta, radiation_sta = precp_sta[:365, :], temp_sta[:365, :], radiation_sta[:365, :]
@@ -181,10 +196,11 @@ def daily_sampler(
         ref_last29_precp = temp.iloc[-29:, 2].values
         
     synthetic = generate_synthetic(metadata, temp_sta, radiation_sta, 
-                                   extremely_dry_b, moderately_wet_b,
+                                   extremely_dry_b, spi_1_upper_norm, moderately_wet_b,
                                    time_t, status_t, sigma_scale, 
                                    ref_last29_precp=ref_last29_precp, # the very last 29-days daily total precp.
-                                   seed=seed, plot=plot)
+                                   seed=seed, 
+                                   plot=plot)
 
     return time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic
 
@@ -206,16 +222,25 @@ def plot_month_background(ax, leap=False):
             ax.axvspan(julday1, julday2, color='gray', alpha=0.3, zorder=1)
 
 
-def plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, sigma_scale, output_name=None):
+def plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, sigma_scale,
+             cycle_period, storm2drought_ratio, storm_onset_month, output_name=None):
 
     fig = plt.figure(figsize=(6, 7))
     gs = gridspec.GridSpec(4, 1)
 
     ax = plt.subplot(gs[0])
-    ax.plot(time_t, status_t, color='black', zorder=3)
     ax.set_title("(a)", fontweight='bold', fontsize=7, loc='left')
+    
     storm_onset = np.where(status_t==-1)[0][0]
-    ax.axvline(x=storm_onset, color="C3", ls="--", lw=1, label=f"First Storm Onset (" + r"$t_0$" + f"={storm_onset})")
+    label = (f"Strom-to-Drought (s2d) Cycle\n"
+             f"First Storm Onset: " + r"$t_0$" +f"={storm_onset}\n"
+             f"s2d Ratio: " + r"$R_{s2d}$" +f"={storm2drought_ratio}\n"
+             f"Cycle Period: " + r"$1/f$" +f"={cycle_period}\n"
+             f"Num. of Strom Day: {len(np.where(status_t==-1)[0])}")
+    ax.plot(time_t, status_t, color='black', zorder=3, label=label)
+
+    label = r"$t_0$"
+    ax.axvline(x=storm_onset, color="C3", ls="--", lw=1, label=label)
     ax.set_xlim(time_t[0], time_t[-1])
     
     ax.set_xlim(1, 365)
@@ -224,11 +249,11 @@ def plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, si
         [1, 50, 100, 150, 200, 250, 300, 350, 365], # type: ignore
     )
     plot_month_background(ax, leap=False)
-    ax.grid(axis="both", color="grey", linestyle="--", lw=0.5, alpha=0.5, zorder=1)
+    ax.grid(axis="both", color="grey", linestyle="--", lw=0.5, alpha=0.5, zorder=5)
     ax.set_ylabel("Status", fontweight='bold')
     ax.set_yticks([-1, 1], ["Strom (-1)", "Drought (1)"])
     ax.set_xlabel(f"", fontweight='bold')
-    ax.legend(loc="lower left", fontsize='6')
+    ax.legend(loc="center left", fontsize='6')
 
 
 
@@ -273,19 +298,20 @@ def plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, si
         ax.plot(x, y, color="C1", label="Mean", zorder=4)
 
         if idx == 0:
-            ax.plot(x, y2, color="C0", label="Mean + Std.", zorder=1)
+            ax.plot(x, y2, color="C0", label="Mean + " + f"{sigma_scale}" + r"$\times$" + f"Std.", zorder=1)
             ax.plot(x, y4, color="C2", label="Max", zorder=2)
             ax.set_yscale("log")
             ax.set_ylim(1e0, 2e2)
-        else:
+            ax.legend(loc="upper left", fontsize="6", ncol=4)
+        elif idx == 1:
             ax.fill_between(x, y1, y2, color="C0", label=f"Mean" + r"$\pm$" + f"{sigma_scale}" + r"$\times$" + f"Std.", alpha=0.5, zorder=1)
             ax.fill_between(x, y3, y4, color="C2", label="Min to Max", alpha=0.5, zorder=2)
+            ax.legend(loc="lower left", fontsize="6", ncol=4)
+        elif idx ==2:
+            ax.fill_between(x, y1, y2, color="C0", label=f"Mean" + r"$\pm$" + f"{sigma_scale}" + r"$\times$" + f"Std.", alpha=0.5, zorder=1)
+            ax.fill_between(x, y3, y4, color="C2", label="Min to Max", alpha=0.5, zorder=2)
+            ax.legend(loc="upper right", fontsize="6")
 
-        if idx in [2]:
-            ax.legend(loc="upper left", fontsize="6")
-        
-        if idx in [0]:
-            ax.legend(loc="upper left", fontsize="6", ncol=4)
 
         ax.set_ylabel(f"{y_label[idx]}", fontweight="bold")
         ax.set_ylim(y_min[idx], y_max[idx])
@@ -325,17 +351,12 @@ def plot_SPI(p_syn, spi_window=30):
     fig, ax = plot_spi_boundary(df_boundary, p_syn=cum_p_syn[:365], p_obs=p_obs[:365], spi_scale=spi_window)
 
     plt.tight_layout()
-    plt.savefig(f"{current_dir}/synthetic_{spi_window}.png", dpi=600)
+    png_path = Path(project_root) / f"plotting/what_if_plots/synthetic_{spi_window}.png"
+    png_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(png_path, dpi=600)
     plt.show()
     plt.close(fig=fig)
-    
-    
-    fig, ax = plot_spi_boundary(df_boundary, p_obs=p_obs[:365], spi_scale=spi_window)
 
-    plt.tight_layout()
-    plt.savefig(f"{current_dir}/synthetic_{spi_window}_no_sum.png", dpi=600)
-    plt.show()
-    plt.close(fig=fig)
 
 def plot_syn2(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, sigma_scale, output_name=None):
 

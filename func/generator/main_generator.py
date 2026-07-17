@@ -17,7 +17,7 @@ import matplotlib.gridspec as gridspec
 
 from obspy import UTCDateTime
 
-#region ### add the sys.path to search for custom modules ###
+# region ### add the sys.path to search for custom modules ###
 import sys
 from pathlib import Path
 
@@ -34,15 +34,17 @@ from func.generator.sampler import daily_sampler, plot_syn
 from func.generator.upsampling import upsampler_prcp, upsampler_temp, upsampler_radi
 
 
-def workflow(year_list, 
+def s2d_workflow(year_list, 
              cycle_period, 
              storm2drought_ratio, 
              storm_onset_month, 
-             storm_onset_day, 
-             plot=False, seed=None):
+             storm_onset_day,
+             sigma_scale=3,
+             plot=False, 
+             seed=None, 
+             ref_history=True):
 
     # region <sampling the daily resolution data>
-    sigma_scale=3 # for std
     time_t_l = []
     status_t_l = []
     synthetic_l = []
@@ -55,19 +57,32 @@ def workflow(year_list,
     else:
         raise ValueError(f"Unsupport data type. type(year_list) is {type(year_list)}.")
     
+    
     for year in list(scenario_year):
-
-        storm_onset = UTCDateTime(year=year, month=int(storm_onset_month), day=int(storm_onset_day)).julday
 
         if year % 4 == 0:
             leap_year = True
         else:
             leap_year = False
-            
+
+
         if seed is None:
             seed = year
 
-        ref_last29_precp = np.full(shape=29, fill_value=0.0)
+        if ref_history is True:
+            if year == 2023:
+                # ref last 29 precp from 2022
+                df_path = Path(project_root) / "data/SedCas_input/climate_2004_2023_t.txt"
+                df = pd.read_csv(df_path, header=0)
+                ref_last29_precp = np.array(df["precipitation [mm per time_step]"][-29:])
+            else:
+                # ref sythenstic data, this is from "temp = daily_sampler"
+                ref_last29_precp = synthetic[-29:, 0] # type: ignore
+        else:
+            ref_last29_precp = np.full(shape=29, fill_value=0.0)
+        
+        storm_onset = UTCDateTime(year=year, month=int(storm_onset_month), day=int(storm_onset_day)).julday
+
         temp = daily_sampler(
             cycle_period=cycle_period,
             storm_onset=storm_onset,
@@ -76,7 +91,7 @@ def workflow(year_list,
             leap_year=leap_year,
             ref_last29_precp=ref_last29_precp,
             seed=seed,
-            plot=False)
+            plot=plot)
 
 
         time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic = temp
@@ -85,7 +100,11 @@ def workflow(year_list,
             output_dir = Path(project_root) / "plotting/what_if_plots"
             output_name = f"{output_dir}/{year}_cycle_period={cycle_period}_storm2drought_ratio={storm2drought_ratio}_storm_onset={storm_onset}.png"
             os.makedirs(output_dir, exist_ok=True)
-            plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, sigma_scale, output_name=output_name)
+            plot_syn(time_t=time_t, status_t=status_t, 
+                     precp_sta=precp_sta, temp_sta=temp_sta, radiation_sta=radiation_sta, 
+                     synthetic=synthetic, sigma_scale=sigma_scale, 
+                     cycle_period=cycle_period, storm2drought_ratio=storm2drought_ratio, storm_onset_month=storm_onset_month, 
+                     output_name=output_name)
 
         time_t_l.append(time_t)
         status_t_l.append(status_t)
@@ -161,13 +180,18 @@ def workflow(year_list,
     with open(scenario_input_meta, "w") as f:
         json.dump(meta, f, indent=2)
         
-    return file_format
+    return file_format, data
 
 
 if __name__ == "__main__":
-    file_format = workflow(year_list=(2023, 2024, 2025),
-                           cycle_period=30, # every N day
-                           storm2drought_ratio=0.05, # duration of storm / drought is 0.1
-                           storm_onset_month=2,  # start from 1st of Febuary
-                           storm_onset_day=1,
-                           plot=True, seed=None)
+    file_format, data = s2d_workflow(
+        year_list=(2023, 2024, 2025),
+        cycle_period=30,  # every N day
+        storm2drought_ratio=0.05,  # duration of storm / drought is 0.1
+        storm_onset_month=1,  # start from 1st of Febuary
+        storm_onset_day=1,
+        sigma_scale=3,  # control the std. for temperature and sun radiation
+        plot=True,
+        seed=None,
+        ref_history=True,
+    )

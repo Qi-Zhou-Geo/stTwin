@@ -47,9 +47,11 @@ pipeline/run_whatif/v0dot4
 # plotting
 plotting/diagram/.$workflow-DTs.drawio.bkp
 plotting/stastic_whatif/v0dot4
+plotting/what_if_plots
 
 plotting/whatif/cache
 plotting/whatif/archive
+plotting/whatif_Rs2d=0.05/cache
 
 plotting/diagram/location_framework/A4.png
 plotting/diagram/.$workflow-DTs.drawio.bkp
