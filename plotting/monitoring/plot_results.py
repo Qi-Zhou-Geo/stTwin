@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-07-03T15:30:44
+# __modification time__ = Last modified: 2026-07-09T11:04:21
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -130,10 +130,11 @@ for idx, key in enumerate(["hillslope_storage", "channel_storage", "sed_transpor
     except:
         value = ds[key].values # shape as (time, num_ls_stochastic)
         value = unit_converter(input=value, catchment_area=4.83, method="area-aggregated")
-
-        q05 = np.quantile(a=value, q=0.05, axis=1) # collapse the num_stochastic dimension
-        q50 = np.quantile(a=value, q=0.50, axis=1) # collapse the num_stochastic dimension
-        q95 = np.quantile(a=value, q=0.95, axis=1) # collapse the num_stochastic dimension
+        
+        # axis=1 >> collapse along the 100-iteration dimension
+        q05 = np.quantile(a=value, q=0.05, axis=1)
+        q50 = np.quantile(a=value, q=0.50, axis=1)
+        q95 = np.quantile(a=value, q=0.95, axis=1)
 
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(cache_path, q05=q05, q50=q50, q95=q95)

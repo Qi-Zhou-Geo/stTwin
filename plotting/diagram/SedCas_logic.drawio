@@ -1,6 +1,6 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36">
   <diagram name="Page-1" id="uk7gXtNpVg8cVnYmi9zu">
-    <mxGraphModel dx="2964" dy="-872" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
+    <mxGraphModel dx="3307" dy="-679" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -1784,7 +1784,7 @@
         <mxCell id="WUIKMPsXTPoWaFhm81N9-37" connectable="0" parent="WUIKMPsXTPoWaFhm81N9-8" style="group" value="" vertex="1">
           <mxGeometry height="130" width="430" x="2650" y="6098" as="geometry" />
         </mxCell>
-        <mxCell id="WUIKMPsXTPoWaFhm81N9-38" parent="WUIKMPsXTPoWaFhm81N9-37" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E6E6E6;strokeWidth=1;fontSize=10;strokeColor=#000000;align=center;imageHeight=50;" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;$$ S_o(t) = \frac{1}{1- s2w} \times Q_s(t) \times E(t) $$&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;Sediments&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: transparent; font-size: 8px;&quot;&gt;entrainment&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;$$ E(t) = 1 + e_k \frac{ch(t)}{ch^{\ast}} $$&lt;/span&gt;&lt;/div&gt;" vertex="1">
+        <mxCell id="WUIKMPsXTPoWaFhm81N9-38" parent="WUIKMPsXTPoWaFhm81N9-37" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E6E6E6;strokeWidth=1;fontSize=10;strokeColor=#000000;align=center;imageHeight=50;" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;$$ S_o(t) = \frac{1}{1- \text{max}_{s2w}} \times Q_s(t) \times E(t) $$&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;Sediments&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: transparent; font-size: 8px;&quot;&gt;entrainment \(E(t)\)&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;$$ E(t) = 1 + e_k \frac{ch(t)}{ch^{\ast}} $$&lt;/span&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="90" width="150" x="200" y="40" as="geometry" />
         </mxCell>
         <mxCell id="WUIKMPsXTPoWaFhm81N9-39" parent="WUIKMPsXTPoWaFhm81N9-37" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E6E6E6;strokeWidth=1;fontSize=10;strokeColor=#000000;align=center;imageHeight=50;" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;$$ S_o(t) = C_a \left( Q_s(t) - Q_{bl}^{\ast} \right)^{C_b} $$&lt;/span&gt;&lt;/div&gt;" vertex="1">
