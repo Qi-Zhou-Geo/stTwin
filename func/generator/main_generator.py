@@ -33,7 +33,6 @@ sys.path.append(str(project_root))
 from func.generator.sampler import daily_sampler, plot_syn
 from func.generator.upsampling import upsampler_prcp, upsampler_temp, upsampler_radi
 
-
 def s2d_workflow(year_list, 
              cycle_period, 
              storm2drought_ratio, 
@@ -185,10 +184,10 @@ def s2d_workflow(year_list,
 
 if __name__ == "__main__":
     file_format, data = s2d_workflow(
-        year_list=(2023, 2024, 2025),
+        year_list=(2023, 2024, 2025), #(2023), # (2023, 2024, 2025)
         cycle_period=30,  # every N day
         storm2drought_ratio=0.05,  # duration of storm / drought is 0.1
-        storm_onset_month=1,  # start from 1st of Febuary
+        storm_onset_month=2,  # start from 1st of Febuary
         storm_onset_day=1,
         sigma_scale=3,  # control the std. for temperature and sun radiation
         plot=True,

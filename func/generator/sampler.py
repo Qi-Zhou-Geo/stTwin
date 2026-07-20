@@ -34,7 +34,6 @@ from func.generator.storm2drought import storm2drought_generator
 from func.generator.load_statistics import sta_loader
 from func.SPI.ILL_SPI_daily import plot_spi_boundary, dump_SPI
 
-
 def generate_synthetic(metadata, temp_sta, radiation_sta, 
                        extremely_dry_b, spi_1_upper_norm, moderately_wet_b,
                        time_t, status_t, sigma_scale, 
@@ -225,8 +224,8 @@ def plot_month_background(ax, leap=False):
 def plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, sigma_scale,
              cycle_period, storm2drought_ratio, storm_onset_month, output_name=None):
 
-    fig = plt.figure(figsize=(6, 7))
-    gs = gridspec.GridSpec(4, 1)
+    fig = plt.figure(figsize=(6, 6))
+    gs = gridspec.GridSpec(4, 1, height_ratios=[1, 1.5, 1.5, 1.5])
 
     ax = plt.subplot(gs[0])
     ax.set_title("(a)", fontweight='bold', fontsize=7, loc='left')
@@ -237,7 +236,7 @@ def plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, si
              f"s2d Ratio: " + r"$R_{s2d}$" +f"={storm2drought_ratio}\n"
              f"Cycle Period: " + r"$1/f$" +f"={cycle_period}\n"
              f"Num. of Strom Day: {len(np.where(status_t==-1)[0])}")
-    ax.plot(time_t, status_t, color='black', zorder=3, label=label)
+    ax.plot(time_t, status_t, color='black', zorder=3, label=f"Strom-to-Drought Cycle")
 
     label = r"$t_0$"
     ax.axvline(x=storm_onset, color="C3", ls="--", lw=1, label=label)
@@ -253,7 +252,7 @@ def plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, si
     ax.set_ylabel("Status", fontweight='bold')
     ax.set_yticks([-1, 1], ["Strom (-1)", "Drought (1)"])
     ax.set_xlabel(f"", fontweight='bold')
-    ax.legend(loc="center left", fontsize='6')
+    ax.legend(loc="center left", fontsize='6', ncol=2)
 
 
 
@@ -294,7 +293,7 @@ def plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, si
             y1 = np.clip(y1, a_min=0, a_max=np.max(y1))
             y2 = np.clip(y2, a_min=0, a_max=np.max(y2))
 
-        ax.plot(x, synthetic[:, idx], label="Synthetic", color="black", zorder=3)
+        ax.plot(x, synthetic[:, idx], label="Synthetic", color="black", zorder=5)
         ax.plot(x, y, color="C1", label="Mean", zorder=4)
 
         if idx == 0:

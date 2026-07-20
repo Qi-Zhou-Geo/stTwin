@@ -387,12 +387,12 @@ def plot_spi_boundary(df_boundary, p_syn=None, p_obs=None, spi_scale=30, max_pre
     # Optional: plot p_syn
     if p_syn is not None:
         ax.plot(day_of_year, p_syn,
-                lw=1, ls="--", color="black",
+                lw=1, ls="-", color="black",
                 label="Synthetic", zorder=4)
 
     if p_obs is not None:
         ax.plot(day_of_year, p_obs,
-                lw=1, ls="--", color="C1",
+                lw=1, ls="-", color="C1",
                 label=(f"Mean Daily Total Precipitation in Last {spi_scale} Days\n"
                        f"(Jan. 1931 – Dec. 2025; MeteoSwiss Montana Station)"), 
                 zorder=4)
@@ -422,7 +422,15 @@ def plot_spi_boundary(df_boundary, p_syn=None, p_obs=None, spi_scale=30, max_pre
         julday1 = UTCDateTime(year=2023, month=month, day=1).julday
         x_ticks.append(julday1)
     x_ticks.append(365)
+    
+    # set ticks by month
     ax.set_xticks(x_ticks, x_ticks)
+    
+    # set ticks every 50 days
+    ax.set_xticks(
+        [1, 50, 100, 150, 200, 250, 300, 350, 365],
+        [1, 50, 100, 150, 200, 250, 300, 350, 365], # type: ignore
+    )
     ax.set_ylim(0, max_precp)
 
     ax.legend(loc="upper left", fontsize=6)

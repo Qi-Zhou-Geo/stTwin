@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-07-19T12:02:16
+# __modification time__ = Last modified: 2026-07-20T10:16:52
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -17,31 +17,33 @@ def storm2drought_generator(t0, Rs2d, cycle_period,
                             plot=False, save_plot=False):
 
     """
-    Generate a binary time series representing alternating
-    drought (1) and storm (-1) periods using a shifted sine wave.
+    Generate a binary storm-to-drought time series consisting of alternating storm and drought periods.
 
-    num_strom_day + num_drought_day + t0 = num_day
-    num_strom_day / num_drought_day - t0 = Rs2d
+    num_storm_day + num_drought_day = num_day
+    num_storm_day / num_drought_day = Rs2d
     
     Args:
-        t0 (int or float): first storm onset day, unit by day of year
-
-        Rs2d (float): strom-to-drought ratio, unit by dimensionless
+        t0 (int or float): first storm onset day, unit by day of year, real calendar julian day (1-indexed),
         where:
-            num_strom_day / num_drought_day
+            start from 1 (Jan 1st), end at 365 or 366 (Dec 31st),
+            e.g., t0=32 means 1st February is the first storm day
 
-        cycle_period (int or float): total length of one "strom" + "drought" cycle, unit by days
+        Rs2d (float): storm-to-drought ratio, unit by dimensionless
         where:
-            strom_day in one cycle + drought_day in one cycle
+            num_storm_day / num_drought_day
+
+        cycle_period (int or float): length of one storm-to-drought cycle, unit by days
+        where:
+            each cycle contains a contiguous storm period followed by a contiguous drought period.
             
     Returns:
-        t (np.ndarray): Day of year (num_day,),
+        t (np.ndarray): Day of year (num_day,) real calendar julian day (1-indexed),
             the first day index is 1, 
-            the last day index is 365 or 366,
+            the last day index is 365 for non-leap year or 366 for leap year,
 
-        y_t (np.ndarray): Strom-to-drought status, shape by (num_day,),
-             1  >> drought >> "y(t) >= 0"
-            -1  >> storm   >> "y(t) < 0"
+        y_t (np.ndarray): time series of storm-to-drought states, shape by (num_day,),
+            elements equal to "drought_value=1" indicate drought
+            elements equal to "storm_value=-1" indicate storm
     """
 
     # (1) set the number of day in one year
@@ -50,8 +52,8 @@ def storm2drought_generator(t0, Rs2d, cycle_period,
     else:
         num_day = 365
 
-
-    # (2) number of strom and drought day in one year
+    # (2) number of storm and drought day in one year
+    t0 = t0 - 1 # convert to python 0-indexed 
     num_storm_day = num_day * (Rs2d / (1 + Rs2d))
     num_storm_day = round(num_storm_day)
 
@@ -69,30 +71,30 @@ def storm2drought_generator(t0, Rs2d, cycle_period,
         raise AssertionError(f"Logic Error!\n"
                              f"<num_cycle>={num_cycle}, it can not greater than <num_storm_day>={num_storm_day}, or be zero.")
 
-    # (3) prepare the last "strom" + "drought" cycle
+    # (3) prepare the last "storm" + "drought" cycle
     num_storm_in_last_cycle = int(num_storm_day % num_cycle) # modulo
     value_in_last_cycle = [storm_value] * num_storm_in_last_cycle
 
-    # normal "strom" + "drought" cycle
+    # normal "storm" + "drought" cycle
     num_storm_in_1_cycle = int((num_storm_day - num_storm_in_last_cycle) // num_cycle) # floor division
     num_drought_in_1_cycle = cycle_period - num_storm_in_1_cycle
     value_in_1_cycle = [storm_value] * num_storm_in_1_cycle + [drought_value] * num_drought_in_1_cycle
 
     # (4) assume all time is drought
-    t = np.arange(1, num_day + 1) # day-of-year index of 1st January is 1
+    t = np.arange(1, num_day + 1) # real calendar julian day (1-indexed),
     y_t = np.full(shape=num_day, fill_value=drought_value, dtype=int)
 
     # (5) start the replace value
-    for id_c in range(num_cycle + 1): # add one more cycle for "num_storm_in_last_cycle"
+    for id_c in range(num_cycle + 1):
 
-        # not the last cycle
+        # not the last cycle >> process all full cycles
         if id_c != num_cycle:
             id1 = t0 + id_c * cycle_period
             id2 = t0 + (id_c + 1) * cycle_period
 
             y_t[id1:id2] = value_in_1_cycle
 
-        # last cycle
+        # last cycle >> assign any remaining "storm" days to the end of the year.
         else:
             
             if num_storm_in_last_cycle == 0:
@@ -127,7 +129,7 @@ def storm2drought_generator(t0, Rs2d, cycle_period,
     return t, y_t
 
 
-def plot_storm2drought(t, y_t, t0, Rs2d, cycle_period, num_s,  save=False):
+def plot_storm2drought(t, y_t, t0, Rs2d, cycle_period, num_s, storm_value=-1, save=False):
     
     import matplotlib.pyplot as plt
     import matplotlib.gridspec as gridspec
@@ -136,7 +138,11 @@ def plot_storm2drought(t, y_t, t0, Rs2d, cycle_period, num_s,  save=False):
                         'axes.formatter.limits': (-4, 6),
                         'axes.formatter.use_mathtext': True})
 
-
+    if t0 != np.where(y_t==storm_value)[0][0]:
+        raise ValueError(f"Warning! t0 is not as excepted.\n"
+                         f"t0={t0}\n"
+                         f"np.where(y_t==storm_value)[0][0]={np.where(y_t==storm_value)[0][0]}")
+    
     label = (f"First Storm Onset (t0={t0})\n"
              f"Strom-to-Drought Ratio (Rs2d={Rs2d})\n"
              f"Cycle Period (1/f={cycle_period})\n"
@@ -154,12 +160,13 @@ def plot_storm2drought(t, y_t, t0, Rs2d, cycle_period, num_s,  save=False):
     ax.set_xlabel(f"Day of Year [t]", fontweight='bold')
     ax.legend(loc="best", fontsize='6')
 
-    if t[-1] == 365:
-        ax.set_xticks([1, 50, 100, 150, 200, 250, 300, 350, 365],
-                      [1, 50, 100, 150, 200, 250, 300, 350, 365]) # type: ignore
-    elif t[-1] == 366:
-        ax.set_xticks([1, 50, 100, 150, 200, 250, 300, 350, 366],
-                      [1, 50, 100, 150, 200, 250, 300, 350, 366]) # type: ignore
+    
+    if t[-1] == 365: # non-leap year
+        non_leap_year = np.array([1, 50, 100, 150, 200, 250, 300, 350, 365])
+        ax.set_xticks(non_leap_year, non_leap_year) # type: ignore
+    elif t[-1] == 366: # leap year
+        leap_year = np.array([1, 50, 100, 150, 200, 250, 300, 350, 366])
+        ax.set_xticks(leap_year, leap_year) # type: ignore
     else:
         raise ValueError(f"Warning! Got unexcept t[-1]={t[-1]}.")
 
@@ -178,13 +185,13 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='input parameters')
     
-    # first strom arrives at 2nd Feb., unit by day of year, start from 1 to 365 or 366
-    parser.add_argument("--storm_onset", type=int, default=32)
+    # first storm arrives at 2nd Feb., unit by day of year, start from 1 to 365 or 366
+    parser.add_argument("--storm_onset", type=int, default=1)
     
-    # total strom day / total drought day, 0.05 >> 17 strom days
+    # total storm day / total drought day, 0.05 >> 17 storm days
     parser.add_argument("--storm2drought_ratio", type=float, default=0.1)
     
-    # one idea strom-drought cycle
+    # one idea storm-drought cycle
     parser.add_argument("--cycle_period", type=int, default=60)
     
     # leap year or not
