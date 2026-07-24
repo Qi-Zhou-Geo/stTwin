@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH -t 00:10:00                # time limit: (D-HH:MM:SS)
-#SBATCH --job-name=load            # job name, "Qi_run"
+#SBATCH --job-name=load01          # job name, "Qi_run"
 
 #SBATCH --ntasks=1
-#SBATCH --array=1-48               # job array id, 324
+#SBATCH --array=1-63               # job array id, 324
 #SBATCH --cpus-per-task=1           # reuest 1 cpu to run in parallel
 
 #SBATCH --mem-per-cpu=8G		       # Memory Request (per CPU; can use on GLIC)

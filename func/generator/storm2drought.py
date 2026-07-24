@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-07-20T10:16:52
+# __modification time__ = Last modified: 2026-07-20T16:44:24
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -186,10 +186,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='input parameters')
     
     # first storm arrives at 2nd Feb., unit by day of year, start from 1 to 365 or 366
-    parser.add_argument("--storm_onset", type=int, default=1)
+    parser.add_argument("--storm_onset", type=int, default=32)
     
     # total storm day / total drought day, 0.05 >> 17 storm days
-    parser.add_argument("--storm2drought_ratio", type=float, default=0.1)
+    parser.add_argument("--storm2drought_ratio", type=float, default=0.05)
     
     # one idea storm-drought cycle
     parser.add_argument("--cycle_period", type=int, default=60)

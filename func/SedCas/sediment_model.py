@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-12T11:28:40
+# __modification time__ = Last modified: 2026-07-21T16:18:12
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 # __note__ = This code is adapted from SedCas (Author: Jacob Hirschberg, Created: 2022-02-03, Source: https://github.com/jacobhirschberg/SedCas)
@@ -287,6 +287,8 @@ def generate_large_ls(ls_trigger,
 
         num_ls = np.sum(ls_days)  # number of big lansdslides, False -> 0, Ture -> 1
         large_ls = np.zeros(len(temperature_daily))
+        
+        # check_ls_cond(cond1, cond3, ls_days, idx, t1="2023-01-01", t2="2026-01-01")
     else:
         print(f"Error! please check the ls_trigger={ls_trigger}")
 
@@ -387,3 +389,11 @@ def generate_small_ls(num_days, num_large_ls, ls_min_v,
     small_ls = pd.DataFrame(data=data)
 
     return small_ls
+
+
+def check_ls_cond(cond1, cond3, ls_days, idx, t1="2023-01-01", t2="2026-01-01"):
+    
+    mask_2023_2025 = (idx >= t1) & (idx < t2)
+    print(f"cond1: {np.sum(cond1[mask_2023_2025])}")
+    print(f"cond3: {np.sum(cond3[mask_2023_2025])}")
+    print(f"ls_days: {np.sum(ls_days[mask_2023_2025])}")

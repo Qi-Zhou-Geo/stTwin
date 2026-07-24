@@ -32,6 +32,8 @@ sys.path.append(str(project_root))
 # import the func. from the same folder
 from func.generator.sampler import daily_sampler, plot_syn
 from func.generator.upsampling import upsampler_prcp, upsampler_temp, upsampler_radi
+from func.generator.plot_s2d import plot_syn_with_SPI
+
 
 def s2d_workflow(year_list, 
              cycle_period, 
@@ -97,13 +99,20 @@ def s2d_workflow(year_list,
         
         if plot is True:
             output_dir = Path(project_root) / "plotting/what_if_plots"
-            output_name = f"{output_dir}/{year}_cycle_period={cycle_period}_storm2drought_ratio={storm2drought_ratio}_storm_onset={storm_onset}.png"
+            output_name1 = f"{output_dir}/{year}_cycle_period={cycle_period}_storm2drought_ratio={storm2drought_ratio}_storm_onset={storm_onset}.png"
+            output_name2 = f"{output_dir}/{year}_cycle_period={cycle_period}_storm2drought_ratio={storm2drought_ratio}_storm_onset={storm_onset}_SPI.png"
             os.makedirs(output_dir, exist_ok=True)
             plot_syn(time_t=time_t, status_t=status_t, 
                      precp_sta=precp_sta, temp_sta=temp_sta, radiation_sta=radiation_sta, 
                      synthetic=synthetic, sigma_scale=sigma_scale, 
                      cycle_period=cycle_period, storm2drought_ratio=storm2drought_ratio, storm_onset_month=storm_onset_month, 
-                     output_name=output_name)
+                     output_name=output_name1)
+            
+            plot_syn_with_SPI(time_t=time_t, status_t=status_t,
+                              precp_sta=precp_sta, p_syn=synthetic[:, 0],
+                              sigma_scale=sigma_scale, 
+                              cycle_period=cycle_period, storm2drought_ratio=storm2drought_ratio, storm_onset_month=storm_onset_month,
+                              output_name=output_name2)
 
         time_t_l.append(time_t)
         status_t_l.append(status_t)
@@ -185,9 +194,9 @@ def s2d_workflow(year_list,
 if __name__ == "__main__":
     file_format, data = s2d_workflow(
         year_list=(2023, 2024, 2025), #(2023), # (2023, 2024, 2025)
-        cycle_period=30,  # every N day
+        cycle_period=105,  # every N day
         storm2drought_ratio=0.05,  # duration of storm / drought is 0.1
-        storm_onset_month=2,  # start from 1st of Febuary
+        storm_onset_month=8,  # start from 1st of Febuary
         storm_onset_day=1,
         sigma_scale=3,  # control the std. for temperature and sun radiation
         plot=True,

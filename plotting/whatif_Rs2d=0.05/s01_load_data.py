@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-06-14T17:06:30
+# __modification time__ = Last modified: 2026-07-17T22:28:21
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -55,13 +55,13 @@ plt.rcParams.update({'font.size': 7,
 
 
 
-def extract_whatif(df_sub, scenario_idx, select_t1, select_t2, model_version):
+def extract_whatif(df_sub, scenario_idx, select_t1, select_t2, model_version, scenario_name="run_whatif_Rs2d=0.05"):
 
     base_values = df_sub.iloc[scenario_idx, :].values
     i, cp, Rs2d, t0, d = base_values
     
-    whatif_type = f"CP={cp}_R={Rs2d}_M={t0}_D={d}"
-    data_dir = Path(project_root) / f"pipeline/run_whatif/{model_version}/{whatif_type}"
+    whatif_type = f"CP={int(cp)}_R={Rs2d:.3f}_M={int(t0)}_D={int(d)}"
+    data_dir = Path(project_root) / f"pipeline/{scenario_name}/{model_version}/{whatif_type}"
     
     ds_path = Path(data_dir) / f"theta_001/sed_container.nc" # 001 is MAP
     ds = xr.load_dataset(ds_path)
@@ -70,21 +70,24 @@ def extract_whatif(df_sub, scenario_idx, select_t1, select_t2, model_version):
 
     # return as List[Dict]
     result = mass_balance_checker(sed_container=ds, residual=1.0, iteration=None, silence=True)
+    
     df_statistic = pd.DataFrame(result).set_index("iteration")
-    print(df_statistic.shape)
+    print(df_statistic.shape) # row by "iteration", column by sediment state
     
     
     stat_values = []
     stat_col_name = []
     for col in df_statistic.columns:
-        data = df_statistic[col]
+        data = df_statistic[col] # shape as ("iteration", num_sed_state)
         
+        # collapse "iteration"
         data_mean = np.mean(data)
         data_std = np.std(data, ddof=1)
 
-        q05 = np.quantile(a=data, q=0.05)
-        q50 = np.quantile(a=data, q=0.50)
-        q95 = np.quantile(a=data, q=0.95)
+        # axis=0 >> collapse along the 100-iteration dimension
+        q05 = np.quantile(a=data, q=0.05, axis=0)
+        q50 = np.quantile(a=data, q=0.50, axis=0)
+        q95 = np.quantile(a=data, q=0.95, axis=0)
 
         stat_col_name.append(f"{col}_mean")
         stat_col_name.append(f"{col}_std")
@@ -119,14 +122,17 @@ def extract_benchmark(select_t1, select_t2, model_version):
     stat_values = []
     stat_col_name = []
     for col in df_statistic.columns:
-        data = df_statistic[col]
-
+        data = df_statistic[col] # shape as ("iteration", num_sed_state)
+        
+        # collapse "iteration"
         data_mean = np.mean(data)
         data_std = np.std(data, ddof=1)
 
-        q05 = np.quantile(a=data, q=0.05)
-        q50 = np.quantile(a=data, q=0.50)
-        q95 = np.quantile(a=data, q=0.95)
+        # axis=0 >> collapse along the 100-iteration dimension
+        q05 = np.quantile(a=data, q=0.05, axis=0)
+        q50 = np.quantile(a=data, q=0.50, axis=0)
+        q95 = np.quantile(a=data, q=0.95, axis=0)
+
 
         stat_col_name.append(f"{col}_mean")
         stat_col_name.append(f"{col}_std")
@@ -158,7 +164,7 @@ def extract_precp(df_sub, select_t1="2023-01-01T00:00:00", select_t2="2025-12-31
         base_values = df_sub.iloc[scenario_idx, :].values
         i, cp, Rs2d, t0, d = base_values
         
-        whatif_type = f"CP={cp}_R={Rs2d}_M={t0}_D={d}"
+        whatif_type = f"CP={int(cp)}_R={Rs2d:.3f}_M={int(t0)}_D={int(d)}"
 
         # Load generated precp
         # for the period 2023-01-01T00:00:00 to 2025-12-31T23:50:00.
@@ -175,37 +181,17 @@ def extract_precp(df_sub, select_t1="2023-01-01T00:00:00", select_t2="2025-12-31
         npz_path.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(npz_path, ratio=ratio, precp_real=precp_real, precp_whatif=precp_whatif)
 
-def main(scenario_idx):
+def main(scenario_idx, scenario_name="run_whatif_Rs2d=0.05", model_version="v0dot4"):
     
-    # region < load scenario from MAP theta >
-    statistic_ratio = Path(project_root) / "pipeline/run_whatif/scenario_bound.txt"
+    statistic_ratio = Path(project_root) / f"pipeline/{scenario_name}/scenario_bound.txt"
     df = pd.read_csv(statistic_ratio, header=0)
 
-    cycle_period = df["cycle_period"].values
-    storm2drought_ratio = df["storm2drought_ratio"].values
-    storm_onset_month = df["storm_onset_month"].values
-    # endregion
-
-
-    # region < select cycle_period = 30 for all Rs2d and t0 >
-    model_version = "v0dot4"
-    value_min, value_max, value_num = 30, 180, 6
-    cycle_period_l = np.linspace(value_min, value_max, value_num)
-    cycle_period_l = [30]
-    cp = cycle_period_l[0]
-    idx = np.where(cycle_period==cp)[0]
-    # endregion
-
-    
-    df_sub = df.iloc[idx, :].copy()
-    df_sub = df_sub.reset_index(drop=True)
-    print(df_sub)
     select_t1, select_t2 = "2023-01-01T00:00:00", "2026-01-01T00:00:00"
-    extract_whatif(df_sub, scenario_idx, select_t1, select_t2, model_version)
+    extract_whatif(df, scenario_idx, select_t1, select_t2, model_version)
     
     if scenario_idx == 0:
         extract_benchmark(select_t1, select_t2, model_version)
-        extract_precp(df_sub, select_t1="2023-01-01T00:00:00", select_t2="2025-12-31T23:50:00")
+        extract_precp(df, select_t1="2023-01-01T00:00:00", select_t2="2025-12-31T23:50:00")
 
 if __name__ == "__main__":
     
@@ -213,4 +199,4 @@ if __name__ == "__main__":
     parser.add_argument("--scenario_idx", type=int, default=0)
     args = parser.parse_args()
     
-    main(args.scenario_idx)
+    main(args.scenario_idx, scenario_name="run_whatif_Rs2d=0.05", model_version="v0dot4")

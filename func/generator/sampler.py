@@ -335,6 +335,7 @@ def plot_syn(time_t, status_t, precp_sta, temp_sta, radiation_sta, synthetic, si
     plt.show()
     plt.close(fig=fig)
 
+
 def plot_SPI(p_syn, spi_window=30):
     
     cumsum = np.cumsum(p_syn)
