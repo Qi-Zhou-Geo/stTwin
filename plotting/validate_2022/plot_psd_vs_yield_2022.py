@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-07-12T15:02:20
+# __modification time__ = Last modified: 2026-07-28T09:10:22
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -82,7 +82,7 @@ ax.plot(x, mve_precp, color="C0", zorder=3, label="MetroSwiss Montana")
 ax.set_yticks([0, 0.4, 0.8, 1.2], labels=[0, 0.4, 0.8, 1.2]) # type: ignore
 ax.set_xlim(x[0], x[-1])
 ax.set_ylim(0, 1.2)
-ax.set_ylabel("Precipitation\n[mm, 10-min total]", fontweight='bold')
+ax.set_ylabel("Precipitation\n" + r"$[\mathrm{mm}$ / $\mathrm{10-min}]$", fontweight='bold')
 
 
 # mve sed
@@ -110,7 +110,7 @@ ax_twin = ax.twinx()
 ax_twin.plot(x, q50, color="black", zorder=4, label="Q50")
 ax_twin.fill_between(x, q05, q95, color="black", alpha=0.2, zorder=2, label="Q5 to Q95")
 ax_twin.set_ylim(0, 6000)
-ax_twin.set_ylabel("Sediment Yield\n" + r"[$\mathrm{m}^3$" + ", 10-min total]", fontweight='bold', color="black")
+ax_twin.set_ylabel("Sediment Yield\n" + r"[$\mathrm{m}^3$ / $\mathrm{10-min}$]", fontweight='bold', color="black")
 rewrite_x_ticks(ax=ax_twin, data_start=t1, data_end=t2, data_sps=1/600, x_interval=1)
 
 handles1, labels1 = ax.get_legend_handles_labels()
@@ -157,7 +157,7 @@ for label, filename in data_map.items():
 ax.set_xlim(0, (t2_pd - t1_pd).total_seconds())
 ax.set_ylim(0, 150)
 rewrite_x_ticks(ax=ax, data_start=t1, data_end=t2, data_sps=1, x_interval=1)
-ax.set_ylabel("Measured Discharge\n" + r"[$\mathrm{m}^3 / s$]", fontweight='bold', color="black")
+ax.set_ylabel("Measured Discharge\n" + r"[$\mathrm{m}^3$ / $s$]", fontweight='bold', color="black")
 
 
 ax_twin = ax.twinx()
@@ -176,7 +176,7 @@ hydro_time = pd.to_datetime(hydro_mve.time_str.values)
 x_qs = (hydro_time - t1_pd).total_seconds()
 x = np.arange(len(data))
 ax_twin.plot(x_qs, data, color="black", label="Modelled", alpha=0.75)
-ax_twin.set_ylabel("Modelled Surface Discharge\n" + r"[$\mathrm{m}^3$" + ", 10-min total]", fontweight='bold', color="black")
+ax_twin.set_ylabel("Modeled Surface Discharge\n" + r"[$\mathrm{m}^3$ / $\mathrm{10-min}$]", fontweight='bold', color="black")
 ax_twin.set_ylim(0, 1.5 * 1e3)
 
 handles1, labels1 = ax.get_legend_handles_labels()

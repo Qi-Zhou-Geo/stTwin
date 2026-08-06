@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-07-24T18:06:28
+# __modification time__ = Last modified: 2026-07-29T13:23:02
 # __author__ = Qi Zhou, Helmholtz Centre Potsdam - GFZ German Research Centre for Geosciences
 # __find me__ = qi.zhou@gfz-potsdam.de, qi.zhou.geo@gmail.com, https://github.com/Nedasd
 
@@ -140,7 +140,8 @@ colors = [mcolors.to_hex(c) for c in colors]
 storm_onset_month = np.unique(np.array(df_all["storm_onset_month"])).tolist()
 storm_onset_month_color = dict(zip(storm_onset_month, colors))
 
-
+# sdr under the MVE
+sdr = 1.065
 
 fig = plt.figure(figsize=(6, 6.5))
 gs = gridspec.GridSpec(3, 2, height_ratios=[10, 10, 1])
@@ -224,8 +225,11 @@ for idx in np.arange(len(df_all)):
                    edgecolors="black", facecolor=storm_onset_month_color.get(t0), 
                    alpha=0.5, zorder=15 - cp, 
                    s=cycle_period_marker.get(cp))
+        
+        if y[idx] <= 1.065:
+            print("precp", cp, t0)
 
-sdr = 1.065
+
 ax.axhline(y=sdr, color="black", ls="--", lw=0.7, zorder=2, label=f"SDE"+ r"$_{\mathrm{mve}}$" + f"={sdr}")
 ax.legend(loc="lower right", fontsize=6)
 ax.set_xlabel("Precipitation Ratio "  + r"$\frac{\Sigma P_\text{s2d}(t)}{\Sigma P_\text{mve}(t)}$", fontweight="bold")
@@ -258,7 +262,10 @@ for idx in np.arange(len(df_all)):
                    edgecolors="black", facecolor=storm_onset_month_color.get(t0), 
                    alpha=0.5, zorder=15 - cp, 
                    s=cycle_period_marker.get(cp))
-sdr = 1.065
+        
+        if y[idx] <= 1.065:
+                print("sed", cp, t0)
+
 ax.axhline(y=sdr, color="black", ls="--", lw=0.7, zorder=2, label=f"Observed SDR={sdr}")
 ax.set_xlabel(r"Sediment Source Ratio " + r"$\frac{\Sigma S_\text{s2d}(t)}{\Sigma S_\text{mve}(t)}$", fontweight="bold")
 ax.set_ylabel("Sediment Delivery Efficiency " + r"$\frac{\Sigma Y_\text{s2d}(t)}{\Sigma S_\text{s2d}(t)}$", fontweight="bold")
