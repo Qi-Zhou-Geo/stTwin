@@ -1,5 +1,5 @@
 ```sh
-# Last Update: Last modified: 2026-06-24T12:38:36
+# Last Update: Last modified: 2026-08-07T11:43:27
 # Author: Qi Zhou
 ```
 
@@ -34,21 +34,33 @@ docker compose -f compose-stTwin.yml ps
 
 # docker compose -f compose-stTwin.yml logs --tail=100 sedcas
 # docker compose -f compose-stTwin.yml logs --tail=100 dashboard
-# docker compose -f compose-stTwin.yml logs --tail=100 cloudflared
-# docker compose -f compose-Flow-Alert.yml logs --tail=100 flow-alert
+# docker compose -f compose-stTwin.yml logs --tail=100 nginx
 ```
 ---
 
 ### 3. Stop the whole services
 ```sh
 docker compose -f compose-stTwin.yml down
-# docker compose -f compose-Flow-Alert.yml down
 ```
 ---
 
-### 4. Restart one service
+
+### 4. Replace a file 
+You can replace a py file and restart the service
+```sh
+# Make sure you are in the directory containing t3_main.py
+docker cp t1_main.py deploy-sedcas-1:/app/func/liveshow/t1_main.py
+docker cp t2s1_load_cache.py deploy-dashboard-1:/app/func/liveshow/t2s1_load_cache.py
+docker cp t2s3_dash_baord.py deploy-dashboard-1:/app/func/liveshow/t2s3_dash_baord.py
+```
+---
+
+
+### 5. Restart one service
 ```sh
 docker compose -f compose-stTwin.yml restart sedcas
-# docker compose -f compose-Flow-Alert.yml restart sedcas
+
+# or
+docker compose -f compose-stTwin.yml restart dashboard
 ```
 ---

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-07-03T18:47:56
+# __modification time__ = Last modified: 2026-08-07T11:01:22
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
@@ -78,7 +78,7 @@ def load_cache_monitoring(data_type, t1="2025-01-01T00:00:00", t2="2036-01-01T00
 
 def load_cache_whatif(data_type, whatif_type=None, t1="2023-01-01T00:00:00", t2="2026-01-01T00:00:00"):
 
-    data_path = Path(project_root) / "pipeline/run_whatif/v0dot4"
+    data_path = Path(project_root) / "deploy/liveshow_cache/whatif/v0dot4"
     key = "output"
     
     
@@ -121,7 +121,7 @@ def load_cache_whatif(data_type, whatif_type=None, t1="2023-01-01T00:00:00", t2=
 
 
 
-    # real-monitoring with fixed ls
+    # real-monitoring
     if data_type in ["hydro", "hydro_output"]:
         data_key = f"hydro_{key}.nc"
         
@@ -144,7 +144,7 @@ def load_cache_whatif(data_type, whatif_type=None, t1="2023-01-01T00:00:00", t2=
     else:
         raise ValueError(f"Please check the input <data_type> {data_type}")
     
-    data_path = Path(project_root) / "pipeline/run_2004_2025_posterior/v0dot4/theta_001"
+    data_path = Path(project_root) / "deploy/liveshow_cache/monitoring"
     vars_dict_monitoring = vars_dict
     ds3 = xr.load_dataset(f"{data_path}/{data_key}")
     ds4 = xr.load_dataset(f"{data_path}/climate_forcing.nc")
@@ -176,6 +176,10 @@ def load_cache_pro(pro_dir):
     
     df = df.iloc[:, [0, 1, -3, -2, -1]]
     df.columns = ["time_stamps", "time_str", "pro_mean", "pro_ci", "RMS"]
+    
+    # drop the NaN time stamps
+    df["time_stamps"] = pd.to_numeric(df["time_stamps"], errors="coerce")
+    df = df.dropna(subset=["time_stamps"])
     df = df.sort_values(by="time_stamps")
     
     # conver to ds dataset

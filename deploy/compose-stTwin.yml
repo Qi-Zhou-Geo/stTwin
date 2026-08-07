@@ -1,3 +1,7 @@
+# Last Update: Last modified: 2026-08-07T09:43:24
+# Author: Qi Zhou
+
+
 # service 1
 services:
   sedcas:
@@ -8,12 +12,12 @@ services:
     #   dockerfile: ${PROJECT_ROOT}/deploy/Dockerfile
     
     # Or use the loaded imgae
-    image: st-image:dev
+    image: st-image:v0dot6
 
     # run as root, it may overwrite host files
     user: "0:0"
 
-    # Inside the container, use "${WORKING_ROOT}" as the working folder.
+    # Inside the container, use "${WORKING_ROOT}" as the working folder
     working_dir: ${WORKING_ROOT}
 
     # start the work flow in container
@@ -35,7 +39,7 @@ services:
 # service 2
   dashboard:
 
-    image: st-image:dev
+    image: st-image:v0dot6
     user: "0:0"
 
     working_dir: ${WORKING_ROOT}
@@ -44,21 +48,43 @@ services:
     restart: always
     volumes:
       - ${CACHE_DIR_HOST}:${CACHE_DIR_CONTAINER}
+      - ${FLOW_ALERT_ROOT}/deploy/liveshow_cache:/Flow-Alert/deploy/liveshow_cache:ro
 
     environment:
       - PYTHONUNBUFFERED=1
 
 # cloudflare
-  cloudflared:
+  # cloudflared:
   
-    image: cloudflare/cloudflared:latest
-    user: "0:0"
+  #   image: cloudflare/cloudflared:latest
+  #   user: "0:0"
     
-    command: tunnel --url http://dashboard:8050 --protocol http2 --logfile ${CACHE_DIR_CONTAINER}/logs/t3_main.log --loglevel info
+  #   command: tunnel --url http://dashboard:8050 --protocol http2 --logfile ${CACHE_DIR_CONTAINER}/logs/t3_main.log --loglevel info
     
+  #   restart: always
+  #   volumes:
+  #     - ${CACHE_DIR_HOST}:${CACHE_DIR_CONTAINER}
+    
+  #   depends_on:
+  #     - dashboard
+
+
+# nginx
+  nginx:
+
+    image: nginx:stable-alpine
     restart: always
+
+    ports:
+      - "80:80" # for http
+      # - "443:443" # for https
+
     volumes:
-      - ${CACHE_DIR_HOST}:${CACHE_DIR_CONTAINER}
+      # Mount the nginx config from this deploy folder into the nginx container
+      # "./nginx/default.conf" is on the VM host
+      # "/etc/nginx/conf.d/default.conf" is inside the container
+      # ":ro" means read-only, so nginx can read the config but cannot change the host file
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     
     depends_on:
       - dashboard

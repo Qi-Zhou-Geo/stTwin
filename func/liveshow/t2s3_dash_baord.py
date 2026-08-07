@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-07-03T15:07:48
+# __modification time__ = Last modified: 2026-08-07T11:41:29
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
@@ -34,6 +34,17 @@ from func.toolkit.logger_printer import setup_logger
 
 font_global = {"fontFamily": "Arial, sans-serif", "fontSize": "12px", "color": "#2d2d2d"}
 
+LEVEL2_MONITORING_OPTIONS = [
+    {"label": "Discharge Magnitude", "value": "hydro"},
+    {"label": "Sediment Magnitude", "value": "sed"},
+    {"label": "Debris-Flow Probability", "value": "seis"},
+]
+
+LEVEL2_WHATIF_OPTIONS = [
+    {"label": "Discharge Magnitude", "value": "hydro"},
+    {"label": "Sediment Magnitude", "value": "sed"},
+]
+
 
 def load_whatif_slider(method="from_text"):
 
@@ -46,7 +57,7 @@ def load_whatif_slider(method="from_text"):
         storm_onset_day_range = [int(v) for v in storm_onset_day_range]
     
     elif method == "from_text":
-        scenario_path = Path(project_root) / "pipeline/run_whatif/scenario_bound.txt"
+        scenario_path = Path(project_root) / "config/scenario_bound.txt"
         df = pd.read_csv(scenario_path, header=0)
         
         cycle_period_range = np.unique(df["cycle_period"]).tolist()
@@ -83,17 +94,13 @@ def build_layout(whatif_slider_cfg):
             # Level 2: Hydro or Sed or Seis
             dcc.RadioItems(
                 id="level2-toggle",
-                options=[
-                    {"label": "Discharge Magnitude", "value": "hydro"}, # results from SedCas
-                    {"label": "Sediment Magnitude",   "value": "sed"}, # results from SedCas
-                    {"label": "Debris-Flow Probability",  "value": "seis"}, # results from Flow-Alert
-                ],
+                options=LEVEL2_MONITORING_OPTIONS,
                 value="sed",
                 inline=True,
                 style={"marginBottom": "3px", "fontSize": "14px", "gap": "1px"},
             ),
 
-            # WhatIf sliders (hidden until level1 == whatif)
+            # Level 2: WhatIf sliders (hidden until level1 == whatif)
             html.Div(
                 id="whatif-panel",
                 children=[
@@ -147,6 +154,21 @@ def build_layout(whatif_slider_cfg):
     return layout
 
 
+def update_level2_options(level1, current_level2):
+
+    if level1 == "monitoring":
+        options = LEVEL2_MONITORING_OPTIONS
+    else:
+        options = LEVEL2_WHATIF_OPTIONS
+
+    valid_values = {opt["value"] for opt in options}
+
+    if current_level2 in valid_values:
+        return options, current_level2
+
+    return options, "sed"
+
+
 def toggle_whatif_panel(level1):
     
     if level1 == "whatif":
@@ -195,7 +217,7 @@ def refresh_chart(n_intervals, level1, level2,
     elif level1 == "whatif":
         
         # (2-1) level2 >> do not need
-        whatif_type = f"CP={cycle_period}.0_R={storm2drought_ratio}_M={storm_onset_month}.0_D={storm_onset_day}.0"
+        whatif_type = f"CP={int(cycle_period)}_R={storm2drought_ratio:.3f}_M={int(storm_onset_month)}_D={int(storm_onset_day)}"
         
         msg, xr_dataset_whatif, vars_dict_whatif, ds_monitoring, vars_dict = load_cache_whatif(data_type=level2, 
                                                                                        whatif_type=whatif_type, 
@@ -216,7 +238,19 @@ def refresh_chart(n_intervals, level1, level2,
 
 
 def register_callbacks(app):
-
+    
+    # update the Level-2 choices when switching between Monitoring and WhatIf
+    # Monitoring supports hydro, sed, and seis
+    # WhatIf supports only hydro and sed
+    level2_callback = app.callback(
+        Output("level2-toggle", "options"),
+        Output("level2-toggle", "value"),
+        Input("level1-toggle", "value"),
+        State("level2-toggle", "value"),
+    )
+    level2_callback(update_level2_options)
+    
+    
     # show/hide whatif slider panel, return as Python decorator
     toggle_callback = app.callback(
         Output("whatif-panel", "style"),

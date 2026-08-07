@@ -1,5 +1,5 @@
 ```sh
-# Last Update: Last modified: 2026-06-29T17:43:16
+# Last Update: Last modified: 2026-08-06T18:52:01
 # Author: Qi Zhou
 ```
 
@@ -21,13 +21,13 @@ ls
 Make sure your Docker desktop App is running.
 
 ```sh
-docker build -f deploy/Dockerfile.stTwin -t st-image:dev .
+docker build -f deploy/Dockerfile.stTwin -t st-image:v0dot6 .
 # docker build >> create a Docker image
 # -f deploy/Dockerfile.stTwin >> use this specific Dockerfile
-# -t st-image:dev >> name the image "st-image", tag it as "dev"
+# -t st-image:v0dot6 >> name the image "st-image", tag it as "dev"
 # . >> use current directory as the build context (project root)
 
-# docker build -f deploy/Dockerfile.stTwin --platform linux/amd64 -t st-image:dev .
+# docker build -f deploy/Dockerfile.stTwin --platform linux/amd64 -t st-image:v0dot6 .
 ```
 ---
 
@@ -37,14 +37,14 @@ DISK USAGE is around 3 GB, not bad.
 docker images
 # you will see:
 # IMAGE          ID             DISK USAGE   CONTENT SIZE   EXTRA
-# st-image:dev   4a901ceeb85c       2.81GB          685MB    
+# st-image:v0dot6   4a901ceeb85c       2.81GB          685MB    
 ```
 ---
 
 ### 4. Run a .py file in Docker container
 enter the container
 ```sh
-docker run --rm -it --entrypoint bash st-image:dev
+docker run --rm -it --entrypoint bash st-image:v0dot6
 ```
 
 activate env
@@ -75,14 +75,14 @@ all edits on QZ's machine are instantly visible inside Docker without rebuilding
 docker run -it --rm \
   -v $(pwd):/project \
   -w /project \
-  st-image:dev \
+  st-image:v0dot6 \
   func/toolkit/env_test.py
 
 # -it >> run container in interactive terminal mode
 # --rm >> Automatically removes the container after it exits
 # -v $(pwd):/project >> mount local project folder "$(pwd)" into "/project" inside container
 # -w /project >> set working directory to "/project"
-# st-image:dev >> image name "st-image", and tag name "dev"
+# st-image:v0dot6 >> image name "st-image", and tag name "dev"
 # func/toolkit/env_test.py >> script to run (no rebuild needed)
 ```
 ---
@@ -91,14 +91,15 @@ docker run -it --rm \
 ### 6. Save and load the image
 Save to local PC
 ```sh
-docker save -o deploy/st-image.tar st-image:dev
-# docker save -o deploy/fa-image.tar fa-image:dev
+docker save -o deploy/st-image_v0dot6.tar st-image:v0dot6
 ```
 
 Once you upload it server
 ```sh
 # now you should in "deploy" folder
-docker load -i st-image.tar
-# docker load -i fa-image.tar
+docker load -i st-image_v0dot6.tar
+
+# delete it by
+docker rmi st-image_v0dot6.tar
 ```
 ---

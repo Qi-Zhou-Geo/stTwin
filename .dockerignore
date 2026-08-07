@@ -31,6 +31,7 @@ demo
 func/bayesian_inference/plots
 
 deploy/st-image.tar
+deploy/liveshow_cache
 
 pipeline
 plotting

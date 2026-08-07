@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# __modification time__ = Last modified: 2026-07-03T09:11:10
+# __modification time__ = Last modified: 2026-08-07T11:08:36
 # __author__ = Qi Zhou, GFZ Helmholtz Centre for Geosciences
 # __find me__ = qi.zhou@gfz.de, qi.zhou.geo@gmail.com, https://github.com/Qi-Zhou-Geo
 # Please do not distribute this functions without the author's permission
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='input parameters')
     parser.add_argument("--output_dir", type=str, default=f"{project_root}/deploy/liveshow_cache/logs")
     parser.add_argument("--log_filename", type=str, default="t1_main.log")
-    parser.add_argument("--num_iteration", type=int, default=4)
+    parser.add_argument("--num_iteration", type=int, default=10)
     args = parser.parse_args()
     
 

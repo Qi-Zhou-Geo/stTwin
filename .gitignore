@@ -33,8 +33,7 @@ data/SedCas_input/climate_2004_2025_t.txt
 
 # deploy cache
 deploy/liveshow_cache
-deploy/st-image.tar
-deploy/fa-image.tar
+deploy/*.tar
 
 # func
 func/SedCas/1h
