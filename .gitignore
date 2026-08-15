@@ -21,6 +21,9 @@ run_temp_test.sh
 # ingore the folder and all files
 
 # config
+config/gfz_sftp_key.yml
+config/gfz_nextcloud_key.yml
+
 config/SedCas-main/1h/sed_container_2004_2018.nc
 
 
