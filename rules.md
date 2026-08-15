@@ -1,12 +1,11 @@
-# Last Update: Last modified: 2026-07-31T11:23:12
+```sh
+# Last modified: 2026-08-15T12:55:12
 # Author: Qi Zhou
+```
 
 ## **Readme**
 Working together efficiently and happily 🤝
 ---
-
-Last modified: 2026-06-08T11:18:44
-Author: Qi Zhou
 
 ### Please follow these rules:
 These steps may increase your workload initially, <br>

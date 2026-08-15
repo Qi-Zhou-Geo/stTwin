@@ -1,5 +1,5 @@
 ```sh
-# Last modified: 2026-08-12T15:18:31
+# Last modified: 2026-08-15T12:55:19
 # Author: Qi Zhou
 ```
 
@@ -8,7 +8,7 @@
 
 ---
 
-### 🛠️ Major Changes for v0.6.2
+### 🛠️ Major Changes for v0.6.3
 This project is an ongoing framework for simulating, detecting, and exploring sediment-transport dynamics at the catchment scale. More detailed usage guidelines will be released together with our manuscript. 
 
 ### 🎬 Live Demo
